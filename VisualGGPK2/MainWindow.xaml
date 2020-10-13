@@ -1,8 +1,26 @@
 ﻿<Window x:Class="VisualGGPK2.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="VisualGGPK2 v0.1.0" Height="500" Width="800">
+        Title="VisualGGPK2 v0.1.0" Width="880" Height="500" AllowDrop="True" Loaded="OnLoaded" DragEnter="OnDragEnter" Drop="OnDragDrop">
     <Grid>
-
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="630"/>
+        </Grid.ColumnDefinitions>
+        <TreeView x:Name="Tree"
+                  TreeViewItem.Expanded= "OnTreeExpanded"
+                  SelectedItemChanged="OnTreeSelectedChanged"
+                  VirtualizingStackPanel.IsVirtualizing="True"
+                  VirtualizingStackPanel.VirtualizationMode="Recycling"
+                  Margin="0,0,1,0"/>
+        <GridSplitter Width="3"/>
+        <TextBlock Text="FileOffset" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,2,0,0"/>
+        <TextBox Text="" TextWrapping="Wrap" Width="100" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="65,1,0,0"/>
+        <TextBlock Text="FileSize" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="170,2,0,0"/>
+        <TextBox Text="" TextWrapping="Wrap" Width="80" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="215,1,0,0"/>
+        <TextBlock Text="FileNameHash" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="300,2,0,0"/>
+        <TextBox Text="" TextWrapping="Wrap" Width="80" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="385,1,0,0"/>
+        <TextBlock Text="FileHash" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="470,2,0,0"/>
+        <TextBox Text="" TextWrapping="Wrap" Width="80" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="525,1,0,0"/>
     </Grid>
 </Window>

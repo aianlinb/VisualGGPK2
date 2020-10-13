@@ -15,7 +15,7 @@ namespace LibGGPK2
         public readonly BinaryWriter Writer;
         public readonly GGPKRecord ggpkRecord;
         public readonly DirectoryRecord rootDirectory;
-        public readonly LinkedList<FreeRecord> LinkedFreeRecords;
+        public readonly LinkedList<FreeRecord> LinkedFreeRecords = new LinkedList<FreeRecord>();
 
         public GGPKContainer(string path)
         {
