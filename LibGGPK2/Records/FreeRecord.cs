@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace LibGGPK2.Records
@@ -13,7 +14,7 @@ namespace LibGGPK2.Records
         public static readonly byte[] Tag = Encoding.ASCII.GetBytes("FREE");
 
         /// <summary>
-        /// Offset of next FREE record
+        /// Offset of next FreeRecord
         /// </summary>
         public long NextFreeOffset;
 
@@ -51,9 +52,14 @@ namespace LibGGPK2.Records
             bw.BaseStream.Seek(Length - 16, SeekOrigin.Current);
         }
 
-        public void Remove()
+        /// <summary>
+        /// Remove this FreeRecord from the Linked FreeRecord List
+        /// </summary>
+        /// <param name="node">Node in <see cref="GGPKContainer.LinkedFreeRecords"/> to remove</param>
+        public void Remove(LinkedListNode<FreeRecord> node = null)
         {
-            var node = ggpkContainer.LinkedFreeRecords.Find(this);
+            if (node == null)
+                node = ggpkContainer.LinkedFreeRecords.Find(this);
             var previous = node.Previous?.Value;
             var next = node.Next?.Value;
             if (next == null)

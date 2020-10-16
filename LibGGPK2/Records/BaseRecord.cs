@@ -2,6 +2,9 @@
 
 namespace LibGGPK2.Records
 {
+    /// <summary>
+    /// BaseType of all records
+    /// </summary>
     public abstract class BaseRecord
     {
         /// <summary>
@@ -19,8 +22,14 @@ namespace LibGGPK2.Records
         /// </summary>
         public GGPKContainer ggpkContainer;
 
+        /// <summary>
+        /// Read the record data from GGPK
+        /// </summary>
         protected abstract void Read();
 
+        /// <summary>
+        /// Write the record data to GGPK
+        /// </summary>
         internal abstract void Write(BinaryWriter bw = null);
     }
 }

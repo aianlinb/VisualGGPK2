@@ -4,7 +4,7 @@ using System.Text;
 namespace LibGGPK2.Records
 {
     /// <summary>
-    /// GGPK record is the very first record and exists at the very beginning of the pack file.
+    /// GGPK record is the very first record and exists at the very beginning of the GGPK file.
     /// It must have excatly 2 entries - One goes to the root directory and the other to a FREE record.
     /// </summary>
     public class GGPKRecord : BaseRecord
@@ -13,9 +13,6 @@ namespace LibGGPK2.Records
         
         public uint GGPKVersion = 3;
 
-        /// <summary>
-        /// List record offsets this record contains. It must have exactly 2 entries.
-        /// </summary>
         public long RootDirectoryOffset;
         public long FirstFreeRecordOffset;
 
@@ -25,14 +22,6 @@ namespace LibGGPK2.Records
             RecordBegin = ggpk.fileStream.Position - 8;
             Length = length; // 28
             Read();
-        }
-
-        public GGPKRecord()
-        {
-            RecordBegin = 0;
-            Length = 28;
-            RootDirectoryOffset = 28;
-            FirstFreeRecordOffset = 0;
         }
 
         protected override void Read()

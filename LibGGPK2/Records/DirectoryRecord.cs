@@ -25,10 +25,13 @@ namespace LibGGPK2.Records
         }
 
         public static readonly byte[] Tag = Encoding.ASCII.GetBytes("PDIR");
+        /// <summary>
+        /// Use for sort the children of directory.
+        /// </summary>
         public static readonly SortComp Comparer = new SortComp();
 
         /// <summary>
-        /// Records this directory contains. Each entry is an offset in the pack file of the record.
+        /// Records (File/Directory) this directory contains.
         /// </summary>
         public DirectoryEntry[] Entries;
         /// <summary>
@@ -45,7 +48,6 @@ namespace LibGGPK2.Records
         }
 
         private SortedSet<RecordTreeNode> _Children;
-        public override DirectoryRecord Parent { get; internal set; }
         public override SortedSet<RecordTreeNode> Children
         {
             get
@@ -100,6 +102,9 @@ namespace LibGGPK2.Records
         }
     }
 
+    /// <summary>
+    /// Use for sort the children of directory.
+    /// </summary>
     public class SortComp : IComparer<RecordTreeNode>
     {
         [System.Runtime.InteropServices.DllImport("shlwapi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]

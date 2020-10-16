@@ -1,29 +1,43 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace LibGGPK2.Records
 {
+    /// <summary>
+    /// For FileRecord and DirectoryRecord
+    /// </summary>
     public abstract class RecordTreeNode : BaseRecord
     {
         public virtual DirectoryRecord Parent { get; internal set; }
         public virtual SortedSet<RecordTreeNode> Children { get; }
 
         /// <summary>
-        /// SHA256 hash of this file's data
+        /// SHA256 hash of the file content
         /// </summary>
         public byte[] Hash;
         /// <summary>
-        /// File name
+        /// File/Directory name
         /// </summary>
         public string Name;
 
+        /// <summary>
+        /// Get the full path in GGPK of this File/Directory
+        /// </summary>
         public virtual string GetPath()
         {
             return Parent?.GetPath() + Name + "/";
         }
 
+        /// <param name="name">Name of record</param>
+        /// <returns>A record with <see cref="Name"/> == <paramref name="name"/></returns>
+        public virtual RecordTreeNode GetChildItem(string name)
+        {
+            return Children.FirstOrDefault((rtn) => { return rtn.Name == name; });
+        }
+
         public virtual uint GetNameHash()
         {
-            return LibGGPK.Murmur.Hash2(Name);
+            return MurmurHash2Unsafe.Hash(Name.ToLower(), 0);
         }
     }
 }

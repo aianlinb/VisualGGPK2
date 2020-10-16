@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace LibGGPK2.Records
 {
+    /// <summary>
+    /// Record contains the data of a file.
+    /// </summary>
     public class FileRecord : RecordTreeNode
     {
         public static readonly byte[] Tag = Encoding.ASCII.GetBytes("FILE");
@@ -30,8 +33,6 @@ namespace LibGGPK2.Records
             Read();
         }
 
-        public override DirectoryRecord Parent { get; internal set; }
-
         protected override void Read()
         {
             var br = ggpkContainer.Reader;
@@ -40,7 +41,7 @@ namespace LibGGPK2.Records
             Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
             br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
             DataBegin = br.BaseStream.Position;
-            DataLength = Length - (nameLength * 2 + 44); //Length - (8 + nameLength * 2 + 32 + 4)
+            DataLength = Length - (nameLength * 2 + 44); // Length - (8 + nameLength * 2 + 32 + 4)
             br.BaseStream.Seek(DataLength, SeekOrigin.Current);
         }
 
@@ -59,33 +60,40 @@ namespace LibGGPK2.Records
             // Actual file content writing of FileRecord isn't here
         }
 
+        /// <summary>
+        /// Get the file content of this record
+        /// </summary>
         public virtual byte[] ReadFileContent()
         {
             var buffer = new byte[DataLength];
             ggpkContainer.fileStream.Seek(DataBegin, SeekOrigin.Begin);
-            ggpkContainer.Reader.Read(buffer, 0, (int)DataLength);
+            ggpkContainer.Reader.Read(buffer, 0, DataLength);
             return buffer;
         }
 
+        /// <summary>
+        /// Replace the file content with a new content,
+        /// and move the record to the FreeRecord with most suitable size.
+        /// </summary>
         public virtual void ReplaceContent(byte[] NewContent)
         {
             var bw = ggpkContainer.Writer;
 
-            Hash = Hash256.ComputeHash(NewContent);
+            Hash = Hash256.ComputeHash(NewContent); // New Hash
 
-            if (NewContent.Length == DataLength)
+            if (NewContent.Length == DataLength) // Replace in situ
             {
                 bw.BaseStream.Seek(DataBegin, SeekOrigin.Begin);
                 bw.Write(NewContent);
             }
-            else
+            else // Replace a FreeRecord
             {
                 var oldOffset = RecordBegin;
                 MarkAsFreeRecord();
                 DataLength = NewContent.Length;
-                Length = 44 + (Name.Length + 1) * 2 + DataLength;  //(8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
+                Length = 44 + (Name.Length + 1) * 2 + DataLength; // (8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
 
-                LinkedListNode<FreeRecord> bestNode = null;
+                LinkedListNode<FreeRecord> bestNode = null; // Find the FreeRecord with most suitable size
                 var currentNode = ggpkContainer.LinkedFreeRecords.First;
                 int space = int.MaxValue;
                 do
@@ -97,7 +105,7 @@ namespace LibGGPK2.Records
                         break;
                     }
                     int tmpSpace = currentNode.Value.Length - Length;
-                    if (tmpSpace < space && /*For old libggpk =>*/ tmpSpace >= 16 /*<= For old libggpk */)
+                    if (tmpSpace < space && tmpSpace >= 16)
                     {
                         bestNode = currentNode;
                         space = tmpSpace;
@@ -106,25 +114,46 @@ namespace LibGGPK2.Records
 
                 if (bestNode == null)
                 {
-                    bw.BaseStream.Seek(0, SeekOrigin.End);
+                    bw.BaseStream.Seek(0, SeekOrigin.End); // Write to the end of GGPK
                     Write();
                     DataBegin = bw.BaseStream.Position;
                     bw.Write(NewContent);
                 }
                 else
                 {
-                    FreeRecord f = bestNode.Value;
-                    bw.BaseStream.Seek(f.RecordBegin, SeekOrigin.Begin);
+                    FreeRecord free = bestNode.Value;
+                    bw.BaseStream.Seek(free.RecordBegin, SeekOrigin.Begin); // Write to the FreeRecord
                     Write();
                     bw.Write(NewContent);
-                    f.Length = space;
-                    f.Write();
+                    free.Length = space;
+                    if (space >= 16) // Update offset of FreeRecord
+                    {
+                        free.Write();
+                        var PreviousBest = bestNode.Previous?.Value;
+                        if (PreviousBest == null)
+                        {
+                            ggpkContainer.ggpkRecord.FirstFreeRecordOffset = free.RecordBegin;
+                            bw.BaseStream.Seek(ggpkContainer.ggpkRecord.RecordBegin + 20, SeekOrigin.Begin);
+                            bw.Write(free.RecordBegin);
+                        }
+                        else
+                        {
+                            PreviousBest.NextFreeOffset = free.RecordBegin;
+                            bw.BaseStream.Seek(PreviousBest.RecordBegin + 8, SeekOrigin.Begin);
+                            bw.Write(free.RecordBegin);
+                        }
+                    }
+                    else // Remove the FreeRecord
+                        free.Remove(bestNode);
                 }
 
-                UpdateOffset(oldOffset);
+                UpdateOffset(oldOffset); // Update the offset of FileRecord in Parent.Entries/>
             }
         }
 
+        /// <summary>
+        /// Set the record to a FreeRecord
+        /// </summary>
         public virtual void MarkAsFreeRecord()
         {
             var bw = ggpkContainer.Writer;
@@ -132,7 +161,7 @@ namespace LibGGPK2.Records
             var free = new FreeRecord(Length, ggpkContainer, 0, RecordBegin);
             free.Write();
             var lastFree = ggpkContainer.LinkedFreeRecords.Last?.Value;
-            if (lastFree == null)
+            if (lastFree == null) // No FreeRecord
             {
                 ggpkContainer.ggpkRecord.FirstFreeRecordOffset = RecordBegin;
                 ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.RecordBegin + 20, SeekOrigin.Begin);
@@ -147,6 +176,10 @@ namespace LibGGPK2.Records
             ggpkContainer.LinkedFreeRecords.AddLast(free);
         }
 
+        /// <summary>
+        /// Update the offset of the record in <see cref="DirectoryRecord.Entries"/>
+        /// </summary>
+        /// <param name="OldOffset">The original offset to be update</param>
         public virtual void UpdateOffset(long OldOffset)
         {
             for (int i=0; i< Parent.Entries.Length; i++)
@@ -159,7 +192,107 @@ namespace LibGGPK2.Records
                     return;
                 }
             }
-            //Not Found Entry??
+            throw new System.Exception(GetPath() + " updateOffset faild:" + OldOffset.ToString() + " => " + RecordBegin.ToString());
+        }
+
+        public enum DataFormats
+        {
+            Unknown,
+            Image,
+            Ascii,
+            Unicode,
+            OGG,
+            Dat,
+            TextureDds,
+            BK2,
+            BANK
+        }
+
+        private DataFormats? _DataFormat;
+        public virtual DataFormats DataFormat
+        {
+            get
+            {
+                if (_DataFormat == null)
+                {
+                    switch (Path.GetExtension(Name).ToLower())
+                    {
+                        case "act":
+                        case "ais":
+                        case "amd": // Animated Meta Data
+                        case "ao": // Animated Object
+                        case "aoc": // Animated Object Controller
+                        case "arl":
+                        case "arm": // Rooms
+                        case "atlas":
+                        case "cht": // ChestData
+                        case "clt":
+                        case "dct": // Decals
+                        case "ddt": // Doodads
+                        case "dlp":
+                        case "ecf":
+                        case "env": // Environment
+                        case "epk":
+                        case "et":
+                        case "ffx": // FFX Render
+                        case "gft":
+                        case "gt": // Ground Types
+                        case "idl":
+                        case "idt":
+                        case "mat": // Materials
+                        case "properties":
+                        case "sm": // Skin Mesh
+                        case "tgr":
+                        case "tgt":
+                        case "tsi":
+                        case "tst":
+                        case "txt":
+                        case "ui": // User Interface
+                        case "xml":
+                            _DataFormat = DataFormats.Unicode;
+                            break;
+                        case "csv":
+                        case "filter": // Item/loot filter
+                        case "fx": // Shader
+                        case "hlsl": // Shader
+                        case "mel": // Maya Embedded Language
+                        case "mtd":
+                        case "ot":
+                        case "otc":
+                        case "pet":
+                        case "red":
+                        case "rs": // Room Set
+                        case "slt":
+                        case "trl": // Trace log?
+                            _DataFormat = DataFormats.Ascii;
+                            break;
+                        case "dat":
+                        case "dat64":
+                            _DataFormat = DataFormats.Dat;
+                            break;
+                        case "dds":
+                            _DataFormat = DataFormats.TextureDds;
+                            break;
+                        case "jpg":
+                        case "png":
+                            _DataFormat = DataFormats.Image;
+                            break;
+                        case "ogg":
+                            _DataFormat = DataFormats.OGG;
+                            break;
+                        case "bk2":
+                            _DataFormat = DataFormats.BK2;
+                            break;
+                        case "bank":
+                            _DataFormat = DataFormats.BANK;
+                            break;
+                        default:
+                            _DataFormat = DataFormats.Unknown;
+                            break;
+                    }
+                }
+                return _DataFormat.Value;
+            }
         }
     }
 }
