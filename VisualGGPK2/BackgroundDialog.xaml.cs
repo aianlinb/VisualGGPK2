@@ -15,7 +15,7 @@
         public void NextProgress()
         {
             progress++;
-            MessageTextBlock.Dispatcher.BeginInvoke(new System.Action(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); }));
+            Dispatcher.BeginInvoke((System.Action)(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); }));
         }
 
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -26,7 +26,7 @@
         public new void Close()
         {
             Closing -= OnClosing;
-            base.Close();
+            Dispatcher.Invoke(base.Close);
         }
     }
 }

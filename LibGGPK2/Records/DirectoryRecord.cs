@@ -39,10 +39,13 @@ namespace LibGGPK2.Records
         /// </summary>
         public long EntriesBegin;
 
+        /// <summary>
+        /// Read a DirectoryRecord from GGPK
+        /// </summary>
         public DirectoryRecord(int length, GGPKContainer ggpk)
         {
             ggpkContainer = ggpk;
-            RecordBegin = ggpk.fileStream.Position - 8;
+            Offset = ggpk.fileStream.Position - 8;
             Length = length;
             Read();
         }
@@ -86,7 +89,7 @@ namespace LibGGPK2.Records
         {
             if (bw == null)
                 bw = ggpkContainer.Writer;
-            RecordBegin = bw.BaseStream.Position;
+            Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
             bw.Write(Name.Length + 1);
@@ -103,7 +106,7 @@ namespace LibGGPK2.Records
     }
 
     /// <summary>
-    /// Use for sort the children of directory.
+    /// Use to sort the children of directory.
     /// </summary>
     public class SortComp : IComparer<RecordTreeNode>
     {
@@ -111,18 +114,16 @@ namespace LibGGPK2.Records
         public static extern int StrCmpLogicalW(string x, string y);
         public virtual int Compare(RecordTreeNode x, RecordTreeNode y)
         {
-            var dx = x as DirectoryRecord;
-            var dy = y as DirectoryRecord;
-            if (dx != null)
-                if (dy != null)
-                    return StrCmpLogicalW(dx.Name, dy.Name);
+            if (x is DirectoryRecord || x is BundleDirectoryNode)
+                if (y is DirectoryRecord || y is BundleDirectoryNode)
+                    return StrCmpLogicalW(x.Name, y.Name);
                 else
                     return -1;
             else
-                if (dy != null)
+                if (y is DirectoryRecord || y is BundleDirectoryNode)
                     return 1;
                 else
-                    return StrCmpLogicalW(((FileRecord)x).Name, ((FileRecord)y).Name);
+                    return StrCmpLogicalW(x.Name, y.Name);
         }
     }
 }

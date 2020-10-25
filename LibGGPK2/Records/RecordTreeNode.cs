@@ -4,11 +4,11 @@ using System.Linq;
 namespace LibGGPK2.Records
 {
     /// <summary>
-    /// For FileRecord and DirectoryRecord
+    /// FileRecord or DirectoryRecord or BundleFileNode or BundleDirectoryNode
     /// </summary>
     public abstract class RecordTreeNode : BaseRecord
     {
-        public virtual DirectoryRecord Parent { get; internal set; }
+        public virtual RecordTreeNode Parent { get; internal set; }
         public virtual SortedSet<RecordTreeNode> Children { get; }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace LibGGPK2.Records
         /// <returns>A record with <see cref="Name"/> == <paramref name="name"/></returns>
         public virtual RecordTreeNode GetChildItem(string name)
         {
-            return Children.FirstOrDefault((rtn) => { return rtn.Name == name; });
+            return Children?.FirstOrDefault(rtn => rtn.Name == name);
         }
 
         public virtual uint GetNameHash()

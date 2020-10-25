@@ -21,7 +21,7 @@ namespace LibGGPK2.Records
         public FreeRecord(int length, GGPKContainer ggpk)
         {
             ggpkContainer = ggpk;
-            RecordBegin = ggpk.fileStream.Position - 8;
+            Offset = ggpk.fileStream.Position - 8;
             Length = length;
             Read();
         }
@@ -29,7 +29,7 @@ namespace LibGGPK2.Records
         public FreeRecord(int length, GGPKContainer ggpk, long nextFreeOffset, long recordBegin)
         {
             ggpkContainer = ggpk;
-            RecordBegin = recordBegin;
+            Offset = recordBegin;
             Length = length;
             NextFreeOffset = nextFreeOffset;
         }
@@ -45,7 +45,7 @@ namespace LibGGPK2.Records
         {
             if (bw == null)
                 bw = ggpkContainer.Writer;
-            RecordBegin = bw.BaseStream.Position;
+            Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
             bw.Write(NextFreeOffset);
@@ -66,26 +66,26 @@ namespace LibGGPK2.Records
                 if (previous == null)
                 {
                     ggpkContainer.ggpkRecord.FirstFreeRecordOffset = 0;
-                    ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.RecordBegin + 20, SeekOrigin.Begin);
+                    ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.Offset + 20, SeekOrigin.Begin);
                     ggpkContainer.Writer.Write((long)0);
                 }
                 else
                 {
                     previous.NextFreeOffset = 0;
-                    ggpkContainer.fileStream.Seek(previous.RecordBegin + 8, SeekOrigin.Begin);
+                    ggpkContainer.fileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
                     ggpkContainer.Writer.Write((long)0);
                 }
             else
                 if (previous == null)
                 {
                     ggpkContainer.ggpkRecord.FirstFreeRecordOffset = next.NextFreeOffset;
-                    ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.RecordBegin + 20, SeekOrigin.Begin);
+                    ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.Offset + 20, SeekOrigin.Begin);
                     ggpkContainer.Writer.Write(next.NextFreeOffset);
                 }
                 else
                 {
                     previous.NextFreeOffset = next.NextFreeOffset;
-                    ggpkContainer.fileStream.Seek(previous.RecordBegin + 8, SeekOrigin.Begin);
+                    ggpkContainer.fileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
                     ggpkContainer.Writer.Write(next.NextFreeOffset);
                 }
             ggpkContainer.LinkedFreeRecords.Remove(node);
