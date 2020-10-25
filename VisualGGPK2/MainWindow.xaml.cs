@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -144,9 +145,23 @@ namespace VisualGGPK2
                                 //DatView.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.TextureDds:
-                                //TODO
-                                //ImageView.Source = ;
-                                //ImageView.Visibility = Visibility.Visible;
+                                try
+                                {
+                                    var buffer = f.ReadFileContent(ggpkContainer.fileStream);
+                                    while (buffer[0] == '*')
+                                    {
+                                        var path = Encoding.UTF8.GetString(buffer, 1, buffer.Length - 1);
+                                        f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
+                                        buffer = f.ReadFileContent(ggpkContainer.fileStream);
+                                    }
+                                    var image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
+                                    var pinnedArray = GCHandle.Alloc(image.Data, GCHandleType.Pinned);
+                                    var addr = pinnedArray.AddrOfPinnedObject();
+                                    var bsource = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
+                                    PixelFormat(image), null, addr, image.DataLen, image.Stride);
+                                    ImageView.Source = bsource;
+                                    ImageView.Visibility = Visibility.Visible;
+                                } catch { } // Ignore error
                                 break;
                             case IFileRecord.DataFormats.BK2:
                                 //TODO
@@ -159,6 +174,29 @@ namespace VisualGGPK2
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Get the PixelFormat of the dds image
+        /// </summary>
+        public static PixelFormat PixelFormat(Pfim.IImage image)
+        {
+            switch (image.Format)
+            {
+                case Pfim.ImageFormat.Rgb24:
+                    return PixelFormats.Bgr24;
+                case Pfim.ImageFormat.Rgba32:
+                    return PixelFormats.Bgr32;
+                case Pfim.ImageFormat.Rgb8:
+                    return PixelFormats.Gray8;
+                case Pfim.ImageFormat.R5g5b5a1:
+                case Pfim.ImageFormat.R5g5b5:
+                    return PixelFormats.Bgr555;
+                case Pfim.ImageFormat.R5g6b5:
+                    return PixelFormats.Bgr565;
+                default:
+                    throw new Exception($"Unable to convert {image.Format} to WPF PixelFormat");
             }
         }
 
