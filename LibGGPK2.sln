@@ -12,6 +12,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualGGPK2", "VisualGGPK2\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibDat2", "LibDat2\LibDat2.csproj", "{762DF6EB-6F9A-4377-8F86-9B04EEA2B52E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibBundle", "LibBundle\LibBundle.csproj", "{2C4CC8AF-5E19-4515-9136-94AE0F283FCB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{762DF6EB-6F9A-4377-8F86-9B04EEA2B52E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{762DF6EB-6F9A-4377-8F86-9B04EEA2B52E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{762DF6EB-6F9A-4377-8F86-9B04EEA2B52E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C4CC8AF-5E19-4515-9136-94AE0F283FCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C4CC8AF-5E19-4515-9136-94AE0F283FCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C4CC8AF-5E19-4515-9136-94AE0F283FCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C4CC8AF-5E19-4515-9136-94AE0F283FCB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -21,7 +21,7 @@
         <TextBox x:Name="TextBoxSize" IsReadOnly="True" Width="100" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="250,1,0,0"/>
         <TextBlock Text="Hash:" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="360,2,0,0"/>
         <TextBox x:Name="TextBoxHash" IsReadOnly="True" Width="100" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="400,1,0,0"/>
-        <TextBox x:Name="TextView" IsReadOnly="True" Grid.Column="1" Visibility="Collapsed" TextWrapping="Wrap" AcceptsReturn="true" Margin="0,19,0,0"/>
-        <Image x:Name="ImageView" Grid.Column="1" Visibility="Collapsed" Stretch="None" Margin="0,19,0,0"/>
+        <TextBox x:Name="TextView" IsReadOnly="True" Grid.Column="1" Visibility="Hidden" TextWrapping="Wrap" AcceptsReturn="true" Margin="0,19,0,0"/>
+        <Image x:Name="ImageView" Grid.Column="1" Visibility="Hidden" Stretch="None" Margin="0,19,0,0"/>
     </Grid>
 </Window>

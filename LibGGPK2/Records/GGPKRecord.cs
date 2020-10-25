@@ -19,7 +19,7 @@ namespace LibGGPK2.Records
         public GGPKRecord(int length, GGPKContainer ggpk)
         {
             ggpkContainer = ggpk;
-            RecordBegin = ggpk.fileStream.Position - 8;
+            Offset = ggpk.fileStream.Position - 8;
             Length = length; // 28
             Read();
         }
@@ -36,7 +36,7 @@ namespace LibGGPK2.Records
         {
             if (bw == null)
                 bw = ggpkContainer.Writer;
-            RecordBegin = bw.BaseStream.Position;
+            Offset = bw.BaseStream.Position;
             bw.Write(Length); // 28
             bw.Write(Tag);
             bw.Write(GGPKVersion); // 3

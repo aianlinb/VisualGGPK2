@@ -15,7 +15,7 @@ namespace LibGGPK2.Records
         /// <summary>
         /// Offset in pack file where record begins
         /// </summary>
-        public long RecordBegin;
+        public long Offset;
 
         /// <summary>
         /// GGPK which contains this record

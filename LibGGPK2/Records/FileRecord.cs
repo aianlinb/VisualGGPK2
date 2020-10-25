@@ -2,13 +2,14 @@
 using System.Text;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using static LibGGPK2.Records.IFileRecord;
 
 namespace LibGGPK2.Records
 {
     /// <summary>
     /// Record contains the data of a file.
     /// </summary>
-    public class FileRecord : RecordTreeNode
+    public class FileRecord : RecordTreeNode, IFileRecord
     {
         public static readonly byte[] Tag = Encoding.ASCII.GetBytes("FILE");
         public static readonly SHA256 Hash256 = SHA256.Create();
@@ -21,13 +22,13 @@ namespace LibGGPK2.Records
         /// Length of the raw file data
         /// </summary>
         public int DataLength;
-        
-		public override SortedSet<RecordTreeNode> Children => null;
+
+        public override SortedSet<RecordTreeNode> Children => null;
 
         public FileRecord(int length, GGPKContainer ggpk)
         {
             ggpkContainer = ggpk;
-            RecordBegin = ggpk.fileStream.Position - 8;
+            Offset = ggpk.fileStream.Position - 8;
             Length = length;
             Read();
         }
@@ -48,7 +49,7 @@ namespace LibGGPK2.Records
         {
             if (bw == null)
                 bw = ggpkContainer.Writer;
-            RecordBegin = bw.BaseStream.Position;
+            Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
             bw.Write(Name.Length + 1);
@@ -62,6 +63,7 @@ namespace LibGGPK2.Records
         /// <summary>
         /// Get the file content of this record
         /// </summary>
+        /// <param name="stream">Stream of GGPK file</param>
         public virtual byte[] ReadFileContent(Stream stream = null)
         {
             var buffer = new byte[DataLength];
@@ -89,7 +91,7 @@ namespace LibGGPK2.Records
             }
             else // Replace a FreeRecord
             {
-                var oldOffset = RecordBegin;
+                var oldOffset = Offset;
                 MarkAsFreeRecord();
                 DataLength = NewContent.Length;
                 Length = 44 + (Name.Length + 1) * 2 + DataLength; // (8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
@@ -123,22 +125,22 @@ namespace LibGGPK2.Records
                 else
                 {
                     FreeRecord free = bestNode.Value;
-                    bw.BaseStream.Seek(free.RecordBegin + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
+                    bw.BaseStream.Seek(free.Offset + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
                     Write();
                     DataBegin = bw.BaseStream.Position;
                     bw.Write(NewContent);
                     free.Length = space;
                     if (space >= 16) // Update offset of FreeRecord
                     {
-                        bw.BaseStream.Seek(free.RecordBegin, SeekOrigin.Begin);
+                        bw.BaseStream.Seek(free.Offset, SeekOrigin.Begin);
                         bw.Write(free.Length);
                     }
                     else // Remove the FreeRecord
                         free.Remove(bestNode);
-					bw.Flush();
                 }
 
                 UpdateOffset(oldOffset); // Update the offset of FileRecord in Parent.Entries/>
+                bw.Flush();
             }
         }
 
@@ -148,21 +150,21 @@ namespace LibGGPK2.Records
         public virtual void MarkAsFreeRecord()
         {
             var bw = ggpkContainer.Writer;
-            bw.BaseStream.Seek(RecordBegin, SeekOrigin.Begin);
-            var free = new FreeRecord(Length, ggpkContainer, 0, RecordBegin);
+            bw.BaseStream.Seek(Offset, SeekOrigin.Begin);
+            var free = new FreeRecord(Length, ggpkContainer, 0, Offset);
             free.Write();
             var lastFree = ggpkContainer.LinkedFreeRecords.Last?.Value;
             if (lastFree == null) // No FreeRecord
             {
-                ggpkContainer.ggpkRecord.FirstFreeRecordOffset = RecordBegin;
-                ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.RecordBegin + 20, SeekOrigin.Begin);
-                ggpkContainer.Writer.Write(RecordBegin);
+                ggpkContainer.ggpkRecord.FirstFreeRecordOffset = Offset;
+                ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.Offset + 20, SeekOrigin.Begin);
+                ggpkContainer.Writer.Write(Offset);
             }
             else
             {
-                lastFree.NextFreeOffset = RecordBegin;
-                ggpkContainer.fileStream.Seek(lastFree.RecordBegin + 8, SeekOrigin.Begin);
-                ggpkContainer.Writer.Write(RecordBegin);
+                lastFree.NextFreeOffset = Offset;
+                ggpkContainer.fileStream.Seek(lastFree.Offset + 8, SeekOrigin.Begin);
+                ggpkContainer.Writer.Write(Offset);
             }
             ggpkContainer.LinkedFreeRecords.AddLast(free);
         }
@@ -173,33 +175,21 @@ namespace LibGGPK2.Records
         /// <param name="OldOffset">The original offset to be update</param>
         public virtual void UpdateOffset(long OldOffset)
         {
+            var Parent = this.Parent as DirectoryRecord;
             for (int i=0; i< Parent.Entries.Length; i++)
             {
                 if (Parent.Entries[i].Offset == OldOffset)
                 {
-                    Parent.Entries[i].Offset = RecordBegin;
+                    Parent.Entries[i].Offset = Offset;
                     ggpkContainer.fileStream.Seek(Parent.EntriesBegin + i * 12 + 4, SeekOrigin.Begin);
-                    ggpkContainer.Writer.Write(RecordBegin);
+                    ggpkContainer.Writer.Write(Offset);
                     return;
                 }
             }
-            throw new System.Exception(GetPath() + " updateOffset faild:" + OldOffset.ToString() + " => " + RecordBegin.ToString());
+            throw new System.Exception(GetPath() + " updateOffset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
         }
 
-        public enum DataFormats
-        {
-            Unknown,
-            Image,
-            Ascii,
-            Unicode,
-            OGG,
-            Dat,
-            TextureDds,
-            BK2,
-            BANK
-        }
-
-        private DataFormats? _DataFormat;
+        private DataFormats? _DataFormat = null;
         public virtual DataFormats DataFormat
         {
             get
