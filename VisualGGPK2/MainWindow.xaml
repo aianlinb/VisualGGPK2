@@ -22,6 +22,6 @@
         <TextBlock Text="Hash:" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="360,2,0,0"/>
         <TextBox x:Name="TextBoxHash" IsReadOnly="True" Width="100" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="400,1,0,0"/>
         <TextBox x:Name="TextView" IsReadOnly="True" Grid.Column="1" Visibility="Hidden" TextWrapping="Wrap" AcceptsReturn="true" ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="0,19,0,0"/>
-        <Image x:Name="ImageView" Grid.Column="1" Visibility="Hidden" Stretch="None" Margin="0,19,0,0"/>
+        <Image x:Name="ImageView" Grid.Column="1" Visibility="Hidden" Stretch="Uniform" Margin="0,19,0,0"/>
     </Grid>
 </Window>

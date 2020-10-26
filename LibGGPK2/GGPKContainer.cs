@@ -35,7 +35,7 @@ namespace LibGGPK2
         public GGPKContainer(string path)
         {
             // Open File
-            fileStream = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            fileStream = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
             Reader = new BinaryReader(fileStream);
             Writer = new BinaryWriter(fileStream);
 

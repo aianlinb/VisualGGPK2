@@ -4,12 +4,25 @@ Library for Content.ggpk of PathOfExile
 Rewrite of https://github.com/aianlinb/libggpk
 
 # What's New?
+- Directly access the files in bundles.
 - No longer read all Records at the beginning.
 - The new file added will replace existing FreeRecord instead of being appended to the end of the GGPK.
 - Correctly handle all NextFreeRecordOffset of FreeRecord.
-- No longer allow other programs to access GGPK file when opening it.
+- No longer allow other programs to modify GGPK file when opening it.
+- Left click the folder to expand it.
+- Replacing by directory.
+- Vista style folder selector.
+- Export/Replace in background.
+- Fix DDS viewer.
+- Custom exception window instead of crashing.
+- Port from .NET Framework to .NET Core
 - Remove unnecessary code.
 
-# New features in the future
-- Merge VisualBundle into VisualGGPK2.
-- Implement viewer of .dat, .dds, .ogg etc..
+# Working on . . .
+- Viewer of .dat .ogg .bank .bk2 etc..
+- Files Filter
+- DDS Converter
+- TextEditor
+- DatEditor
+- Recovering files from official original file
+- GGPK Comparer

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Copyright>Copyright © 2020 aianlinb</Copyright>
-    <AssemblyVersion>2.2.0.0</AssemblyVersion>
+    <AssemblyVersion>2.2.0.2</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
