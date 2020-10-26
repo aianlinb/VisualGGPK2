@@ -114,6 +114,7 @@ namespace VisualGGPK2
                 //OGGView.Visibility = Visibility.Hidden;
                 //BK2View.Visibility = Visibility.Hidden;
                 //BANKView.Visibility = Visibility.Hidden;
+                ButtonSave.Visibility = Visibility.Hidden;
                 if (tvi.Tag is RecordTreeNode rtn)
                 {
                     TextBoxOffset.Text = rtn.Offset.ToString("X");
@@ -129,14 +130,20 @@ namespace VisualGGPK2
                                 ImageView.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.Ascii:
+                                TextView.IsReadOnly = false;
+                                TextView.Tag = Encoding.UTF8;
                                 TextView.Text = Encoding.UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
+                                ButtonSave.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.Unicode:
                                 if (rtn.Parent.Name == "Bundles")
                                     goto case IFileRecord.DataFormats.Ascii;
+                                TextView.IsReadOnly = false;
+                                TextView.Tag = Encoding.Unicode;
                                 TextView.Text = Encoding.Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
+                                ButtonSave.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.OGG:
                                 //TODO
@@ -316,6 +323,15 @@ namespace VisualGGPK2
                         bkg.ShowDialog();
                     }
                 }
+            }
+        }
+
+        private void OnSaveClicked(object sender, RoutedEventArgs e)
+        {
+            if (Tree.SelectedItem is TreeViewItem tvi && tvi.Tag is IFileRecord fr)
+            {
+                fr.ReplaceContent(((Encoding)TextView.Tag).GetBytes(TextView.Text));
+                MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

@@ -14,6 +14,7 @@ Rewrite of https://github.com/aianlinb/libggpk
 - Vista style folder selector.
 - Export/Replace in background.
 - Fix DDS viewer.
+- Directly edit and save in TextViewer.
 - Custom exception window instead of crashing.
 - Port from .NET Framework to .NET Core
 - Remove unnecessary code.
@@ -22,7 +23,6 @@ Rewrite of https://github.com/aianlinb/libggpk
 - Viewer of .dat .ogg .bank .bk2 etc..
 - Files Filter
 - DDS Converter
-- TextEditor
 - DatEditor
 - Recovering files from official original file
 - GGPK Comparer

@@ -65,9 +65,14 @@ namespace LibGGPK2.Records
         /// </summary>
         public virtual void ReplaceContent(byte[] NewContent)
         {
+            var BundleToSave = ggpkContainer.Index.GetSmallestBundle();
             BundleFileRecord.Write(NewContent);
-            var NewBundleData = BundleFileRecord.bundleRecord.Save(ggpkContainer.Reader);
-            ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].ReplaceContent(NewBundleData);
+            if (BundleFileRecord.bundleRecord != BundleToSave)
+                BundleFileRecord.Move(BundleToSave);
+            var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle[BundleToSave].DataBegin);
+            var fr = ggpkContainer.RecordOfBundle[BundleToSave];
+            fr.ReplaceContent(NewBundleData);
+            BundleToSave.Bundle.offset = fr.DataBegin;
             ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
         }
 
@@ -75,10 +80,11 @@ namespace LibGGPK2.Records
         /// Replace the file content with a new content,
         /// and return the bundle which have to be saved.
         /// </summary>
-        public virtual void BatchReplaceContent(byte[] NewContent, out BundleRecord BundleToSave)
+        public virtual void BatchReplaceContent(byte[] NewContent, BundleRecord BundleToSave)
         {
             BundleFileRecord.Write(NewContent);
-            BundleToSave = BundleFileRecord.bundleRecord;
+            if (BundleFileRecord.bundleRecord != BundleToSave)
+                BundleFileRecord.Move(BundleToSave);
         }
 
         /// <summary>

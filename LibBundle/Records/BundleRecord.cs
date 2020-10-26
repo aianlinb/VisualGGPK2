@@ -60,13 +60,18 @@ namespace LibBundle.Records
             Bundle.Save(data, path);
             data.Close();
         }
-        public byte[] Save(BinaryReader br = null)
+        public byte[] Save(BinaryReader br = null, long? Offset = null)
         {
             MemoryStream data;
             if (br == null)
                 data = Bundle.Read();
-            else
+            else if (Offset == null)
                 data = Bundle.Read(br);
+            else
+            {
+                Read(br, Offset);
+                data = Bundle.Read(br);
+            }
             foreach (var d in FileToAdd)
             {
                 d.Key.Offset = (int)data.Position;

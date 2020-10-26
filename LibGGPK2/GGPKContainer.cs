@@ -249,24 +249,18 @@ namespace LibGGPK2
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
         public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            LibBundle.Records.BundleRecord br = null;
+            var BundleToSave = Index.GetSmallestBundle();
             foreach (var record in list)
             {
                 if (record.Key is BundleFileNode bfn)
-                {
-                    bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), out var bundle);
-                    if (br != bundle)
-                    {
-                        if (br != null)
-                            RecordOfBundle[br].ReplaceContent(br.Save(Reader));
-                        br = bundle;
-                        br.Read(Reader, RecordOfBundle[br].DataBegin);
-                    }
-                }
+                    bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
                 else
                     record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
                 ProgressStep();
             }
+            var fr = RecordOfBundle[BundleToSave];
+            fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
+            BundleToSave.Bundle.offset = fr.DataBegin;
             IndexRecord.ReplaceContent(Index.Save());
         }
 
