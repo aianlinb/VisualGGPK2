@@ -23,6 +23,9 @@ namespace LibGGPK2.Records
         /// </summary>
         public int DataLength;
 
+        /// <summary>
+        /// There is no child with a file
+        /// </summary>
         public override SortedSet<RecordTreeNode> Children => null;
 
         public FileRecord(int length, GGPKContainer ggpk)
@@ -190,6 +193,9 @@ namespace LibGGPK2.Records
         }
 
         private DataFormats? _DataFormat = null;
+        /// <summary>
+        /// Content data format of this file
+        /// </summary>
         public virtual DataFormats DataFormat
         {
             get

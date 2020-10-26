@@ -178,11 +178,8 @@ namespace LibBundle
 
         public static ulong FNV1a64Hash(string str)
         {
-            if (str.EndsWith("/"))
-            {
-                str.TrimEnd(new char[] { '/' });
-                str += "++";
-            }
+            if (str.EndsWith('/'))
+                str = str.TrimEnd(new char[] { '/' }) + "++";
             else
                 str = str.ToLower() + "++";
 

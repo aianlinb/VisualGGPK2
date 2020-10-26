@@ -9,9 +9,18 @@ namespace LibGGPK2.Records
 {
     public class BundleFileNode : RecordTreeNode, IFileRecord
     {
+        /// <summary>
+        /// FNV1a64Hash of the path of file
+        /// </summary>
         public new ulong Hash;
+        /// <summary>
+        /// Record of the file in bundle
+        /// </summary>
         public LibBundle.Records.FileRecord BundleFileRecord;
 
+        /// <summary>
+        /// Create a node of the file in bundle
+        /// </summary>
         public BundleFileNode(string name, ulong hash, int offset, int size, LibBundle.Records.FileRecord record, GGPKContainer ggpkContainer)
         {
             Name = name;
@@ -22,6 +31,9 @@ namespace LibGGPK2.Records
             this.ggpkContainer = ggpkContainer;
         }
 
+        /// <summary>
+        /// There is no child with a file
+        /// </summary>
         public override SortedSet<RecordTreeNode> Children => null;
 
         /// <summary>
@@ -69,16 +81,25 @@ namespace LibGGPK2.Records
             BundleToSave = BundleFileRecord.bundleRecord;
         }
 
+        /// <summary>
+        /// Throw a <see cref="NotSupportedException"/>
+        /// </summary>
         protected override void Read()
         {
             throw new NotSupportedException("A virtual node of bundles cannot be read");
         }
+        /// <summary>
+        /// Throw a <see cref="NotSupportedException"/>
+        /// </summary>
         internal override void Write(BinaryWriter bw = null)
         {
             throw new NotSupportedException("A virtual node of bundles cannot be written");
         }
 
         private DataFormats? _DataFormat = null;
+        /// <summary>
+        /// Content data format of this file
+        /// </summary>
         public virtual DataFormats DataFormat
         {
             get

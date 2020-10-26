@@ -60,6 +60,8 @@ namespace VisualGGPK2
                 var root = CreateNode(ggpkContainer.rootDirectory);
                 Tree.Items.Add(root); // Initial TreeView
                 root.IsExpanded = true;
+
+                TextView.AppendText("\r\n\r\nDone!\r\n");
             }
             else
                 Close();

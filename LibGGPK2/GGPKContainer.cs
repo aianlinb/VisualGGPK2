@@ -62,34 +62,44 @@ namespace LibGGPK2
                 IndexRecord = _index;
                 fileStream.Seek(_index.DataBegin, SeekOrigin.Begin);
                 Index = new IndexContainer(Reader);
-                FakeBundles2 = new BundleDirectoryNode("Bundles2", MurmurHash2Unsafe.Hash("bundles2", 0), (int)OriginalBundles2.Offset, OriginalBundles2.Length, this);
+                FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), (int)OriginalBundles2.Offset, OriginalBundles2.Length, this);
                 rootDirectory.Children.Remove(OriginalBundles2);
                 rootDirectory.Children.Add(FakeBundles2);
                 foreach (var f in Index.Files)
-                    BuildBundleTree(f);
+                    BuildBundleTree(f, FakeBundles2);
             }
             foreach (var br in Index.Bundles)
                 RecordOfBundle[br] = (FileRecord)FindRecord(br.Name, OriginalBundles2);
         }
 
-        public void BuildBundleTree(LibBundle.Records.FileRecord fr)
+        public void BuildBundleTree(LibBundle.Records.FileRecord fr, RecordTreeNode parent)
         {
             var SplittedPath = fr.path.Split('/');
-            RecordTreeNode parent = FakeBundles2;
+            var path = "";
             for (int i = 0; i < SplittedPath.Length; i++)
             {
                 var name = SplittedPath[i];
                 var isFile = (i + 1 == SplittedPath.Length);
                 var parentOfFile = (i + 2 == SplittedPath.Length);
                 var next = parent.GetChildItem(name);
+                path += name;
+                if (!isFile) path += "/";
                 if (next == null)
                 { // No exist node, Build a new node
                     if (isFile)
                         next = new BundleFileNode(name, fr.Hash, fr.Offset, fr.Size, fr, this);
+                    else if (parentOfFile)
+                        next = new BundleDirectoryNode(name, path, fr.parent.Hash, fr.parent.Offset, fr.parent.Size, this);
                     else
-                        next = new BundleDirectoryNode(name, MurmurHash2Unsafe.Hash(name.ToLower(), 0), parentOfFile ? fr.parent.Offset : 0, parentOfFile ? fr.parent.Size : 0, this);
+                        next = new BundleDirectoryNode(name, path, 0, 0, 0, this);
                     parent.Children.Add(next);
                     next.Parent = parent;
+                }
+                else if (parentOfFile && next.Offset == 0)
+                {
+                    ((BundleDirectoryNode)next).Hash = fr.parent.Hash;
+                    next.Offset = fr.parent.Offset;
+                    next.Length = fr.parent.Size;
                 }
                 parent = next;
             }
