@@ -22,7 +22,5 @@ Rewrite of https://github.com/aianlinb/libggpk
 # Working on . . .
 - Viewer of .dat .ogg .bank .bk2 etc..
 - Files Filter
-- DDS Converter
-- DatEditor
-- Recovering files from official original file
-- GGPK Comparer
+- Dat Editor
+- Recovering files from official patch server

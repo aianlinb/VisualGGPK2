@@ -38,15 +38,15 @@ namespace VisualGGPK2
 
         private void OnResumeClick(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
             Closing -= OnClosing;
+            DialogResult = true;
             Close();
         }
 
         private void OnStopClick(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
             Closing -= OnClosing;
+            DialogResult = false;
             Close();
         }
     }

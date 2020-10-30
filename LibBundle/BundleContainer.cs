@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 
 namespace LibBundle
 {
@@ -42,6 +43,7 @@ namespace LibBundle
 
         public string path;
         public long offset;
+        public COMPRESSTION_LEVEL Compression_Level = COMPRESSTION_LEVEL.Normal;
 
         public int uncompressed_size;
         public int compressed_size;
@@ -117,48 +119,128 @@ namespace LibBundle
             var chunks = new int[entry_count];
             for (int i = 0; i < entry_count; i++)
                 chunks[i] = br.ReadInt32();
-            
+
             var data = new MemoryStream(uncompressed_size);
             for (int i = 0; i < entry_count; i++)
             {
                 var b = br.ReadBytes(chunks[i]);
-                int size = (i + 1 == entry_count) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size; // isLast ?
+                var size = (i + 1 == entry_count) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size; // isLast ?
                 var toSave = new byte[size + 64];
                 OodleLZ_Decompress(b, b.Length, toSave, size, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
                 data.Write(toSave, 0, size);
             }
+
             return data;
         }
 
+        public virtual byte[] AppendAndSave(Stream newData, string path = null)
+        {
+            if (path == null)
+                path = this.path;
+            offset = 0;
+            return AppendAndSave(newData, File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+        }
+
+        public virtual byte[] AppendAndSave(Stream newData, Stream originalData)
+        {
+            originalData.Seek(offset + 60, SeekOrigin.Begin);
+            var OldChunkCompressedSizes = new byte[(entry_count - 1) * 4];
+            originalData.Read(OldChunkCompressedSizes, 0, OldChunkCompressedSizes.Length);
+
+            var lastCunkCompressedSize = originalData.ReadByte() | originalData.ReadByte() << 8 | originalData.ReadByte() << 16 | originalData.ReadByte() << 24; //ReadInt32
+
+            var lastCunkDecompressedSize = uncompressed_size - (chunk_size * (entry_count - 1));
+
+            uncompressed_size = (int)(size_decompressed += newData.Length);
+            entry_count = uncompressed_size / chunk_size;
+            if (uncompressed_size % chunk_size != 0) entry_count++;
+            head_size = entry_count * 4 + 48;
+
+            var msToSave = new MemoryStream();
+            var bw = new BinaryWriter(msToSave);
+
+            msToSave.Seek(60 + (entry_count * 4), SeekOrigin.Begin);
+            var o = new byte[compressed_size - lastCunkCompressedSize];
+            originalData.Read(o, 0, o.Length);
+            bw.Write(o);
+
+            var lastChunkCompressedData = new byte[lastCunkCompressedSize];
+            originalData.Read(lastChunkCompressedData, 0, lastCunkCompressedSize);
+            var lastCunkDecompressedData = new byte[lastCunkDecompressedSize + 64];
+            OodleLZ_Decompress(lastChunkCompressedData, lastCunkCompressedSize, lastCunkDecompressedData, lastCunkDecompressedSize, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
+
+            newData.Seek(0, SeekOrigin.Begin);
+            compressed_size -= lastCunkDecompressedSize;
+            var NewChunkCompressedSizes = new int[entry_count - (OldChunkCompressedSizes.Length / 4)];
+
+            var FirstNewDataChunk = new byte[chunk_size - lastCunkDecompressedSize];
+            newData.Read(FirstNewDataChunk, 0, FirstNewDataChunk.Length);
+            FirstNewDataChunk = lastCunkDecompressedData.Take(lastCunkDecompressedSize).Concat(FirstNewDataChunk).ToArray(); // Decompressed
+            var CompressedChunk = new byte[FirstNewDataChunk.Length + 548];
+            var CompressedLength = OodleLZ_Compress(encoder, FirstNewDataChunk, FirstNewDataChunk.Length, CompressedChunk, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
+            compressed_size += NewChunkCompressedSizes[0] = CompressedLength;
+            bw.Write(CompressedChunk); // Compressed
+            for (int i = 1; i < NewChunkCompressedSizes.Length; i++)
+            {
+                var size = (i + 1 == NewChunkCompressedSizes.Length) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size;
+                var b = new byte[size];
+                newData.Read(b, 0, size);
+                var by = new byte[b.Length + 548];
+                var l = OodleLZ_Compress(encoder, b, size, by, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
+                compressed_size += NewChunkCompressedSizes[i] = l;
+                bw.Write(by, 0, l);
+            }
+            size_compressed = compressed_size;
+
+            msToSave.Seek(60, SeekOrigin.Begin);
+            bw.Write(OldChunkCompressedSizes);
+            for (int i = 0; i < NewChunkCompressedSizes.Length; i++)
+                bw.Write(NewChunkCompressedSizes[i]);
+
+            msToSave.Seek(0, SeekOrigin.Begin);
+            bw.Write(uncompressed_size);
+            bw.Write(compressed_size);
+            bw.Write(head_size);
+            bw.Write((uint)encoder);
+            bw.Write(unknown);
+            bw.Write(size_decompressed);
+            bw.Write(size_compressed);
+            bw.Write(entry_count);
+            bw.Write(chunk_size);
+            bw.Write(unknown3);
+            bw.Write(unknown4);
+            bw.Write(unknown5);
+            bw.Write(unknown6);
+
+            bw.Flush();
+            var result = msToSave.ToArray();
+            bw.Close();
+            return result;
+        }
+
         //Packing
-        public virtual void Save(Stream ms, string path)
+        public virtual void Save(Stream newData, string path)
         {
             var bw = new BinaryWriter(File.Open(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite));
 
-            uncompressed_size = (int)(size_decompressed = ms.Length);
+            uncompressed_size = (int)(size_decompressed = newData.Length);
             entry_count = uncompressed_size / chunk_size;
             if (uncompressed_size % chunk_size != 0) entry_count++;
             head_size = entry_count * 4 + 48;
 
             bw.BaseStream.Seek(60 + (entry_count * 4), SeekOrigin.Begin);
-            ms.Position = 0;
+            newData.Seek(0, SeekOrigin.Begin);
             compressed_size = 0;
             var chunks = new int[entry_count];
-            for (int i = 0; i < entry_count - 1; i++)
+            for (int i = 0; i < entry_count; i++)
             {
-                var b = new byte[chunk_size];
-                ms.Read(b, 0, chunk_size);
+                var b = new byte[i + 1 == entry_count ? uncompressed_size - (entry_count - 1) * chunk_size : chunk_size];
+                newData.Read(b, 0, b.Length);
                 var by = new byte[b.Length + 548];
-                var l = OodleLZ_Compress(ENCODE_TYPES.LEVIATHAN, b, b.Length, by, COMPRESSTION_LEVEL.Normal, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
+                var l = OodleLZ_Compress(encoder, b, b.Length, by, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
                 compressed_size += chunks[i] = l;
                 bw.Write(by, 0, l);
             }
-            var b2 = new byte[ms.Length - (entry_count - 1) * chunk_size];
-            ms.Read(b2, 0, b2.Length);
-            var by2 = new byte[b2.Length + 548];
-            var l2 = OodleLZ_Compress(ENCODE_TYPES.LEVIATHAN, b2, b2.Length, by2, COMPRESSTION_LEVEL.Normal, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
-            compressed_size += chunks[entry_count - 1] = l2;
-            bw.Write(by2, 0, l2);
             size_compressed = compressed_size;
 
             bw.BaseStream.Seek(60, SeekOrigin.Begin);
@@ -184,42 +266,36 @@ namespace LibBundle
             bw.Close();
         }
         //Packing
-        public virtual byte[] Save(Stream ms)
+        public virtual byte[] Save(Stream newData)
         {
             var msToSave = new MemoryStream();
             var bw = new BinaryWriter(msToSave);
 
-            uncompressed_size = (int)(size_decompressed = ms.Length);
+            uncompressed_size = (int)(size_decompressed = newData.Length);
             entry_count = uncompressed_size / chunk_size;
             if (uncompressed_size % chunk_size != 0) entry_count++;
             head_size = entry_count * 4 + 48;
 
-            bw.BaseStream.Seek(60 + (entry_count * 4), SeekOrigin.Begin);
-            ms.Position = 0;
+            msToSave.Seek(60 + (entry_count * 4), SeekOrigin.Begin);
+            newData.Seek(0, SeekOrigin.Begin);
             compressed_size = 0;
             var chunks = new int[entry_count];
-            for (int i = 0; i < entry_count - 1; i++)
+            for (int i = 0; i < entry_count; i++)
             {
-                var b = new byte[chunk_size];
-                ms.Read(b, 0, chunk_size);
+                var b = new byte[i + 1 == entry_count ? uncompressed_size - (entry_count - 1) * chunk_size : chunk_size];
+                newData.Read(b, 0, b.Length);
                 var by = new byte[b.Length + 548];
-                var l = OodleLZ_Compress(ENCODE_TYPES.LEVIATHAN, b, b.Length, by, COMPRESSTION_LEVEL.Normal, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
+                var l = OodleLZ_Compress(encoder, b, b.Length, by, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
                 compressed_size += chunks[i] = l;
                 bw.Write(by, 0, l);
             }
-            var b2 = new byte[ms.Length - (entry_count - 1) * chunk_size];
-            ms.Read(b2, 0, b2.Length);
-            var by2 = new byte[b2.Length + 548];
-            var l2 = OodleLZ_Compress(ENCODE_TYPES.LEVIATHAN, b2, b2.Length, by2, COMPRESSTION_LEVEL.Normal, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
-            compressed_size += chunks[entry_count - 1] = l2;
-            bw.Write(by2, 0, l2);
             size_compressed = compressed_size;
 
-            bw.BaseStream.Seek(60, SeekOrigin.Begin);
+            msToSave.Seek(60, SeekOrigin.Begin);
             for (int i = 0; i < entry_count; i++)
                 bw.Write(chunks[i]);
 
-            bw.BaseStream.Seek(0, SeekOrigin.Begin);
+            msToSave.Seek(0, SeekOrigin.Begin);
             bw.Write(uncompressed_size);
             bw.Write(compressed_size);
             bw.Write(head_size);

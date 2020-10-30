@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using static LibGGPK2.Records.IFileRecord;
 
@@ -9,6 +10,9 @@ namespace LibGGPK2.Records
 {
     public class BundleFileNode : RecordTreeNode, IFileRecord
     {
+        public readonly static Queue<KeyValuePair<BundleRecord, MemoryStream>> CachedBundleData = new Queue<KeyValuePair<BundleRecord, MemoryStream>>();
+        public static long CachedSize = 0;
+
         /// <summary>
         /// FNV1a64Hash of the path of file
         /// </summary>
@@ -43,10 +47,20 @@ namespace LibGGPK2.Records
         /// <param name="ggpkStream">Stream of GGPK file</param>
         public virtual byte[] ReadFileContent(Stream ggpkStream = null)
         {
-            using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
-            BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
-            using var ms = BundleFileRecord.bundleRecord.Bundle.Read(br);
-            return BundleFileRecord.Read(ms);
+            var cached = CachedBundleData.FirstOrDefault((o) => o.Key == BundleFileRecord.bundleRecord).Value;
+            if (cached == null) {
+                using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
+                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
+                cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
+                CachedBundleData.Enqueue(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
+                CachedSize += cached.Length;
+                while (CachedSize > 300000000 && CachedBundleData.Count > 1) {
+                    var ms = CachedBundleData.Dequeue().Value;
+                    CachedSize -= ms.Length;
+                    ms.Close();
+                }
+            }
+            return BundleFileRecord.Read(cached);
         }
 
         /// <summary>
@@ -63,6 +77,7 @@ namespace LibGGPK2.Records
         /// Replace the file content with a new content,
         /// and write the modified bundle to the GGPK.
         /// </summary>
+        /// <returns>Size of imported bytes</returns>
         public virtual void ReplaceContent(byte[] NewContent)
         {
             var BundleToSave = ggpkContainer.Index.GetSmallestBundle();
@@ -80,11 +95,13 @@ namespace LibGGPK2.Records
         /// Replace the file content with a new content,
         /// and return the bundle which have to be saved.
         /// </summary>
-        public virtual void BatchReplaceContent(byte[] NewContent, BundleRecord BundleToSave)
+        /// <returns>Size of imported bytes</returns>
+        public virtual int BatchReplaceContent(byte[] NewContent, BundleRecord BundleToSave)
         {
             BundleFileRecord.Write(NewContent);
             if (BundleFileRecord.bundleRecord != BundleToSave)
                 BundleFileRecord.Move(BundleToSave);
+            return NewContent.Length;
         }
 
         /// <summary>

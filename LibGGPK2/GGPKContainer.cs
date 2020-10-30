@@ -32,7 +32,7 @@ namespace LibGGPK2
         /// Load GGPK
         /// </summary>
         /// <param name="path">Path to GGPK file</param>
-        public GGPKContainer(string path)
+        public GGPKContainer(string path, bool BundleMode = false)
         {
             // Open File
             fileStream = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
@@ -55,6 +55,7 @@ namespace LibGGPK2
                 NextFreeOffset = current.NextFreeOffset;
             }
 
+            if (BundleMode) return;
             // Read Bundles
             OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
             if (OriginalBundles2.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
@@ -197,7 +198,8 @@ namespace LibGGPK2
         /// <summary>
         /// Export files synchronously
         /// </summary>
-        /// <param name="list">File list to export (generate by <see cref="RecursiveFileList"/>)</param>
+        /// <param name="list">File list to export. (generate by <see cref="RecursiveFileList"/>)
+        /// The list must be sort by thier bundle to speed up exportation.</param>
         /// <param name="ProgressStep">It will be executed every time a file is exported</param>
         public static void Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
@@ -249,19 +251,29 @@ namespace LibGGPK2
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
         public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            var BundleToSave = Index.GetSmallestBundle();
+            var BundleToSave = Index?.GetSmallestBundle();
+            var SavedSize = 0;
             foreach (var record in list)
             {
+                if (SavedSize > 50000000) // 50MB per bundle
+                {
+                    var fr = RecordOfBundle[BundleToSave];
+                    fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
+                    BundleToSave.Bundle.offset = fr.DataBegin;
+                    SavedSize = 0;
+                }
                 if (record.Key is BundleFileNode bfn)
-                    bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
+                    SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
                 else
                     record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
                 ProgressStep();
             }
-            var fr = RecordOfBundle[BundleToSave];
-            fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
-            BundleToSave.Bundle.offset = fr.DataBegin;
-            IndexRecord.ReplaceContent(Index.Save());
+            if (BundleToSave != null) {
+                var fr2 = RecordOfBundle[BundleToSave];
+                fr2.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
+                BundleToSave.Bundle.offset = fr2.DataBegin;
+                IndexRecord.ReplaceContent(Index.Save());
+            }
         }
 
         /// <summary>
@@ -271,16 +283,16 @@ namespace LibGGPK2
         /// <param name="path">Path to save</param>
         /// <param name="paths">File list</param>
         /// <param name="export">True for export False for replace</param>
-        public static void RecursiveFileList(RecordTreeNode record, string path, ref SortedDictionary<IFileRecord, string> paths, bool export)
+        public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> paths, bool export)
         {
             if (record is IFileRecord fr)
             {
                 if (export || File.Exists(path))
-                    paths.Add(fr, path);
+                    paths.Add(new KeyValuePair<IFileRecord, string>(fr, path));
             }
             else
                 foreach (var f in record.Children)
-                    RecursiveFileList(f, path + "\\" + f.Name, ref paths, export);
+                    RecursiveFileList(f, path + "\\" + f.Name, paths, export);
         }
     }
 

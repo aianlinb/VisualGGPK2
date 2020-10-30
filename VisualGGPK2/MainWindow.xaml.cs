@@ -3,8 +3,8 @@ using LibGGPK2.Records;
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,18 +37,29 @@ namespace VisualGGPK2
                 FileName = "Content.ggpk",
                 Filter = "GGPK File|*.ggpk"
             };
-            var path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
-            if (path != null && File.Exists(path + @"\Content.ggpk"))
-                ofd.InitialDirectory = path.TrimEnd('\\'); // Get POE path
-            else
+
+            var setting = Properties.Settings.Default;
+            if (setting.GGPKPath == "")
             {
-                path = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Garena\PoE")?.GetValue("Path") as string;
+                var path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
                 if (path != null && File.Exists(path + @"\Content.ggpk"))
-                    ofd.InitialDirectory = path.TrimEnd('\\'); // Get Garena POE path
+                    ofd.InitialDirectory = path.TrimEnd('\\'); // Get POE path
+                else
+                {
+                    path = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Garena\PoE")?.GetValue("Path") as string;
+                    if (path != null && File.Exists(path + @"\Content.ggpk"))
+                        ofd.InitialDirectory = path.TrimEnd('\\'); // Get Garena POE path
+                }
             }
+            else
+                ofd.InitialDirectory = setting.GGPKPath;
+
 
             if (ofd.ShowDialog() == true) // Select Content.ggpk
             {
+                setting.GGPKPath = Directory.GetParent(ofd.FileName).FullName;
+                setting.Save();
+
                 var mi = new MenuItem { Header = "Export" }; // Initial ContextMenu
                 mi.Click += OnExportClicked;
                 TreeMenu.Items.Add(mi);
@@ -56,10 +67,17 @@ namespace VisualGGPK2
                 mi.Click += OnReplaceClicked;
                 TreeMenu.Items.Add(mi);
 
-                ggpkContainer = new GGPKContainer(ofd.FileName); // Initial GGPK
+                var args = Environment.GetCommandLineArgs();
+                ggpkContainer =  new GGPKContainer(ofd.FileName, args.Length > 1 && args[1] == "-bundleMode"); // Initial GGPK
                 var root = CreateNode(ggpkContainer.rootDirectory);
                 Tree.Items.Add(root); // Initial TreeView
                 root.IsExpanded = true;
+
+                var imageMenu = new ContextMenu();
+                mi = new MenuItem { Header = "SaveAsPng" };
+                mi.Click += OnSavePngClicked;
+                imageMenu.Items.Add(mi);
+                ImageView.ContextMenu = imageMenu;
 
                 TextView.AppendText("\r\n\r\nDone!\r\n");
             }
@@ -78,7 +96,8 @@ namespace VisualGGPK2
             {
                 Source = rtn is IFileRecord ? IconFile : IconDir,
                 Width = 20,
-                Height = 20
+                Height = 20,
+                Margin = new Thickness(0,0,2,0)
             });
             stack.Children.Add(new TextBlock { Text = rtn.Name, FontSize = 16 }); // File/Directory Name
             tvi.Header = stack;
@@ -120,9 +139,11 @@ namespace VisualGGPK2
                     TextBoxOffset.Text = rtn.Offset.ToString("X");
                     TextBoxSize.Text = rtn.Length.ToString();
                     TextBoxHash.Text = rtn is DirectoryRecord || rtn is FileRecord ? BitConverter.ToString(rtn.Hash).Replace("-", "") : rtn is BundleFileNode bf ? bf.Hash.ToString("X") : ((BundleDirectoryNode)rtn).Hash.ToString("X");
+                    TextBoxBundle.Text = "";
                     if (rtn is IFileRecord f)
                     {
-                        if (f is FileRecord fr) TextBoxSize.Text = fr.DataLength.ToString(); // FileSize
+                        if (f is FileRecord fr) TextBoxSize.Text = fr.DataLength.ToString();
+                        else TextBoxBundle.Text = ((BundleFileNode)f).BundleFileRecord.bundleRecord.Name;
                         switch (f is FileRecord fr2 ? fr2.DataFormat : ((BundleFileNode)rtn).DataFormat)
                         {
                             case IFileRecord.DataFormats.Image:
@@ -163,14 +184,19 @@ namespace VisualGGPK2
                                         f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
                                         buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     }
+                                    if (buffer[0] != 'D' || buffer[1] != 'D' || buffer[2] != 'S' || buffer[3] != ' ')
+                                        buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
                                     var image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
-                                    var pinnedArray = GCHandle.Alloc(image.Data, GCHandleType.Pinned);
-                                    var addr = pinnedArray.AddrOfPinnedObject();
-                                    var bsource = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
-                                    PixelFormat(image), null, addr, image.DataLen, image.Stride);
-                                    ImageView.Source = bsource;
+                                    image.Decompress();
+                                    ImageView.Tag = rtn.Name;
+                                    ImageView.Source = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
+                                    PixelFormat(image), null, image.Data, image.Stride);
                                     ImageView.Visibility = Visibility.Visible;
-                                } catch { } // Ignore error
+                                } catch (Exception ex) {
+                                    TextView.Text = ex.ToString();
+                                    TextView.IsReadOnly = true;
+                                    TextView.Visibility = Visibility.Visible;
+                                }
                                 break;
                             case IFileRecord.DataFormats.BK2:
                                 //TODO
@@ -242,12 +268,12 @@ namespace VisualGGPK2
             if (MessageBox.Show("Replace files?", "Replace Confirm",
                 MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.Cancel) == MessageBoxResult.OK)
             {
-                var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
-                GGPKContainer.RecursiveFileList(ggpkContainer.rootDirectory, dropped[0], ref list, false);
+                var list = new Collection<KeyValuePair<IFileRecord, string>>();
+                GGPKContainer.RecursiveFileList(ggpkContainer.rootDirectory, dropped[0], list, false);
                 var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
                 ggpkContainer.ReplaceAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
                     if (tsk.Result == null)
-                        MessageBox.Show("Relaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     else
                         Dispatcher.Invoke(() => { throw tsk.Result; });
                     bkg.Close();
@@ -277,7 +303,7 @@ namespace VisualGGPK2
                     {
                         var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
                         var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
-                        GGPKContainer.RecursiveFileList(rtn, path, ref list, true);
+                        GGPKContainer.RecursiveFileList(rtn, path, list, true);
                         var bkg = new BackgroundDialog { ProgressText = "Exported {0}/" + list.Count.ToString() + " Files . . ." };
                         GGPKContainer.ExportAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
                             if (tsk.Result == null)
@@ -310,8 +336,8 @@ namespace VisualGGPK2
                     var ofd = new OpenFolderDialog();
                     if (ofd.ShowDialog() == true)
                     {
-                        var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
-                        GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, ref list, false);
+                        var list = new Collection<KeyValuePair<IFileRecord, string>>();
+                        GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
                         var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
                         ggpkContainer.ReplaceAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
                             if (tsk.Result == null)
@@ -332,6 +358,19 @@ namespace VisualGGPK2
             {
                 fr.ReplaceContent(((Encoding)TextView.Tag).GetBytes(TextView.Text));
                 MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void OnSavePngClicked(object sender, RoutedEventArgs e) {
+            var sfd = new SaveFileDialog { FileName = ((string)ImageView.Tag).Replace("dds", "png") };
+            if (sfd.ShowDialog() == true) {
+                var pbe = new PngBitmapEncoder();
+                pbe.Frames.Add(BitmapFrame.Create((BitmapSource)ImageView.Source));
+                var f = File.OpenWrite(sfd.FileName);
+                pbe.Save(f);
+                f.Flush();
+                f.Close();
+                MessageBox.Show("Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net20;net35;net40;net45;net451;netstandard1.1;netstandard1.3;netstandard2.0</TargetFrameworks>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>1570;1701</NoWarn>
+	</PropertyGroup>
+	<PropertyGroup>
+		<Version>0.3.3</Version>
+		<FileVersion>0.3.3</FileVersion>
+		<Authors>master131</Authors>
+		<Description>Full C# port of Brotli compression library.</Description>
+		<Copyright>Copyright (c) 2017-2019 master131</Copyright>
+		<RepositoryUrl>https://github.com/master131/BrotliSharpLib</RepositoryUrl>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>brotli;csharp;net</PackageTags>
+		<AssemblyVersion>0.3.2</AssemblyVersion>
+		<PackageLicenseUrl>https://github.com/master131/BrotliSharpLib/blob/master/LICENSE</PackageLicenseUrl>
+		<PackageProjectUrl>https://github.com/master131/BrotliSharpLib</PackageProjectUrl>
+		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>StrongNameKey.snk</AssemblyOriginatorKeyFile>
+		<DelaySign>false</DelaySign>
+		<PackageId>BrotliSharpLib</PackageId>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40'">
+		<DefineConstants>$(DefineConstants);AGGRESSIVE_INLINING</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework)'!='net20' AND '$(TargetFramework)'!='net35' AND '$(TargetFramework)'!='net40' AND '$(TargetFramework)'!='net45' AND '$(TargetFramework)'!='netstandard1.1'">
+		<DefineConstants>$(DefineConstants);SIZE_OF_T</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+	    <Version>4.5.2</Version>
+	  </PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+	    <Version>4.5.2</Version>
+	  </PackageReference>
+	</ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.1'">
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+      <Version>4.5.2</Version>
+    </PackageReference>
+    <PackageReference Include="System.IO.Compression">
+      <Version>4.3.0</Version>
+    </PackageReference>
+  </ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+	    <Version>4.5.2</Version>
+	  </PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'net451'">
+	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+	    <Version>4.5.2</Version>
+	  </PackageReference>
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+	  <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+	    <Version>4.5.2</Version>
+	  </PackageReference>
+	</ItemGroup>
+</Project>
