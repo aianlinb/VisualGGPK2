@@ -154,6 +154,9 @@ namespace LibGGPK2.Records
                         case ".idl":
                         case ".idt":
                         case ".mat": // Materials
+                        case ".ot":
+                        case ".otc":
+                        case ".pet":
                         case ".properties":
                         case ".sm": // Skin Mesh
                         case ".tgr":
@@ -171,9 +174,6 @@ namespace LibGGPK2.Records
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
                         case ".mtd":
-                        case ".ot":
-                        case ".otc":
-                        case ".pet":
                         case ".red":
                         case ".rs": // Room Set
                         case ".slt":

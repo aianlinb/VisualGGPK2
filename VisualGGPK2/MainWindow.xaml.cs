@@ -161,7 +161,7 @@ namespace VisualGGPK2
                                 if (rtn.Parent.Name == "Bundles")
                                     goto case IFileRecord.DataFormats.Ascii;
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = Encoding.Unicode;
+                                TextView.Tag = new UnicodeEncoding(false, true);
                                 TextView.Text = Encoding.Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
