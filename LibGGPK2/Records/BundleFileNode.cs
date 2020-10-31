@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using static LibGGPK2.Records.IFileRecord;
 
@@ -9,19 +10,39 @@ namespace LibGGPK2.Records
 {
     public class BundleFileNode : RecordTreeNode, IFileRecord
     {
+        public readonly static LinkedList<KeyValuePair<BundleRecord, MemoryStream>> CachedBundleData = new LinkedList<KeyValuePair<BundleRecord, MemoryStream>>();
+        public static long CachedSize = 0;
+
+        /// <summary>
+        /// BundleFileNode with a cache that need to be updated
+        /// </summary>
+        public static BundleFileNode LastFileToUpdate;
+
+        /// <summary>
+        /// FNV1a64Hash of the path of file
+        /// </summary>
         public new ulong Hash;
+        /// <summary>
+        /// Record of the file in bundle
+        /// </summary>
         public LibBundle.Records.FileRecord BundleFileRecord;
 
-        public BundleFileNode(string name, ulong hash, int offset, int size, LibBundle.Records.FileRecord record, GGPKContainer ggpkContainer)
+        /// <summary>
+        /// Create a node of the file in bundle
+        /// </summary>
+        public BundleFileNode(string name, LibBundle.Records.FileRecord record, GGPKContainer ggpkContainer)
         {
             Name = name;
-            Hash = hash;
-            Offset = offset;
-            Length = size;
             BundleFileRecord = record;
+            Hash = record.Hash;
+            Offset = record.Offset;
+            Length = record.Size;
             this.ggpkContainer = ggpkContainer;
         }
 
+        /// <summary>
+        /// There is no child with a file
+        /// </summary>
         public override SortedSet<RecordTreeNode> Children => null;
 
         /// <summary>
@@ -31,10 +52,21 @@ namespace LibGGPK2.Records
         /// <param name="ggpkStream">Stream of GGPK file</param>
         public virtual byte[] ReadFileContent(Stream ggpkStream = null)
         {
-            using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
-            BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
-            using var ms = BundleFileRecord.bundleRecord.Bundle.Read(br);
-            return BundleFileRecord.Read(ms);
+            var cached = CachedBundleData.FirstOrDefault((o) => o.Key == BundleFileRecord.bundleRecord).Value;
+            if (cached == null) {
+                using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
+                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
+                cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
+                CachedBundleData.AddFirst(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
+                CachedSize += cached.Length;
+                while (CachedSize > 300000000 && CachedBundleData.Count > 1) {
+                    var ms = CachedBundleData.Last.Value.Value;
+                    CachedSize -= ms.Length;
+                    ms.Close();
+                    CachedBundleData.RemoveLast();
+                }
+            }
+            return BundleFileRecord.Read(cached);
         }
 
         /// <summary>
@@ -51,11 +83,18 @@ namespace LibGGPK2.Records
         /// Replace the file content with a new content,
         /// and write the modified bundle to the GGPK.
         /// </summary>
+        /// <returns>Size of imported bytes</returns>
         public virtual void ReplaceContent(byte[] NewContent)
         {
+            var BundleToSave = ggpkContainer.Index.GetSmallestBundle();
             BundleFileRecord.Write(NewContent);
-            var NewBundleData = BundleFileRecord.bundleRecord.Save(ggpkContainer.Reader);
-            ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].ReplaceContent(NewBundleData);
+            if (BundleFileRecord.bundleRecord != BundleToSave)
+                BundleFileRecord.Move(BundleToSave);
+            var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle[BundleToSave].DataBegin);
+            var fr = ggpkContainer.RecordOfBundle[BundleToSave];
+            fr.ReplaceContent(NewBundleData);
+            BundleToSave.Bundle.offset = fr.DataBegin;
+            UpdateCache(BundleToSave);
             ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
         }
 
@@ -63,22 +102,49 @@ namespace LibGGPK2.Records
         /// Replace the file content with a new content,
         /// and return the bundle which have to be saved.
         /// </summary>
-        public virtual void BatchReplaceContent(byte[] NewContent, out BundleRecord BundleToSave)
+        /// <returns>Size of imported bytes</returns>
+        public virtual int BatchReplaceContent(byte[] NewContent, BundleRecord BundleToSave)
         {
             BundleFileRecord.Write(NewContent);
-            BundleToSave = BundleFileRecord.bundleRecord;
+            LastFileToUpdate = this;
+            if (BundleFileRecord.bundleRecord != BundleToSave)
+                BundleFileRecord.Move(BundleToSave);
+            return NewContent.Length;
         }
 
+        /// <summary>
+        /// Throw a <see cref="NotSupportedException"/>
+        /// </summary>
         protected override void Read()
         {
             throw new NotSupportedException("A virtual node of bundles cannot be read");
         }
+        /// <summary>
+        /// Throw a <see cref="NotSupportedException"/>
+        /// </summary>
         internal override void Write(BinaryWriter bw = null)
         {
             throw new NotSupportedException("A virtual node of bundles cannot be written");
         }
 
+        public void UpdateCache(BundleRecord br) {
+            Hash = BundleFileRecord.Hash;
+            Offset = BundleFileRecord.Offset;
+            Length = BundleFileRecord.Size;
+            var node = CachedBundleData.First;
+            while (node != null) {
+                if (node.Value.Key == br) {
+                    CachedBundleData.Remove(node);
+                    break;
+                } else
+                    node = node.Next;
+            }
+        }
+
         private DataFormats? _DataFormat = null;
+        /// <summary>
+        /// Content data format of this file
+        /// </summary>
         public virtual DataFormats DataFormat
         {
             get
@@ -110,6 +176,9 @@ namespace LibGGPK2.Records
                         case ".idl":
                         case ".idt":
                         case ".mat": // Materials
+                        case ".ot":
+                        case ".otc":
+                        case ".pet":
                         case ".properties":
                         case ".sm": // Skin Mesh
                         case ".tgr":
@@ -127,9 +196,6 @@ namespace LibGGPK2.Records
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
                         case ".mtd":
-                        case ".ot":
-                        case ".otc":
-                        case ".pet":
                         case ".red":
                         case ".rs": // Room Set
                         case ".slt":

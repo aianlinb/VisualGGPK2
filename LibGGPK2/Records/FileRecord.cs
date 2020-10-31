@@ -23,6 +23,9 @@ namespace LibGGPK2.Records
         /// </summary>
         public int DataLength;
 
+        /// <summary>
+        /// There is no child with a file
+        /// </summary>
         public override SortedSet<RecordTreeNode> Children => null;
 
         public FileRecord(int length, GGPKContainer ggpk)
@@ -190,6 +193,9 @@ namespace LibGGPK2.Records
         }
 
         private DataFormats? _DataFormat = null;
+        /// <summary>
+        /// Content data format of this file
+        /// </summary>
         public virtual DataFormats DataFormat
         {
             get
@@ -221,6 +227,9 @@ namespace LibGGPK2.Records
                         case ".idl":
                         case ".idt":
                         case ".mat": // Materials
+                        case ".ot":
+                        case ".otc":
+                        case ".pet":
                         case ".properties":
                         case ".sm": // Skin Mesh
                         case ".tgr":
@@ -238,9 +247,6 @@ namespace LibGGPK2.Records
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
                         case ".mtd":
-                        case ".ot":
-                        case ".otc":
-                        case ".pet":
                         case ".red":
                         case ".rs": // Room Set
                         case ".slt":
