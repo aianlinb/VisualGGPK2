@@ -89,7 +89,7 @@ namespace LibGGPK2
                 if (next == null)
                 { // No exist node, Build a new node
                     if (isFile)
-                        next = new BundleFileNode(name, fr.Hash, fr.Offset, fr.Size, fr, this);
+                        next = new BundleFileNode(name, fr, this);
                     else if (parentOfFile)
                         next = new BundleDirectoryNode(name, path, fr.parent.Hash, fr.parent.Offset, fr.parent.Size, this);
                     else
@@ -273,6 +273,7 @@ namespace LibGGPK2
                 var fr2 = RecordOfBundle[BundleToSave];
                 fr2.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
                 BundleToSave.Bundle.offset = fr2.DataBegin;
+                BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
                 IndexRecord.ReplaceContent(Index.Save());
             }
         }

@@ -170,10 +170,10 @@ namespace LibBundle
             OodleLZ_Decompress(lastChunkCompressedData, lastCunkCompressedSize, lastCunkDecompressedData, lastCunkDecompressedSize, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
 
             newData.Seek(0, SeekOrigin.Begin);
-            compressed_size -= lastCunkDecompressedSize;
+            compressed_size -= lastCunkCompressedSize;
             var NewChunkCompressedSizes = new int[entry_count - (OldChunkCompressedSizes.Length / 4)];
 
-            var FirstNewDataChunk = new byte[chunk_size - lastCunkDecompressedSize];
+            var FirstNewDataChunk = new byte[Math.Min(chunk_size - lastCunkDecompressedSize, newData.Length)];
             newData.Read(FirstNewDataChunk, 0, FirstNewDataChunk.Length);
             FirstNewDataChunk = lastCunkDecompressedData.Take(lastCunkDecompressedSize).Concat(FirstNewDataChunk).ToArray(); // Decompressed
             var CompressedChunk = new byte[FirstNewDataChunk.Length + 548];

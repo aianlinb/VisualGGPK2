@@ -10,8 +10,13 @@ namespace LibGGPK2.Records
 {
     public class BundleFileNode : RecordTreeNode, IFileRecord
     {
-        public readonly static Queue<KeyValuePair<BundleRecord, MemoryStream>> CachedBundleData = new Queue<KeyValuePair<BundleRecord, MemoryStream>>();
+        public readonly static LinkedList<KeyValuePair<BundleRecord, MemoryStream>> CachedBundleData = new LinkedList<KeyValuePair<BundleRecord, MemoryStream>>();
         public static long CachedSize = 0;
+
+        /// <summary>
+        /// BundleFileNode with a cache that need to be updated
+        /// </summary>
+        public static BundleFileNode LastFileToUpdate;
 
         /// <summary>
         /// FNV1a64Hash of the path of file
@@ -25,13 +30,13 @@ namespace LibGGPK2.Records
         /// <summary>
         /// Create a node of the file in bundle
         /// </summary>
-        public BundleFileNode(string name, ulong hash, int offset, int size, LibBundle.Records.FileRecord record, GGPKContainer ggpkContainer)
+        public BundleFileNode(string name, LibBundle.Records.FileRecord record, GGPKContainer ggpkContainer)
         {
             Name = name;
-            Hash = hash;
-            Offset = offset;
-            Length = size;
             BundleFileRecord = record;
+            Hash = record.Hash;
+            Offset = record.Offset;
+            Length = record.Size;
             this.ggpkContainer = ggpkContainer;
         }
 
@@ -52,12 +57,13 @@ namespace LibGGPK2.Records
                 using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
                 BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
                 cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
-                CachedBundleData.Enqueue(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
+                CachedBundleData.AddFirst(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
                 CachedSize += cached.Length;
                 while (CachedSize > 300000000 && CachedBundleData.Count > 1) {
-                    var ms = CachedBundleData.Dequeue().Value;
+                    var ms = CachedBundleData.Last.Value.Value;
                     CachedSize -= ms.Length;
                     ms.Close();
+                    CachedBundleData.RemoveLast();
                 }
             }
             return BundleFileRecord.Read(cached);
@@ -88,6 +94,7 @@ namespace LibGGPK2.Records
             var fr = ggpkContainer.RecordOfBundle[BundleToSave];
             fr.ReplaceContent(NewBundleData);
             BundleToSave.Bundle.offset = fr.DataBegin;
+            UpdateCache(BundleToSave);
             ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
         }
 
@@ -99,6 +106,7 @@ namespace LibGGPK2.Records
         public virtual int BatchReplaceContent(byte[] NewContent, BundleRecord BundleToSave)
         {
             BundleFileRecord.Write(NewContent);
+            LastFileToUpdate = this;
             if (BundleFileRecord.bundleRecord != BundleToSave)
                 BundleFileRecord.Move(BundleToSave);
             return NewContent.Length;
@@ -117,6 +125,20 @@ namespace LibGGPK2.Records
         internal override void Write(BinaryWriter bw = null)
         {
             throw new NotSupportedException("A virtual node of bundles cannot be written");
+        }
+
+        public void UpdateCache(BundleRecord br) {
+            Hash = BundleFileRecord.Hash;
+            Offset = BundleFileRecord.Offset;
+            Length = BundleFileRecord.Size;
+            var node = CachedBundleData.First;
+            while (node != null) {
+                if (node.Value.Key == br) {
+                    CachedBundleData.Remove(node);
+                    break;
+                } else
+                    node = node.Next;
+            }
         }
 
         private DataFormats? _DataFormat = null;

@@ -75,9 +75,15 @@ namespace LibBundle.Records
                 d.Key.Offset = (int)data.Position + Bundle.uncompressed_size;
                 data.Write(d.Value, 0, d.Key.Size);
             }
-            UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
+            byte[] result;
+            if (data.Length == 0) {
+                br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
+                result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
+            } else {
+                UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
+                result = Bundle.AppendAndSave(data, br.BaseStream);
+            }
             FileToAdd.Clear();
-            var result = Bundle.AppendAndSave(data, br.BaseStream);
             data.Close();
             return result;
         }
