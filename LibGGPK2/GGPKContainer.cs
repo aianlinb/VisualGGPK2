@@ -261,6 +261,7 @@ namespace LibGGPK2
                     var fr = RecordOfBundle[BundleToSave];
                     fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleToSave = Index.GetSmallestBundle();
                     SavedSize = 0;
                 }
                 if (record.Key is BundleFileNode bfn)
@@ -303,8 +304,6 @@ namespace LibGGPK2
     /// </summary>
     public class BundleSortComp : IComparer<IFileRecord>
     {
-        [System.Runtime.InteropServices.DllImport("shlwapi.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-        public static extern int StrCmpLogicalW(string x, string y);
         public virtual int Compare(IFileRecord x, IFileRecord y)
         {
             if (x is FileRecord frx)

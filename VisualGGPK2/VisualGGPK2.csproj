@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020 aianlinb</Copyright>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
