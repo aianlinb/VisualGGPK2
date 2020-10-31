@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace LibGGPK2
@@ -281,18 +282,18 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="record">File/Directory Record to export</param>
         /// <param name="path">Path to save</param>
-        /// <param name="paths">File list</param>
+        /// <param name="list">File list</param>
         /// <param name="export">True for export False for replace</param>
-        public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> paths, bool export)
+        public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> list, bool export, string regex = null)
         {
             if (record is IFileRecord fr)
             {
-                if (export || File.Exists(path))
-                    paths.Add(new KeyValuePair<IFileRecord, string>(fr, path));
+                if ((export || File.Exists(path)) && (regex == null || Regex.IsMatch(record.GetPath(), regex)))
+                    list.Add(new KeyValuePair<IFileRecord, string>(fr, path));
             }
             else
                 foreach (var f in record.Children)
-                    RecursiveFileList(f, path + "\\" + f.Name, paths, export);
+                    RecursiveFileList(f, path + "\\" + f.Name, list, export, regex);
         }
     }
 
