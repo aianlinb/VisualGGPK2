@@ -58,7 +58,8 @@ namespace LibGGPK2
 
             if (BundleMode) return;
             // Read Bundles
-            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
+            var Bundles2DirectoryNameHash = MurmurHash2Unsafe.Hash("bundles2", 0);
+            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == Bundles2DirectoryNameHash) as DirectoryRecord;
             if (OriginalBundles2.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
             {
                 IndexRecord = _index;
@@ -261,6 +262,7 @@ namespace LibGGPK2
                     var fr = RecordOfBundle[BundleToSave];
                     fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
                     BundleToSave = Index.GetSmallestBundle();
                     SavedSize = 0;
                 }
@@ -270,13 +272,13 @@ namespace LibGGPK2
                     record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
                 ProgressStep();
             }
-            if (BundleToSave != null) {
-                var fr2 = RecordOfBundle[BundleToSave];
-                fr2.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
-                BundleToSave.Bundle.offset = fr2.DataBegin;
+            if (BundleToSave != null && SavedSize > 0) {
+                var fr = RecordOfBundle[BundleToSave];
+                fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
+                BundleToSave.Bundle.offset = fr.DataBegin;
                 BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
-                IndexRecord.ReplaceContent(Index.Save());
             }
+            IndexRecord.ReplaceContent(Index.Save());
         }
 
         /// <summary>

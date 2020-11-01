@@ -179,7 +179,7 @@ namespace LibBundle
             var CompressedChunk = new byte[FirstNewDataChunk.Length + 548];
             var CompressedLength = OodleLZ_Compress(encoder, FirstNewDataChunk, FirstNewDataChunk.Length, CompressedChunk, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
             compressed_size += NewChunkCompressedSizes[0] = CompressedLength;
-            bw.Write(CompressedChunk); // Compressed
+            bw.Write(CompressedChunk, 0, CompressedLength); // Compressed
             for (int i = 1; i < NewChunkCompressedSizes.Length; i++)
             {
                 var size = (i + 1 == NewChunkCompressedSizes.Length) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size;

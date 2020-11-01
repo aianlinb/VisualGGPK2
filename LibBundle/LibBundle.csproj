@@ -4,12 +4,13 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <Copyright>Copyright © 2020 aianlinb</Copyright>
     <AssemblyVersion>2.3.0.0</AssemblyVersion>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <PlatformTarget>x64</PlatformTarget>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>..\Release</OutputPath>
     <DebugType>full</DebugType>
   </PropertyGroup>
