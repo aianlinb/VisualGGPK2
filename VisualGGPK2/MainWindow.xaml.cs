@@ -26,6 +26,8 @@ namespace VisualGGPK2
         /// </summary>
         public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file")));
         public static readonly ContextMenu TreeMenu = new ContextMenu();
+        public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
+        public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
 
         public MainWindow() { InitializeComponent(); }
 
@@ -152,8 +154,8 @@ namespace VisualGGPK2
                                 break;
                             case IFileRecord.DataFormats.Ascii:
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = Encoding.UTF8;
-                                TextView.Text = Encoding.UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
+                                TextView.Tag = "UTF8";
+                                TextView.Text = UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
                                 break;
@@ -161,8 +163,8 @@ namespace VisualGGPK2
                                 if (rtn.Parent.Name == "Bundles")
                                     goto case IFileRecord.DataFormats.Ascii;
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = new UnicodeEncoding(false, true);
-                                TextView.Text = Encoding.Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream));
+                                TextView.Tag = "Unicode";
+                                TextView.Text = Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream)).TrimStart('\xFEFF');
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
                                 break;
@@ -180,7 +182,7 @@ namespace VisualGGPK2
                                     var buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     while (buffer[0] == '*')
                                     {
-                                        var path = Encoding.UTF8.GetString(buffer, 1, buffer.Length - 1);
+                                        var path = UTF8.GetString(buffer, 1, buffer.Length - 1);
                                         f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
                                         buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     }
@@ -356,7 +358,12 @@ namespace VisualGGPK2
         {
             if (Tree.SelectedItem is TreeViewItem tvi && tvi.Tag is IFileRecord fr)
             {
-                fr.ReplaceContent(((Encoding)TextView.Tag).GetBytes(TextView.Text));
+                if ((string)TextView.Tag == "Unicode") {
+                    fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));
+                } else if ((string)TextView.Tag == "UTF8") {
+                    fr.ReplaceContent(UTF8.GetBytes(TextView.Text));
+                } else
+                    return; 
                 MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
