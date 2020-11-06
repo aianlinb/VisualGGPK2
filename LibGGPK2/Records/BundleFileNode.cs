@@ -165,24 +165,31 @@ namespace LibGGPK2.Records
                         case ".clt":
                         case ".dct": // Decals
                         case ".ddt": // Doodads
+                        case ".dgr":
                         case ".dlp":
                         case ".ecf":
+                        case ".edp":
                         case ".env": // Environment
                         case ".epk":
                         case ".et":
                         case ".ffx": // FFX Render
+                        case ".fmt":
+                        case ".fxgraph":
                         case ".gft":
                         case ".gt": // Ground Types
                         case ".idl":
                         case ".idt":
                         case ".mat": // Materials
+                        case ".mtd":
                         case ".ot":
                         case ".otc":
                         case ".pet":
-                        case ".properties":
+                        case ".red":
+                        case ".rs": // Room Set
                         case ".sm": // Skin Mesh
                         case ".tgr":
                         case ".tgt":
+                        case ".trl": // Trace log?
                         case ".tsi":
                         case ".tst":
                         case ".txt":
@@ -190,16 +197,16 @@ namespace LibGGPK2.Records
                         case ".xml":
                             _DataFormat = DataFormats.Unicode;
                             break;
+                        case ".ast":
                         case ".csv":
                         case ".filter": // Item/loot filter
                         case ".fx": // Shader
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
-                        case ".mtd":
-                        case ".red":
-                        case ".rs": // Room Set
+                        case ".mtp":
+                        case ".properties":
                         case ".slt":
-                        case ".trl": // Trace log?
+                        case ".smd":
                             _DataFormat = DataFormats.Ascii;
                             break;
                         case ".dat":
