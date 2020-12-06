@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace LibBundle.Records
 {
     public class BundleRecord
     {
-        public long indexOffset;
-        public int bundleIndex;
-        public int nameLength;
+        public long IndexOffset;
+        public int NameLength;
         public string Name;
         public int UncompressedSize;
+
+        public int bundleIndex;
+        public int validSize;
         public readonly List<FileRecord> Files = new List<FileRecord>();
         internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new Dictionary<FileRecord, byte[]>();
         private BundleContainer _bundle;
@@ -26,24 +29,28 @@ namespace LibBundle.Records
 
         public BundleRecord(BinaryReader br)
         {
-            indexOffset = br.BaseStream.Position;
-            nameLength = br.ReadInt32();
-            Name = System.Text.Encoding.UTF8.GetString(br.ReadBytes(nameLength)) + ".bundle.bin";
+            IndexOffset = br.BaseStream.Position;
+            NameLength = br.ReadInt32();
+            Name = Encoding.UTF8.GetString(br.ReadBytes(NameLength)) + ".bundle.bin";
             UncompressedSize = br.ReadInt32();
         }
 
         public void Read(BinaryReader br = null, long? Offset = null)
-        {   
-            if (_bundle == null)
-                if (Offset.HasValue)
-                {
-                    br.BaseStream.Seek(Offset.Value, SeekOrigin.Begin);
-                    _bundle = new BundleContainer(br);
-                }
-                else if (br == null)
-                    _bundle = new BundleContainer(Name);
-                else
-                    _bundle = new BundleContainer(br);
+        {
+            if (_bundle != null) return;
+            if (Offset.HasValue)
+            {
+                br.BaseStream.Seek(Offset.Value, SeekOrigin.Begin);
+                _bundle = new BundleContainer(br);
+            }
+            else if (br == null)
+            {
+                _bundle = new BundleContainer(Name);
+            }
+            else
+            {
+                _bundle = new BundleContainer(br);
+            }
         }
 
         public void Save(string newPath = null, string originalPath = null)
@@ -65,21 +72,24 @@ namespace LibBundle.Records
             else
                 File.WriteAllBytes(Bundle.path, Bundle.AppendAndSave(data, originalPath));
         }
+
         public byte[] Save(BinaryReader br, long? Offset = null)
         {
-            if (Offset != null)
-                Read(br, Offset);
+            if (Offset != null) Read(br, Offset);
             var data = new MemoryStream();
-            foreach (var d in FileToAdd)
+            foreach (var (f, b) in FileToAdd)
             {
-                d.Key.Offset = (int)data.Position + Bundle.uncompressed_size;
-                data.Write(d.Value, 0, d.Key.Size);
+                f.Offset = (int)data.Position + Bundle.uncompressed_size;
+                data.Write(b, 0, f.Size);
             }
             byte[] result;
-            if (data.Length == 0) {
+            if (data.Length == 0)
+            {
                 br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
                 result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
-            } else {
+            }
+            else
+            {
                 UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
                 result = Bundle.AppendAndSave(data, br.BaseStream);
             }

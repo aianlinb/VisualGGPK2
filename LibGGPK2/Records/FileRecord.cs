@@ -240,7 +240,7 @@ namespace LibGGPK2.Records
                         case ".sm": // Skin Mesh
                         case ".tgr":
                         case ".tgt":
-                        case ".trl": // Trace log?
+                        case ".trl": // Trails Effect
                         case ".tsi":
                         case ".tst":
                         case ".txt":
@@ -250,14 +250,14 @@ namespace LibGGPK2.Records
                             break;
                         case ".ast":
                         case ".csv":
-                        case ".filter": // Item/loot filter
+                        case ".filter": // Item/loot Filter
                         case ".fx": // Shader
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
                         case ".mtp":
                         case ".properties":
                         case ".slt":
-                        case ".smd":
+                        case ".smd": // Skin Mesh Data
                             _DataFormat = DataFormats.Ascii;
                             break;
                         case ".dat":

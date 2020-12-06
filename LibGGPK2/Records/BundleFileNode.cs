@@ -54,8 +54,8 @@ namespace LibGGPK2.Records
         {
             var cached = CachedBundleData.FirstOrDefault((o) => o.Key == BundleFileRecord.bundleRecord).Value;
             if (cached == null) {
-                using var br = new BinaryReader(ggpkStream, Encoding.UTF8, true);
-                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle[BundleFileRecord.bundleRecord].DataBegin);
+                using var br = ggpkStream == null ? null : new BinaryReader(ggpkStream, Encoding.UTF8, true);
+                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle(BundleFileRecord.bundleRecord).DataBegin);
                 cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
                 CachedBundleData.AddFirst(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
                 CachedSize += cached.Length;
@@ -90,8 +90,8 @@ namespace LibGGPK2.Records
             BundleFileRecord.Write(NewContent);
             if (BundleFileRecord.bundleRecord != BundleToSave)
                 BundleFileRecord.Move(BundleToSave);
-            var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle[BundleToSave].DataBegin);
-            var fr = ggpkContainer.RecordOfBundle[BundleToSave];
+            var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
+            var fr = ggpkContainer.RecordOfBundle(BundleToSave);
             fr.ReplaceContent(NewBundleData);
             BundleToSave.Bundle.offset = fr.DataBegin;
             UpdateCache(BundleToSave);
@@ -189,7 +189,7 @@ namespace LibGGPK2.Records
                         case ".sm": // Skin Mesh
                         case ".tgr":
                         case ".tgt":
-                        case ".trl": // Trace log?
+                        case ".trl": // Trails Effect
                         case ".tsi":
                         case ".tst":
                         case ".txt":
@@ -199,14 +199,14 @@ namespace LibGGPK2.Records
                             break;
                         case ".ast":
                         case ".csv":
-                        case ".filter": // Item/loot filter
+                        case ".filter": // Item/loot Filter
                         case ".fx": // Shader
                         case ".hlsl": // Shader
                         case ".mel": // Maya Embedded Language
                         case ".mtp":
                         case ".properties":
                         case ".slt":
-                        case ".smd":
+                        case ".smd": // Skin Mesh Data
                             _DataFormat = DataFormats.Ascii;
                             break;
                         case ".dat":

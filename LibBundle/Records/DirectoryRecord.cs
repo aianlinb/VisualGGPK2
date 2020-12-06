@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace LibBundle.Records
 {
@@ -12,7 +13,7 @@ namespace LibBundle.Records
         public int Size;
         public int RecursiveSize;
 
-        public DirectoryRecord(System.IO.BinaryReader br)
+        public DirectoryRecord(BinaryReader br)
         {
             indexOffset = br.BaseStream.Position;
             Hash = br.ReadUInt64();
