@@ -2,14 +2,20 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Copyright>Copyright © 2020 aianlinb</Copyright>
     <Authors>aianlinb</Authors>
+    <Copyright>Copyright © 2020 aianlinb.</Copyright>
+    <AssemblyVersion>0.6.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputPath>..\Release</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\Release\Release</OutputPath>
+    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>

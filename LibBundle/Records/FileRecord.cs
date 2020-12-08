@@ -9,7 +9,7 @@ namespace LibBundle.Records
         public DirectoryRecord parent;
         public string path;
 
-        public ulong Hash;
+        public ulong NameHash;
         public int BundleIndex;
         public int Offset;
         public int Size;
@@ -17,7 +17,7 @@ namespace LibBundle.Records
         public FileRecord(BinaryReader br)
         {
             indexOffset = br.BaseStream.Position;
-            Hash = br.ReadUInt64();
+            NameHash = br.ReadUInt64();
             BundleIndex = br.ReadInt32();
             Offset = br.ReadInt32();
             Size = br.ReadInt32();

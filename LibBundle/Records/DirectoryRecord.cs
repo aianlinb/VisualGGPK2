@@ -8,7 +8,7 @@ namespace LibBundle.Records
         public long indexOffset;
         public List<FileRecord> children = new List<FileRecord>(); // Files only
 
-        public ulong Hash;
+        public ulong NameHash;
         public int Offset;
         public int Size;
         public int RecursiveSize;
@@ -16,7 +16,7 @@ namespace LibBundle.Records
         public DirectoryRecord(BinaryReader br)
         {
             indexOffset = br.BaseStream.Position;
-            Hash = br.ReadUInt64();
+            NameHash = br.ReadUInt64();
             Offset = br.ReadInt32();
             Size = br.ReadInt32();
             RecursiveSize = br.ReadInt32();

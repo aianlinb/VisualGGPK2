@@ -15,16 +15,10 @@ namespace LibDat2.Types {
 		}
 
 		public static FieldType Create(string type, BinaryReader reader, DatContainer dat) {
-			if (type.StartsWith("x64|"))
-				return dat.x64 ? Create(type[4..], reader, dat) : Null;
-			else if (type.StartsWith("x32|"))
-				return dat.x64 ? Null : Create(type[4..], reader, dat);
-			else if (type == "ref|key")
+			if (type == "ref|key")
 				return new KeyType(dat.x64, reader, false);
 			else if (type == "ref|foreignkey")
 				return new KeyType(dat.x64, reader, true);
-			else if (type.StartsWith("x32ref|"))
-				return new PointerType(reader, false, dat, type[7..]);
 			else if (type.StartsWith("ref|"))
 				return new PointerType(reader, dat.x64, dat, type[4..]);
 			return type switch {
@@ -42,16 +36,10 @@ namespace LibDat2.Types {
 		}
 
 		public static long? TypeLength(string type, bool x64) {
-			if (type.StartsWith("x64|"))
-				return x64 ? TypeLength(type[4..], x64) : 0;
-			else if (type.StartsWith("x32|"))
-				return x64 ? 0 : TypeLength(type[4..], x64);
-			else if (type.StartsWith("ref|list|"))
+			if (type.StartsWith("ref|list|"))
 				return x64 ? 16 : 8;
 			else if (type == "ref|foreignkey")
 				return x64 ? 16 : 8;
-			else if (type.StartsWith("x32ref|"))
-				return 4;
 			else if (type.StartsWith("ref|"))
 				return x64 ? 8 : 4;
 			else return type switch {

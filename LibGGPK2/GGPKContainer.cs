@@ -110,7 +110,7 @@ namespace LibGGPK2
                     if (isFile)
                         next = new BundleFileNode(name, fr, this);
                     else if (parentOfFile)
-                        next = new BundleDirectoryNode(name, path, fr.parent.Hash, fr.parent.Offset, fr.parent.Size, this);
+                        next = new BundleDirectoryNode(name, path, fr.parent.NameHash, fr.parent.Offset, fr.parent.Size, this);
                     else
                         next = new BundleDirectoryNode(name, path, 0, 0, 0, this);
                     parent.Children.Add(next);
@@ -118,7 +118,7 @@ namespace LibGGPK2
                 }
                 else if (parentOfFile && next.Offset == 0)
                 {
-                    ((BundleDirectoryNode)next).Hash = fr.parent.Hash;
+                    ((BundleDirectoryNode)next).Hash = fr.parent.NameHash;
                     next.Offset = fr.parent.Offset;
                     next.Length = fr.parent.Size;
                 }

@@ -34,7 +34,7 @@ namespace LibGGPK2.Records
         {
             Name = name;
             BundleFileRecord = record;
-            Hash = record.Hash;
+            Hash = record.NameHash;
             Offset = record.Offset;
             Length = record.Size;
             this.ggpkContainer = ggpkContainer;
@@ -128,7 +128,7 @@ namespace LibGGPK2.Records
         }
 
         public void UpdateCache(BundleRecord br) {
-            Hash = BundleFileRecord.Hash;
+            Hash = BundleFileRecord.NameHash;
             Offset = BundleFileRecord.Offset;
             Length = BundleFileRecord.Size;
             var node = CachedBundleData.First;

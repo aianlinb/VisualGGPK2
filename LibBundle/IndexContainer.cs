@@ -40,7 +40,7 @@ namespace LibBundle
             {
                 var f = new FileRecord(databr);
                 Files[i] = f;
-                FindFiles[f.Hash] = f;
+                FindFiles[f.NameHash] = f;
                 var b = Bundles[f.BundleIndex];
                 f.bundleRecord = b;
                 b.Files.Add(f);
@@ -110,7 +110,7 @@ namespace LibBundle
             bw.Write(Files.Length);
             foreach (var f in Files)
             {
-                bw.Write(f.Hash);
+                bw.Write(f.NameHash);
                 bw.Write(f.BundleIndex);
                 bw.Write(f.Offset);
                 bw.Write(f.Size);
@@ -119,7 +119,7 @@ namespace LibBundle
             bw.Write(Directorys.Length);
             foreach (var d in Directorys)
             {
-                bw.Write(d.Hash);
+                bw.Write(d.NameHash);
                 bw.Write(d.Offset);
                 bw.Write(d.Size);
                 bw.Write(d.RecursiveSize);
@@ -145,7 +145,7 @@ namespace LibBundle
             bw.Write(Files.Length);
             foreach (var f in Files)
             {
-                bw.Write(f.Hash);
+                bw.Write(f.NameHash);
                 bw.Write(f.BundleIndex);
                 bw.Write(f.Offset);
                 bw.Write(f.Size);
@@ -154,7 +154,7 @@ namespace LibBundle
             bw.Write(Directorys.Length);
             foreach (var d in Directorys)
             {
-                bw.Write(d.Hash);
+                bw.Write(d.NameHash);
                 bw.Write(d.Offset);
                 bw.Write(d.Size);
                 bw.Write(d.RecursiveSize);
