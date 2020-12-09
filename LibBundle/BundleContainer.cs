@@ -128,12 +128,12 @@ namespace LibBundle
             for (int i = 0; i < entry_count; i++)
                 compressed[i] = br.ReadBytes(chunks[i]);
 
-            Parallel.For(0, entry_count, i => {
-                var size = (i + 1 == entry_count) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size; // isLast ?
-                var toSave = new byte[size + 64];
-                OodleLZ_Decompress(compressed[i], compressed[i].Length, toSave, size, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
-                compressed[i] = toSave.Take(size).ToArray();
-            });
+			Parallel.For(0, entry_count, i => {
+				var size = (i + 1 == entry_count) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size; // isLast ?
+				var toSave = new byte[size + 64];
+                _ = OodleLZ_Decompress(compressed[i], compressed[i].Length, toSave, size, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
+				compressed[i] = toSave.Take(size).ToArray();
+			});
 
             var data = new MemoryStream(uncompressed_size);
             for (int i = 0; i < entry_count; i++)
@@ -199,7 +199,7 @@ namespace LibBundle
                 byteArrays[i] = by;
                 Interlocked.Add(ref compressed_size, NewChunkCompressedSizes[i] = l);
             });
-            for (int i = 0; i < NewChunkCompressedSizes.Length - 1; i++)
+            for (int i = 1; i < NewChunkCompressedSizes.Length; i++)
                 bw.Write(byteArrays[i], 0, NewChunkCompressedSizes[i]);
 
             size_compressed = compressed_size;
