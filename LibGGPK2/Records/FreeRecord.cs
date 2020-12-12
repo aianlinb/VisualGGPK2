@@ -58,8 +58,7 @@ namespace LibGGPK2.Records
         /// <param name="node">Node in <see cref="GGPKContainer.LinkedFreeRecords"/> to remove</param>
         public void Remove(LinkedListNode<FreeRecord> node = null)
         {
-            if (node == null)
-                node = ggpkContainer.LinkedFreeRecords.Find(this);
+            node ??= ggpkContainer.LinkedFreeRecords.Find(this);
             var previous = node.Previous?.Value;
             var next = node.Next?.Value;
             if (next == null)
@@ -78,15 +77,15 @@ namespace LibGGPK2.Records
             else
                 if (previous == null)
                 {
-                    ggpkContainer.ggpkRecord.FirstFreeRecordOffset = next.NextFreeOffset;
+                    ggpkContainer.ggpkRecord.FirstFreeRecordOffset = next.Offset;
                     ggpkContainer.fileStream.Seek(ggpkContainer.ggpkRecord.Offset + 20, SeekOrigin.Begin);
-                    ggpkContainer.Writer.Write(next.NextFreeOffset);
+                    ggpkContainer.Writer.Write(next.Offset);
                 }
                 else
                 {
-                    previous.NextFreeOffset = next.NextFreeOffset;
+                    previous.NextFreeOffset = next.Offset;
                     ggpkContainer.fileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
-                    ggpkContainer.Writer.Write(next.NextFreeOffset);
+                    ggpkContainer.Writer.Write(next.Offset);
                 }
             ggpkContainer.LinkedFreeRecords.Remove(node);
         }

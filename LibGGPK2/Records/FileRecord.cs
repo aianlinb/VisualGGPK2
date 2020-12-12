@@ -50,8 +50,7 @@ namespace LibGGPK2.Records
 
         internal override void Write(BinaryWriter bw = null)
         {
-            if (bw == null)
-                bw = ggpkContainer.Writer;
+            bw ??= ggpkContainer.Writer;
             Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
@@ -70,8 +69,7 @@ namespace LibGGPK2.Records
         public virtual byte[] ReadFileContent(Stream stream = null)
         {
             var buffer = new byte[DataLength];
-            if (stream == null)
-                stream = ggpkContainer.fileStream;
+            stream ??= ggpkContainer.fileStream;
             stream.Seek(DataBegin, SeekOrigin.Begin);
             stream.Read(buffer, 0, DataLength);
             return buffer;
@@ -101,7 +99,7 @@ namespace LibGGPK2.Records
 
                 LinkedListNode<FreeRecord> bestNode = null; // Find the FreeRecord with most suitable size
                 var currentNode = ggpkContainer.LinkedFreeRecords.First;
-                int space = int.MaxValue;
+                var space = int.MaxValue;
                 do
                 {
                     if (currentNode.Value.Length == Length)
@@ -110,7 +108,7 @@ namespace LibGGPK2.Records
                         space = 0;
                         break;
                     }
-                    int tmpSpace = currentNode.Value.Length - Length;
+                    var tmpSpace = currentNode.Value.Length - Length;
                     if (tmpSpace < space && tmpSpace >= 16)
                     {
                         bestNode = currentNode;
@@ -122,7 +120,6 @@ namespace LibGGPK2.Records
                 {
                     bw.BaseStream.Seek(0, SeekOrigin.End); // Write to the end of GGPK
                     Write();
-                    DataBegin = bw.BaseStream.Position;
                     bw.Write(NewContent);
                 }
                 else
@@ -130,7 +127,6 @@ namespace LibGGPK2.Records
                     FreeRecord free = bestNode.Value;
                     bw.BaseStream.Seek(free.Offset + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
                     Write();
-                    DataBegin = bw.BaseStream.Position;
                     bw.Write(NewContent);
                     free.Length = space;
                     if (space >= 16) // Update offset of FreeRecord
@@ -143,8 +139,8 @@ namespace LibGGPK2.Records
                 }
 
                 UpdateOffset(oldOffset); // Update the offset of FileRecord in Parent.Entries/>
-                bw.Flush();
             }
+            bw.Flush();
         }
 
         /// <summary>
