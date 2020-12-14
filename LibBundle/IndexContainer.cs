@@ -8,13 +8,13 @@ namespace LibBundle
 {
     public class IndexContainer
     {
-        public BundleContainer BundleContainer;
-        public BundleRecord[] Bundles;
-        public FileRecord[] Files;
-        public DirectoryRecord[] Directorys;
-        public Dictionary<ulong, FileRecord> FindFiles = new Dictionary<ulong, FileRecord>();
-        public HashSet<string> Paths = new HashSet<string>();
-        public byte[] directoryBundleData;
+        public readonly BundleContainer BundleContainer;
+        public readonly BundleRecord[] Bundles;
+        public readonly FileRecord[] Files;
+        public readonly DirectoryRecord[] Directorys;
+        public readonly Dictionary<ulong, FileRecord> FindFiles = new Dictionary<ulong, FileRecord>();
+        public readonly HashSet<string> Paths = new HashSet<string>();
+        public readonly byte[] directoryBundleData;
 
         private static BinaryReader tmp;
         public IndexContainer(string path) : this(tmp = new BinaryReader(File.OpenRead(path)))
@@ -29,25 +29,27 @@ namespace LibBundle
             data.Seek(0, SeekOrigin.Begin);
             var databr = new BinaryReader(data);
 
-            int bundleCount = databr.ReadInt32();
+            var bundleCount = databr.ReadInt32();
             Bundles = new BundleRecord[bundleCount];
             for (int i = 0; i < bundleCount; i++)
                 Bundles[i] = new BundleRecord(databr) { bundleIndex = i };
 
-            int fileCount = databr.ReadInt32();
+            var fileCount = databr.ReadInt32();
             Files = new FileRecord[fileCount];
-            for (int i = 0; i < fileCount; i++)
+            for (var i = 0; i < fileCount; i++)
             {
                 var f = new FileRecord(databr);
                 Files[i] = f;
-                FindFiles[f.Hash] = f;
-                f.bundleRecord = Bundles[f.BundleIndex];
-                Bundles[f.BundleIndex].Files.Add(f);
+                FindFiles[f.NameHash] = f;
+                var b = Bundles[f.BundleIndex];
+                f.bundleRecord = b;
+                b.Files.Add(f);
+                if (f.Offset >= b.validSize) b.validSize = f.Offset + f.Size;
             }
 
-            int directoryCount = databr.ReadInt32();
+            var directoryCount = databr.ReadInt32();
             Directorys = new DirectoryRecord[directoryCount];
-            for (int i = 0; i < directoryCount; i++)
+            for (var i = 0; i < directoryCount; i++)
                 Directorys[i] = new DirectoryRecord(databr);
 
             var tmp = databr.BaseStream.Position;
@@ -60,27 +62,24 @@ namespace LibBundle
             foreach (var d in Directorys)
             {
                 var temp = new List<string>();
-                bool Base = false;
+                var Base = false;
                 br2.BaseStream.Seek(d.Offset, SeekOrigin.Begin);
                 while (br2.BaseStream.Position - d.Offset <= d.Size - 4)
                 {
-                    int index = br2.ReadInt32();
+                    var index = br2.ReadInt32();
                     if (index == 0)
                     {
                         Base = !Base;
-                        if (Base)
-                            temp = new List<string>();
+                        if (Base) temp.Clear();
                     }
                     else
                     {
                         index -= 1;
                         var sb = new StringBuilder();
                         char c;
-                        while ((c = br2.ReadChar()) != 0)
-                            sb.Append(c);
+                        while ((c = br2.ReadChar()) != 0) sb.Append(c);
                         var str = sb.ToString();
-                        if (index < temp.Count)
-                            str = temp[index] + str;
+                        if (index < temp.Count) str = temp[index] + str;
                         if (Base)
                             temp.Add(str);
                         else
@@ -103,26 +102,29 @@ namespace LibBundle
             bw.Write(Bundles.Length);
             foreach (var b in Bundles)
             {
-                bw.Write(b.nameLength);
-                bw.Write(Encoding.UTF8.GetBytes(b.Name), 0, b.nameLength);
+                bw.Write(b.NameLength);
+                bw.Write(Encoding.UTF8.GetBytes(b.Name), 0, b.NameLength);
                 bw.Write(b.UncompressedSize);
             }
+
             bw.Write(Files.Length);
             foreach (var f in Files)
             {
-                bw.Write(f.Hash);
+                bw.Write(f.NameHash);
                 bw.Write(f.BundleIndex);
                 bw.Write(f.Offset);
                 bw.Write(f.Size);
             }
+
             bw.Write(Directorys.Length);
             foreach (var d in Directorys)
             {
-                bw.Write(d.Hash);
+                bw.Write(d.NameHash);
                 bw.Write(d.Offset);
                 bw.Write(d.Size);
                 bw.Write(d.RecursiveSize);
             }
+
             bw.Write(directoryBundleData);
             bw.Flush();
 
@@ -135,26 +137,29 @@ namespace LibBundle
             bw.Write(Bundles.Length);
             foreach (var b in Bundles)
             {
-                bw.Write(b.nameLength);
-                bw.Write(Encoding.UTF8.GetBytes(b.Name), 0, b.nameLength);
+                bw.Write(b.NameLength);
+                bw.Write(Encoding.UTF8.GetBytes(b.Name), 0, b.NameLength);
                 bw.Write(b.UncompressedSize);
             }
+
             bw.Write(Files.Length);
             foreach (var f in Files)
             {
-                bw.Write(f.Hash);
+                bw.Write(f.NameHash);
                 bw.Write(f.BundleIndex);
                 bw.Write(f.Offset);
                 bw.Write(f.Size);
             }
+
             bw.Write(Directorys.Length);
             foreach (var d in Directorys)
             {
-                bw.Write(d.Hash);
+                bw.Write(d.NameHash);
                 bw.Write(d.Offset);
                 bw.Write(d.Size);
                 bw.Write(d.RecursiveSize);
             }
+
             bw.Write(directoryBundleData);
             bw.Flush();
 
@@ -163,10 +168,9 @@ namespace LibBundle
 
         public BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
         {
-            if (Bundles == null)
-                Bundles = this.Bundles;
+            Bundles ??= this.Bundles;
             var result = Bundles.ElementAt(0);
-            int l = Bundles[0].UncompressedSize;
+            var l = Bundles[0].UncompressedSize;
             foreach (var b in Bundles)
                 if (b.UncompressedSize < l)
                 {
@@ -184,10 +188,10 @@ namespace LibBundle
                 str = str.ToLower() + "++";
 
             var bs = Encoding.UTF8.GetBytes(str);
-            ulong hash = 0xcbf29ce484222325;
+            var hash = 0xcbf29ce484222325L;
             foreach (var by in bs)
                 hash = (hash ^ by) * 0x100000001b3;
-
+            // Equal to: bs.Aggregate(0xcbf29ce484222325, (current, by) => (current ^ by) * 0x100000001b3);
             return hash;
         }
     }

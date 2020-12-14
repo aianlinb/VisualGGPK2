@@ -1,13 +1,18 @@
-﻿using LibGGPK2;
+﻿using LibDat2;
+using LibGGPK2;
 using LibGGPK2.Records;
 using Microsoft.Win32;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Dynamic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -26,79 +31,103 @@ namespace VisualGGPK2
         /// </summary>
         public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file")));
         public static readonly ContextMenu TreeMenu = new ContextMenu();
+        public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
+        public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
+        public readonly bool BundleMode = false;
+        public readonly bool SteamMode = false;
 
-        public MainWindow() { InitializeComponent(); }
+        public MainWindow() {
+            var args = Environment.GetCommandLineArgs();
+            for (int i = 1; i < args.Length; i++)
+                switch (args[i].ToLower()) {
+                    case "-bundle":
+                        BundleMode = true;
+                        break;
+                    case "-steam":
+                        SteamMode = true;
+                        break;
+                }
+            if (BundleMode && SteamMode) {
+                MessageBox.Show("BundleMode and SteamMode cannot be both true", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+                return;
+            }
+            InitializeComponent();
+        }
 
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
-            var ofd = new OpenFileDialog
-            {
+        private void OnLoaded(object sender, RoutedEventArgs e) {
+            var ofd = new OpenFileDialog {
                 DefaultExt = "ggpk",
-                FileName = "Content.ggpk",
-                Filter = "GGPK File|*.ggpk"
+                FileName = SteamMode ? "_.index.bin" : "Content.ggpk",
+                Filter = SteamMode ? "Index Bundle File|*.index.bin" : "GGPK File|*.ggpk"
             };
 
             var setting = Properties.Settings.Default;
-            if (setting.GGPKPath == "")
-            {
-                var path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
-                if (path != null && File.Exists(path + @"\Content.ggpk"))
-                    ofd.InitialDirectory = path.TrimEnd('\\'); // Get POE path
-                else
-                {
+            if (setting.GGPKPath == "") {
+                string path;
+                path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
+                if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
+                    ofd.InitialDirectory = path.TrimEnd('\\');
+                else {
                     path = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Garena\PoE")?.GetValue("Path") as string;
-                    if (path != null && File.Exists(path + @"\Content.ggpk"))
-                        ofd.InitialDirectory = path.TrimEnd('\\'); // Get Garena POE path
+                    if (path != null && File.Exists(path + @"\Content.ggpk")) // Get Garena POE path
+                        ofd.InitialDirectory = path.TrimEnd('\\');
                 }
-            }
-            else
+            } else
                 ofd.InitialDirectory = setting.GGPKPath;
 
-
-            if (ofd.ShowDialog() == true) // Select Content.ggpk
-            {
+            if (ofd.ShowDialog() == true) {
                 setting.GGPKPath = Directory.GetParent(ofd.FileName).FullName;
                 setting.Save();
-
-                var mi = new MenuItem { Header = "Export" }; // Initial ContextMenu
-                mi.Click += OnExportClicked;
-                TreeMenu.Items.Add(mi);
-                mi = new MenuItem { Header = "Replace" };
-                mi.Click += OnReplaceClicked;
-                TreeMenu.Items.Add(mi);
-
-                var args = Environment.GetCommandLineArgs();
-                ggpkContainer =  new GGPKContainer(ofd.FileName, args.Length > 1 && args[1] == "-bundleMode"); // Initial GGPK
-                var root = CreateNode(ggpkContainer.rootDirectory);
-                Tree.Items.Add(root); // Initial TreeView
-                root.IsExpanded = true;
-
-                var imageMenu = new ContextMenu();
-                mi = new MenuItem { Header = "SaveAsPng" };
-                mi.Click += OnSavePngClicked;
-                imageMenu.Items.Add(mi);
-                ImageView.ContextMenu = imageMenu;
-
-                TextView.AppendText("\r\n\r\nDone!\r\n");
-            }
-            else
+            } else {
                 Close();
+                return;
+            }
+
+            var mi = new MenuItem { Header = "Export" }; // Initial ContextMenu
+            mi.Click += OnExportClicked;
+            TreeMenu.Items.Add(mi);
+            mi = new MenuItem { Header = "Replace" };
+            mi.Click += OnReplaceClicked;
+            TreeMenu.Items.Add(mi);
+
+            var imageMenu = new ContextMenu();
+            mi = new MenuItem { Header = "SaveAsPng" };
+            mi.Click += OnSavePngClicked;
+            imageMenu.Items.Add(mi);
+            ImageView.ContextMenu = imageMenu;
+
+            ggpkContainer = new GGPKContainer(ofd.FileName, BundleMode, SteamMode); // Initial GGPK
+            var root = CreateNode(ggpkContainer.rootDirectory);
+            Tree.Items.Add(root); // Initial TreeView
+            root.IsExpanded = true;
+
+            TextView.AppendText("\r\n\r\nDone!\r\n");
         }
 
         /// <summary>
         /// Create a element of the TreeView
         /// </summary>
-        public TreeViewItem CreateNode(RecordTreeNode rtn)
+        public static TreeViewItem CreateNode(RecordTreeNode rtn)
         {
-            var tvi = new TreeViewItem { Tag = rtn };
+            var tvi = new TreeViewItem { Tag = rtn, Margin = new Thickness(0,1,0,1) };
             var stack = new StackPanel { Orientation = Orientation.Horizontal };
-            stack.Children.Add(new Image // Icon
-            {
-                Source = rtn is IFileRecord ? IconFile : IconDir,
-                Width = 20,
-                Height = 20,
-                Margin = new Thickness(0,0,2,0)
-            });
+            if (rtn is IFileRecord)
+                stack.Children.Add(new Image // Icon
+                {
+                    Source = IconFile,
+                    Width = 18,
+                    Height = 18,
+                    Margin = new Thickness(0,0,2,0)
+                });
+            else
+                stack.Children.Add(new Image // Icon
+                {
+                    Source = IconDir,
+                    Width = 20,
+                    Height = 20,
+                    Margin = new Thickness(0, 0, 2, 0)
+                });
             stack.Children.Add(new TextBlock { Text = rtn.Name, FontSize = 16 }); // File/Directory Name
             tvi.Header = stack;
             if (!(rtn is IFileRecord))
@@ -126,11 +155,12 @@ namespace VisualGGPK2
         /// </summary>
         private void OnTreeSelectedChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (e.NewValue is TreeViewItem tvi)
+            if (Tree.SelectedItem is TreeViewItem tvi)
             {
                 ImageView.Visibility = Visibility.Hidden;
                 TextView.Visibility = Visibility.Hidden;
                 //OGGView.Visibility = Visibility.Hidden;
+                DatView.Visibility = Visibility.Hidden;
                 //BK2View.Visibility = Visibility.Hidden;
                 //BANKView.Visibility = Visibility.Hidden;
                 ButtonSave.Visibility = Visibility.Hidden;
@@ -144,7 +174,7 @@ namespace VisualGGPK2
                     {
                         if (f is FileRecord fr) TextBoxSize.Text = fr.DataLength.ToString();
                         else TextBoxBundle.Text = ((BundleFileNode)f).BundleFileRecord.bundleRecord.Name;
-                        switch (f is FileRecord fr2 ? fr2.DataFormat : ((BundleFileNode)rtn).DataFormat)
+                        switch (f.DataFormat)
                         {
                             case IFileRecord.DataFormats.Image:
                                 ImageView.Source = BitmapFrame.Create(new MemoryStream(f.ReadFileContent(ggpkContainer.fileStream)));
@@ -152,8 +182,8 @@ namespace VisualGGPK2
                                 break;
                             case IFileRecord.DataFormats.Ascii:
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = Encoding.UTF8;
-                                TextView.Text = Encoding.UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
+                                TextView.Tag = "UTF8";
+                                TextView.Text = UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
                                 break;
@@ -161,8 +191,8 @@ namespace VisualGGPK2
                                 if (rtn.Parent.Name == "Bundles")
                                     goto case IFileRecord.DataFormats.Ascii;
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = new UnicodeEncoding(false, true);
-                                TextView.Text = Encoding.Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream));
+                                TextView.Tag = "Unicode";
+                                TextView.Text = Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream)).TrimStart('\xFEFF');
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
                                 break;
@@ -171,8 +201,13 @@ namespace VisualGGPK2
                                 //OGGView.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.Dat:
-                                //TODO
-                                //DatView.Visibility = Visibility.Visible;
+                                try {
+                                    var dat = new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name);
+                                    ShowDatFile(dat);
+                                    DatView.Visibility = Visibility.Visible;
+                                } catch (Exception ex) {
+                                    MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                }
                                 break;
                             case IFileRecord.DataFormats.TextureDds:
                                 try
@@ -180,7 +215,7 @@ namespace VisualGGPK2
                                     var buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     while (buffer[0] == '*')
                                     {
-                                        var path = Encoding.UTF8.GetString(buffer, 1, buffer.Length - 1);
+                                        var path = UTF8.GetString(buffer, 1, buffer.Length - 1);
                                         f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
                                         buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     }
@@ -212,28 +247,49 @@ namespace VisualGGPK2
             }
         }
 
+        DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
+        private void ShowDatFile(DatContainer dat) {
+            DatTable.Columns.Clear();
+            var eos = new List<ExpandoObject>(dat.FieldDefinitions.Count);
+            for (var i = 0; i < dat.FieldDatas.Count; i++) {
+                var eo = new ExpandoObject() as IDictionary<string, object>;
+                eo.Add("Row", i + 1);
+                foreach (var (name, value) in (dat.FieldDefinitions.Keys, dat.FieldDatas[i]))
+                    eo.Add((string)name, value);
+                eos.Add((ExpandoObject)eo);
+            }
+
+            DatTable.Columns.Add(new DataGridTextColumn {
+                Header = "Row",
+                Binding = new Binding("Row"),
+                Width = dataGridLength
+            });
+            foreach (var col in dat.FieldDefinitions.Keys)
+                DatTable.Columns.Add(new DataGridTextColumn {
+                    Header = col,
+                    Binding = new Binding(col + ".Value") { TargetNullValue = "{null}" },
+                    Width = dataGridLength
+                });
+
+            DatTable.ItemsSource = eos;
+
+            DatPointedTable.ItemsSource = dat.PointedDatas.Values;
+
+            if (dat.FirstError.HasValue)
+                MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.DatName, MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
         /// <summary>
         /// Get the PixelFormat of the dds image
         /// </summary>
-        public static PixelFormat PixelFormat(Pfim.IImage image)
-        {
-            switch (image.Format)
-            {
-                case Pfim.ImageFormat.Rgb24:
-                    return PixelFormats.Bgr24;
-                case Pfim.ImageFormat.Rgba32:
-                    return PixelFormats.Bgr32;
-                case Pfim.ImageFormat.Rgb8:
-                    return PixelFormats.Gray8;
-                case Pfim.ImageFormat.R5g5b5a1:
-                case Pfim.ImageFormat.R5g5b5:
-                    return PixelFormats.Bgr555;
-                case Pfim.ImageFormat.R5g6b5:
-                    return PixelFormats.Bgr565;
-                default:
-                    throw new Exception($"Unable to convert {image.Format} to WPF PixelFormat");
-            }
-        }
+        public static PixelFormat PixelFormat(Pfim.IImage image) => image.Format switch {
+            Pfim.ImageFormat.Rgb24 => PixelFormats.Bgr24,
+            Pfim.ImageFormat.Rgba32 => PixelFormats.Bgr32,
+            Pfim.ImageFormat.Rgb8 => PixelFormats.Gray8,
+            Pfim.ImageFormat.R5g5b5a1 or Pfim.ImageFormat.R5g5b5 => PixelFormats.Bgr555,
+            Pfim.ImageFormat.R5g6b5 => PixelFormats.Bgr565,
+            _ => throw new Exception($"Unable to convert {image.Format} to WPF PixelFormat"),
+        };
 
         /// <summary>
         /// TreeViewItem MouseDown event
@@ -356,7 +412,12 @@ namespace VisualGGPK2
         {
             if (Tree.SelectedItem is TreeViewItem tvi && tvi.Tag is IFileRecord fr)
             {
-                fr.ReplaceContent(((Encoding)TextView.Tag).GetBytes(TextView.Text));
+                if ((string)TextView.Tag == "Unicode") {
+                    fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));
+                } else if ((string)TextView.Tag == "UTF8") {
+                    fr.ReplaceContent(UTF8.GetBytes(TextView.Text));
+                } else
+                    return; 
                 MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -372,6 +433,56 @@ namespace VisualGGPK2
                 f.Close();
                 MessageBox.Show("Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+		private void ReloadClick(object sender, RoutedEventArgs e) {
+            try {
+                DatContainer.ReloadDefinitions();
+                OnTreeSelectedChanged(null, null);
+            } catch (Exception ex) {
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+        }
+	}
+
+    public static class GetTupleEnumerator {
+        public static IEnumerator<(object, object)> GetEnumerator(this (IEnumerable, IEnumerable) TupleEnumerable) => new TupleEnumerator(TupleEnumerable);
+
+        public class TupleEnumerator : ITuple, IEnumerator<(object, object)> {
+
+            public IEnumerator Item1;
+
+            public IEnumerator Item2;
+
+            public TupleEnumerator((IEnumerable, IEnumerable) TupleEnumerable) {
+                Item1 = TupleEnumerable.Item1.GetEnumerator();
+                Item2 = TupleEnumerable.Item2.GetEnumerator();
+            }
+
+            public (object, object) Current => (Item1.Current, Item2.Current);
+
+            object IEnumerator.Current => Current;
+
+            public int Length => 2;
+
+            public object this[int index] => index switch {
+                1 => Item1,
+                2 => Item2,
+                _ => throw new IndexOutOfRangeException()
+            };
+
+            public bool MoveNext() {
+                return Item1.MoveNext() | Item2.MoveNext();
+            }
+
+            public void Reset() {
+                Item1.Reset();
+                Item2.Reset();
+            }
+
+#pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
+            public void Dispose() { }
         }
     }
 }

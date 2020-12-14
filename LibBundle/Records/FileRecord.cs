@@ -9,7 +9,7 @@ namespace LibBundle.Records
         public DirectoryRecord parent;
         public string path;
 
-        public ulong Hash;
+        public ulong NameHash;
         public int BundleIndex;
         public int Offset;
         public int Size;
@@ -17,7 +17,7 @@ namespace LibBundle.Records
         public FileRecord(BinaryReader br)
         {
             indexOffset = br.BaseStream.Position;
-            Hash = br.ReadUInt64();
+            NameHash = br.ReadUInt64();
             BundleIndex = br.ReadInt32();
             Offset = br.ReadInt32();
             Size = br.ReadInt32();
@@ -25,22 +25,19 @@ namespace LibBundle.Records
 
         public byte[] Read(Stream stream = null)
         {
-            if (!bundleRecord.FileToAdd.TryGetValue(this, out byte[] b))
-            {
-                b = new byte[Size];
-                var data = stream ?? bundleRecord.Bundle.Read();
-                data.Seek(Offset, SeekOrigin.Begin);
-                data.Read(b, 0, Size);
-            }
+            if (bundleRecord.FileToAdd.TryGetValue(this, out var b)) return b;
+            b = new byte[Size];
+            var data = stream ?? bundleRecord.Bundle.Read();
+            data.Seek(Offset, SeekOrigin.Begin);
+            data.Read(b, 0, Size);
             return b;
         }
 
         public void Move(BundleRecord target)
         {
-            if (bundleRecord.FileToAdd.TryGetValue(this, out byte[] data))
+            if (bundleRecord.FileToAdd.TryGetValue(this, out var data))
                 bundleRecord.FileToAdd.Remove(this);
-            else
-                data = Read();
+            else data = Read();
             bundleRecord.Files.Remove(this);
             target.Files.Add(this);
             target.FileToAdd[this] = data;

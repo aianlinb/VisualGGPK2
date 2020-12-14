@@ -1,0 +1,479 @@
+diff --LibGGPK2 stable.py/DatDefinitions.json dat64Supported/DatDefinitions.json
+	"AfflictionFixedMods": {
+@@ 1 @@
+-		"Key0": "ref|foreignkey",
++		"Unknown0": "int",
++		"Unknown1": "int",
+
+	"AreaTransitionInfo": {
+@@ 4 @@
+-		"Unknown2": "int",
+-		"Unknown3": "int",
+-		"Unknown4": "int",
+-		"Unknown5": "int",
+@@ 1 @@
+		"Key8": "ref|foreignkey",
++		"Key9": "ref|foreignkey",
++		"Key10": "ref|foreignkey",
+
+	"AtlasAwakeningStats": {
+@@ 4 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int",
+-		"Unknown3": "int",
+-		"Unknown4": "int"
++		"Keys1": "ref|list|ref|foreignkey",
++		"Unknown2": "ref|list|int",
+
+	"AtlasRegions": {
+@@ 2 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int"
++		"Key1": "ref|key",
++		"Key2": "ref|key"
+
+	"BlightBalancePerLevel": {
+@@ 1 @@
+-		"Unknown2": "int",
++		"Unknown2": "ref|list|int",
+@@ 2 @@
+-		"Unknown8": "int",
+-		"Unknown9": "int"
++		"Unknown8": "int"
+
+	"BlightTopologyNodes": {
+@@ 1 @@
+-		"Type": "ref|string",
++		"Type": "int",
+
+	"BuffVisualOrbArt": {
+@@ 1 @@
+-		"Unknown2": "ref|list|ref|string",
++		"Unknown2": "ref|list|int",
+
+	"Characters": {
+@@ 2 @@
+-		"Unknown13": "int",
+-		"Unknown14": "int",
++		"Key13": "ref|key",
++		"Key14": "ref|key",
+@@ 1 @@
+	},
++	"ChatIcons": {
++		"Id": "ref|string",
++		"Path": "ref|string"
++	},
+
+	"DelveFeatures": {
+@@ 2 @@
+-		"MinTier": "ref|key",
++		"MinTier": "ref|list|int",
+-		"Type": "ref|string",
+
+	"DelveFlares": {
+@@ 9 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int",
++		"Key1": "ref|foreignkey",
++		"Key2": "ref|foreignkey",
+		"Unknown3": "int",
+-		"Unknown4": "int",
++		"Key4": "ref|foreignkey",
+		"Unknown5": "int",
+-		"Unknown6": "int",
++		"Unknown6": "int"
+-		"Unknown7": "int",
+-		"Unknown8": "int",
+-		"Unknown9": "int"
+
+	"EffectDrivenSkill": {
+@@ 2 @@
+-		"Unknown2": "int",
+-		"Unknown3": "int",
++		"Unknown2": "ref|list|ref|foreignkey",
+@@ 1 @@
+-		"Unknown6": "int",
+@@ 1 @@
+-		"Unknown7": "int",
++		"Unknown7": "ref|list|ref|foreignkey",
+
+	"Environments": {
+@@ 2 @@
+-		"Unknown3": "int",
+-		"Unknown4": "int",
++		"Unknown3": "ref|list|ref|string",
+
+	"ExecuteGEAL": {
+@@ 3 @@
+-		"Unknown11": "int",
+-		"Flag2": "bool",
+-		"Unknown12": "int",
++		"Flag2": "bool",
++		"Unknown11": "ref|list|ref|foreignkey",
+@@ 3 @@
+-		"Unknown17": "int",
+-		"Flag3": "bool",
+-		"Unknown18": "int",
++		"Flag3": "bool",
++		"Unknown17": "int",
++		"Unknown18": "ref|string",
+@@ 4 @@
+-		"Unknown28": "int",
+-		"Unknown29": "int",
+-		"Unknown30": "int",
+-		"Unknown31": "int",
++		"Unknown28": "ref|string",
++		"Unknown29": "ref|string",
++		"Unknown30": "ref|string",
++		"Unknown31": "ref|string",
+@@ 2 @@
+-		"Unknown33": "int",
+-		"Unknown34": "int",
++		"Unknown33": "ref|key",
++		"Unknown34": "ref|string",
+
+	"ExpandingPulse": {
+@@ 1 @@
+-		"Unknown0": "ref|list|int",
++		"Unknown0": "int",
++		"Id": "ref|string",
+@@ 1 @@
+-		"Key0": "ref|foreignkey",
++		"Unknown3": "int",
++		"Unknown4": "int",
+
+	"ExtraTerrainFeatures": {
+@@ 2 @@
+-		"Unknown1": "int",
+-		"Key0": "ref|foreignkey",
++		"Key0": "ref|key",
++		"Key1": "ref|foreignkey",
+
+	"FixedMissions": {
+@@ 2 @@
+		"Key1": "ref|foreignkey",
++		"Key2": "ref|key",
++		"Key3": "ref|key",
+@@ 3 @@
+-		"Unknown7": "int",
+-		"Unknown8": "int",
+-		"Unknown9": "int"
++		"Unknown7": "int"
+
+	"GeometryAttack": {
+@@ 2 @@
+-		"Unknown13": "int",
+-		"Unknown14": "int",
++		"Unknown13": "ref|key",
++		"Unknown14": "ref|key",
+@@ 1 @@
+-		"Key0": "ref|foreignkey",
++		"Unknown17": "int",
+@@ 2 @@
+		"Unknown19": "int",
++		"Unknown20": "int",
+@@ 5 @@
+-		"Flag11": "byte",
+-		"Flag12": "byte",
+-		"Flag13": "byte",
+-		"Flag14": "byte",
+-		"Unknown40": "ref|int",
++		"Unknown40": "ref|list|ref|foreignkey",
+
+	"GeometryTrigger": {
+@@ 4 @@
+-		"Unknown28": "int",
+-		"Unknown29": "int",
+-		"Unknown30": "int",
+-		"Unknown31": "int",
++		"Unknown28": "ref|foreignkey",
++		"Unknown30": "ref|foreignkey",
+
+	"GroundEffects": {
+@@ 10 @@
+-		"Flag0": "bool",
+-		"Flag1": "bool",
+-		"Unknown6": "int",
+-		"Flag2": "bool",
+-		"Flag3": "bool",
+-		"AOFile": "ref|string",
+-		"Flag4": "bool",
+-		"Data0": "ref|list|int",
+-		"Data1": "ref|list|int",
+-		"Unknown12": "int",
++		"Flag0": "byte",
++		"Flag1": "byte",
++		"Flag2": "byte",
++		"Flag3": "byte",
++		"Data0": "ref|list|int",
++		"Flag4": "bool",
++		"AOFile": "ref|list|ref|string",
++		"Unknown4": "ref|list|ref|string",
++		"Unknown5": "ref|string",
+
+	"HeistChestRewardTypes": {
+@@ 1 @@
+-		"Unknown0": "int",
++		"Key0": "ref|key",
+
+	"HeistObjectiveValueDescriptions": {
+@@ 2 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int"
++		"Unknown1": "float",
++		"Unknown2": "ref|float"
+
+	"HeistRooms": {
+@@ 1 @@
+-		"Unknown8": "int",
++		"Key2": "ref|key",
+
+	"IncursionRoomBossFightEvents": {
+@@ 1 @@
+-		"Unknown0": "int",
++		"Key0": "ref|key",
+@@ 1 @@
+-		"Key0": "ref|foreignkey"
++		"Key1": "ref|foreignkey"
+
+	"ItemVisualHeldBodyModel": {
+@@ 3 @@
+-		"Unknown4": "int",
+-		"Unknown5": "int",
+-		"Unknown6": "int",
++		"Key4": "ref|key",
++		"Key5": "ref|key",
++		"Key6": "ref|key",
+
+	"JobAssassinationSpawnerGroups": {
+@@ 4 @@
+-		"Unknown0": "int",
+-		"Unknown1": "int",
+-		"Unknown2": "int",
+-		"Unknown3": "int"
++		"Key0": "ref|key",
++		"Key1": "ref|key",
++		"Key2": "ref|key",
++		"Key3": "ref|key"
+
+	"LabyrinthExclusionGroups": {
+@@ 1 @@
+-		"Unknown1": "int"
++		"Unknown1": "ref|string"
+
+	"LabyrinthTrials": {
+@@ 1 @@
+-		"WorldAreas": "ulong",
++		"WorldAreas": "ref|foreignkey",
+
+	"MapConnections": {
+@@ 1 @@
+-		"Unknown6": "int",
++		"Key0": "ref|key",
+
+	"MetamorphosisMetaSkills": {
+@@ 1 @@
+-		"Unknown11": "ref|list|int",
++		"Unknown11": "ref|list|ref|key",
+@@ 1 @@
+-		"Unknown14": "int",
++		"Unknown14": "ref|string",
+
+	"MonsterBonuses": {
+@@ 2 @@
+-		"Unknown3": "int",
+-		"Unknown4": "int",
++		"Data0": "ref|list|int",
+
+	"MonsterVarieties": {
+@@ 4 @@
+-		"Unknown15": "int",
+-		"Unknown16": "int",
+-		"Unknown73": "int",
+-		"Unknown104": "int",
++		"Unknown15": "ref|string",
++		"Unknown16": "ref|string",
++		"Unknown73": "ref|string",
++		"Unknown104": "ref|string",
+
+	"MoveDaemon": {
+@@ 3 @@
+-		"Unknown24": "int",
+-		"Unknown25": "int",
+-		"Unknown26": "byte",
++		"Unknown26": "byte",
++		"Unknown24": "ref|string",
++		"Unknown25": "int",
+
+	"MTXSetBonus": {
+@@ 2 @@
+-		"ArtFile": "ref|string"
++		"ArtFile": "ref|key",
++		"Unknown2": "ref|key"
+
+	"Music": {
+@@ 1 @@
+-		"Unknown5": "int",
++		"Unknown5": "ref|string",
+
+	"NPCTalk": {
+@@ 3 @@
+-		"Unknown23": "int",
+-		"Unknown24": "int",
+-		"Unknown25": "int",
++		"Unknown23": "ref|key",
++		"Unknown24": "int",
++		"Unknown25": "ref|key",
++		"Unknown26": "int"
+
+	"NPCs": {
+@@ 1 @@
+-		"Unknown3": "int",
++		"Key1": "ref|key",
+
+	"PassiveJewelSlots": {
+@@ 2 @@
+-		"Unknown2": "int",
+-		"Unknown3": "int"
++		"Unknown2": "ref|list|int"
+
+	"Quest": {
+@@ 2 @@
+-		"Unknown4": "int",
+-		"Unknown5": "int",
++		"Unknown4": "ref|foreignkey",
+
+	"QuestStates": {
+@@ 3 @@
+-		"Key0": "ref|foreignkey",
+-		"Unknown3": "int",
+-		"Unknown4": "int"
++		"Key1": "ref|key",
++		"Unknown2": "int",
++		"Key2": "ref|foreignkey"
+
+	"Races": {
+@@ 11 @@
+-		"Data0": "ref|list|ref|foreignkey",
+-		"Data1": "ref|list|int",
+-		"Unknown1": "int",
+-		"Flag0": "bool",
+-		"Unknown2": "int",
+-		"Unknown3": "int",
+-		"Unknown4": "int",
+-		"Unknown5": "int",
+-		"Unknown6": "int",
+-		"Unknown7": "int",
+-		"Unknown8": "int"
++		"Unknown1": "ref|key",
++		"Unknown2": "ref|string",
++		"Unknown3": "ref|key",
++		"Unknown4": "ref|string",
++		"Unknown5": "ref|string",
++		"Url": "ref|string",
++		"Unknown6": "int",
++		"Unknown7": "int",
++		"Unknown8": "ref|key",
++		"Unknown9": "ref|string",
++		"Flag0": "byte",
++		"Unknown10": "int",
++		"Unknown11": "int"
+
+	"Realms": {
+@@ 1 @@
+-		"Unknown0": "int",
++		"Key0": "ref|key",
+
+	"RunicCircles": {
+@@ 5 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int",
+-		"Unknown3": "int",
+-		"Unknown4": "int",
+-		"Unknown5": "int"
++		"Id": "ref|string",
++		"Unknown1": "int",
++		"Keys0": "ref|list|ref|foreignkey",
++		"Unknown2": "int"
+
+	"ShopPaymentPackage": {
+@@ 1 @@
+-		"Unknown6": "int",
++		"Key6": "ref|key",
+
+	"SpawnObject": {
+@@ 4 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int",
+-		"Unknown3": "int",
+-		"Unknown4": "int",
++		"Key1": "ref|key",
++		"Key2": "ref|key",
++		"Key3": "ref|key",
++		"Key4": "ref|key",
+@@ 1 @@
+-		"Unknown13": "int",
++		"Key13": "ref|key",
+
+	"StashId": {},
+@@ 0 @@
++	"StashTabAffinities": {
++		"Unknown1": "int",
++		"Unknown2": "ref|long",
++		"Unknown3": "ref|list|int"
++	},
+
+	"StrDexIntMissions": {
+@@ 1 @@
+-		"Key0": "ref|foreignkey",
++		"Unknown2": "int",
++		"Unknown3": "int",
+
+	"TalismanMonsterMods": {
+@@ 2 @@
+-		"Unknown1": "int",
+-		"Unknown2": "int",
++		"Key0": "ref|foreignkey",
++		"Key1": "ref|foreignkey"
+
+	"TreasureHunterMissions": {
+@@ 4 @@
+-		"Unknown14": "int",
+-		"Unknown15": "int",
+-		"Unknown19": "byte",
+-		"Unknown16": "int",
++		"Unknown14": "ref|string",
++		"Unknown15": "ref|string",
++		"OTFile": "ref|string",
++		"Unknown19": "byte
+
+	"TriggerBeam": {
+@@ 1 @@
+		"Flag2": "byte",
++		"Unknown8": "int"
+
+	"UniqueStashLayout": {
+@@ 3 @@
+-		"Key3": "ref|foreignkey",
+-		"Unknown1": "int",
+-		"Unknown2": "int",
++		"Unknown1": "int",
++		"Unknown2": "int",
++		"Unknown3": "int",
++		"Unknown4": "int",
+
+	"WarbandsPackMonsters": {
+@@ 1 @@
+-		"Unknown1": "ref|foreignkey",
++		"Unknown1": "int",
++		"Unknown2": "int",
++		"Unknown3": "int",
+
+	"WorldAreas": {
+@@ 1 @@
+-		"Unknown56": "int",
++		"Unknown56": "ref|string",
+@@ 2 @@
+-		"Unknown96": "int",
+-		"Unknown97": "int",
++		"Key96": "ref|foreignkey",

@@ -21,20 +21,38 @@ namespace LibGGPK2
         public readonly BinaryReader Reader;
         public readonly BinaryWriter Writer;
         public readonly GGPKRecord ggpkRecord;
-        public readonly DirectoryRecord rootDirectory;
+        public readonly RecordTreeNode rootDirectory;
         public readonly DirectoryRecord OriginalBundles2;
         public readonly BundleDirectoryNode FakeBundles2;
         public readonly IndexContainer Index;
         public readonly FileRecord IndexRecord;
-        public readonly LinkedList<FreeRecord> LinkedFreeRecords = new LinkedList<FreeRecord>();
-        public readonly Dictionary<LibBundle.Records.BundleRecord, FileRecord> RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>();
+        public readonly LinkedList<FreeRecord> LinkedFreeRecords;
+        private readonly Dictionary<LibBundle.Records.BundleRecord, FileRecord> _RecordOfBundle;
+
+        public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord) {
+            if (_RecordOfBundle == null) return null;
+            if (!_RecordOfBundle.TryGetValue(bundleRecord, out var fr))
+                fr = (FileRecord)FindRecord(bundleRecord.Name, OriginalBundles2);
+            return fr;
+        }
 
         /// <summary>
         /// Load GGPK
         /// </summary>
         /// <param name="path">Path to GGPK file</param>
-        public GGPKContainer(string path, bool BundleMode = false)
+        public GGPKContainer(string path, bool BundleMode = false, bool SteamMode = false)
         {
+            // Steam Mode (No GGPK)
+            if (SteamMode) {
+                if (BundleMode)
+                    throw new NotSupportedException("BundleMode and SteamMode cannot be both true");
+                Index = new IndexContainer(path + @"\_.index.bin");
+                rootDirectory = FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), 0, 0, this);
+                foreach (var f in Index.Files)
+                    BuildBundleTree(f, rootDirectory);
+                return;
+            }
+
             // Open File
             fileStream = File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
             Reader = new BinaryReader(fileStream);
@@ -48,6 +66,7 @@ namespace LibGGPK2
             rootDirectory.Name = "ROOT";
 
             // Build Linked FreeRecord List
+            LinkedFreeRecords = new LinkedList<FreeRecord>();
             long NextFreeOffset = ggpkRecord.FirstFreeRecordOffset;
             while (NextFreeOffset > 0)
             {
@@ -58,7 +77,8 @@ namespace LibGGPK2
 
             if (BundleMode) return;
             // Read Bundles
-            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
+            var Bundles2DirectoryNameHash = MurmurHash2Unsafe.Hash("bundles2", 0);
+            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == Bundles2DirectoryNameHash) as DirectoryRecord;
             if (OriginalBundles2.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
             {
                 IndexRecord = _index;
@@ -70,8 +90,7 @@ namespace LibGGPK2
                 foreach (var f in Index.Files)
                     BuildBundleTree(f, FakeBundles2);
             }
-            foreach (var br in Index.Bundles)
-                RecordOfBundle[br] = (FileRecord)FindRecord(br.Name, OriginalBundles2);
+            _RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>(Index.Bundles.Length);
         }
 
         public void BuildBundleTree(LibBundle.Records.FileRecord fr, RecordTreeNode parent)
@@ -91,7 +110,7 @@ namespace LibGGPK2
                     if (isFile)
                         next = new BundleFileNode(name, fr, this);
                     else if (parentOfFile)
-                        next = new BundleDirectoryNode(name, path, fr.parent.Hash, fr.parent.Offset, fr.parent.Size, this);
+                        next = new BundleDirectoryNode(name, path, fr.parent.NameHash, fr.parent.Offset, fr.parent.Size, this);
                     else
                         next = new BundleDirectoryNode(name, path, 0, 0, 0, this);
                     parent.Children.Add(next);
@@ -99,7 +118,7 @@ namespace LibGGPK2
                 }
                 else if (parentOfFile && next.Offset == 0)
                 {
-                    ((BundleDirectoryNode)next).Hash = fr.parent.Hash;
+                    ((BundleDirectoryNode)next).Hash = fr.parent.NameHash;
                     next.Offset = fr.parent.Offset;
                     next.Length = fr.parent.Size;
                 }
@@ -215,7 +234,7 @@ namespace LibGGPK2
                     {
                         ms?.Close();
                         br = bfn.BundleFileRecord.bundleRecord;
-                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle[bfn.BundleFileRecord.bundleRecord].DataBegin);
+                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(bfn.BundleFileRecord.bundleRecord).DataBegin);
                         ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
                     }
                     File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
@@ -253,15 +272,17 @@ namespace LibGGPK2
         public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             var BundleToSave = Index?.GetSmallestBundle();
+            var fr = RecordOfBundle(BundleToSave);
             var SavedSize = 0;
             foreach (var record in list)
             {
                 if (SavedSize > 50000000) // 50MB per bundle
                 {
-                    var fr = RecordOfBundle[BundleToSave];
-                    fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
+                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
                     BundleToSave = Index.GetSmallestBundle();
+                    fr = RecordOfBundle(BundleToSave);
                     SavedSize = 0;
                 }
                 if (record.Key is BundleFileNode bfn)
@@ -270,13 +291,12 @@ namespace LibGGPK2
                     record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
                 ProgressStep();
             }
-            if (BundleToSave != null) {
-                var fr2 = RecordOfBundle[BundleToSave];
-                fr2.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle[BundleToSave].DataBegin));
-                BundleToSave.Bundle.offset = fr2.DataBegin;
+            if (BundleToSave != null && SavedSize > 0) {
+                fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle(BundleToSave).DataBegin));
+                BundleToSave.Bundle.offset = fr.DataBegin;
                 BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
-                IndexRecord.ReplaceContent(Index.Save());
             }
+            IndexRecord.ReplaceContent(Index.Save());
         }
 
         /// <summary>
@@ -318,8 +338,8 @@ namespace LibGGPK2
             {
                 var bfx = (BundleFileNode)x;
                 var bfy = (BundleFileNode)y;
-                var ofx = bfx.ggpkContainer.RecordOfBundle[bfx.BundleFileRecord.bundleRecord].DataBegin;
-                var ofy = bfy.ggpkContainer.RecordOfBundle[bfy.BundleFileRecord.bundleRecord].DataBegin;
+                var ofx = bfx.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord).DataBegin;
+                var ofy = bfy.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord).DataBegin;
                 if (ofx > ofy)
                     return 1;
                 else if (ofx < ofy)

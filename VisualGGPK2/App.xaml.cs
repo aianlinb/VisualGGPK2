@@ -16,11 +16,13 @@ namespace VisualGGPK2
             {
                 MessageBox.Show("File not found: LibBundle.dll", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
+                return;
             }
             if (!File.Exists("oo2core_8_win64.dll"))
             {
                 MessageBox.Show("File not found: oo2core_8_win64.dll", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
+                return;
             }
             base.OnStartup(e);
         }
