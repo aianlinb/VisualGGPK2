@@ -38,7 +38,7 @@ namespace VisualGGPK2
 
         public MainWindow() {
             var args = Environment.GetCommandLineArgs();
-            for (int i = 1; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
                 switch (args[i].ToLower()) {
                     case "-bundle":
                         BundleMode = true;
