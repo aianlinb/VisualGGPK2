@@ -118,6 +118,7 @@ namespace LibBundle
         // UnPacking
         public virtual MemoryStream Read(BinaryReader br)
         {
+            if (br == null) return Read();
             br.BaseStream.Seek(offset + 60, SeekOrigin.Begin);
 
             var chunks = new int[entry_count];
@@ -231,7 +232,7 @@ namespace LibBundle
         // Packing
         public virtual void Save(Stream newData, string path)
         {
-            var bw = new BinaryWriter(File.OpenWrite(path));
+            var bw = new BinaryWriter(File.OpenWrite(path ?? this.path));
 
             uncompressed_size = (int)(size_decompressed = newData.Length);
             entry_count = uncompressed_size / chunk_size;

@@ -55,7 +55,7 @@ namespace LibGGPK2.Records
             var cached = CachedBundleData.FirstOrDefault((o) => o.Key == BundleFileRecord.bundleRecord).Value;
             if (cached == null) {
                 using var br = ggpkStream == null ? null : new BinaryReader(ggpkStream, Encoding.UTF8, true);
-                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle(BundleFileRecord.bundleRecord).DataBegin);
+                BundleFileRecord.bundleRecord.Read(br, ggpkContainer.RecordOfBundle(BundleFileRecord.bundleRecord)?.DataBegin);
                 cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
                 CachedBundleData.AddFirst(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
                 CachedSize += cached.Length;
@@ -90,12 +90,16 @@ namespace LibGGPK2.Records
             BundleFileRecord.Write(NewContent);
             if (BundleFileRecord.bundleRecord != BundleToSave)
                 BundleFileRecord.Move(BundleToSave);
-            var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
-            var fr = ggpkContainer.RecordOfBundle(BundleToSave);
-            fr.ReplaceContent(NewBundleData);
-            BundleToSave.Bundle.offset = fr.DataBegin;
-            UpdateCache(BundleToSave);
-            ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
+            if (ggpkContainer.Reader == null) {
+                BundleToSave.Save();
+            } else {
+                var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
+                var fr = ggpkContainer.RecordOfBundle(BundleToSave);
+                fr.ReplaceContent(NewBundleData);
+                BundleToSave.Bundle.offset = fr.DataBegin;
+                UpdateCache(BundleToSave);
+                ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
+            }
         }
 
         /// <summary>

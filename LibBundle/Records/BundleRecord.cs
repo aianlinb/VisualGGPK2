@@ -56,7 +56,7 @@ namespace LibBundle.Records
         public void Save(string newPath = null, string originalPath = null)
         {
             if (newPath == null && originalPath == null && Bundle.path == null)
-                throw new ArgumentNullException("Could not find path to read and save");
+                throw new ArgumentNullException();
             var data = new MemoryStream();
             foreach (var d in FileToAdd)
             {
@@ -75,7 +75,7 @@ namespace LibBundle.Records
 
         public byte[] Save(BinaryReader br, long? Offset = null)
         {
-            if (Offset != null) Read(br, Offset);
+            Read(br, Offset);
             var data = new MemoryStream();
             foreach (var (f, b) in FileToAdd)
             {
@@ -85,13 +85,17 @@ namespace LibBundle.Records
             byte[] result;
             if (data.Length == 0)
             {
-                br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
-                result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
+                if (br == null) {
+                    result = Bundle.Read().ToArray();
+                } else {
+                    br.BaseStream.Seek(Bundle.offset, SeekOrigin.Begin);
+                    result = br.ReadBytes(Bundle.head_size + Bundle.compressed_size + 12);
+                }
             }
             else
             {
                 UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
-                result = Bundle.AppendAndSave(data, br.BaseStream);
+                result = Bundle.AppendAndSave(data, br?.BaseStream ?? Bundle.Read());
             }
             FileToAdd.Clear();
             data.Close();

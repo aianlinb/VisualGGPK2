@@ -40,7 +40,7 @@ namespace LibGGPK2
         /// Load GGPK
         /// </summary>
         /// <param name="path">Path to GGPK file</param>
-        public GGPKContainer(string path, bool BundleMode = false, bool SteamMode = false)
+        public GGPKContainer(string path, bool BundleMode = false, bool SteamMode = false, bool BuildTree = true)
         {
             // Steam Mode (No GGPK)
             if (SteamMode) {
@@ -84,11 +84,13 @@ namespace LibGGPK2
                 IndexRecord = _index;
                 fileStream.Seek(_index.DataBegin, SeekOrigin.Begin);
                 Index = new IndexContainer(Reader);
-                FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), (int)OriginalBundles2.Offset, OriginalBundles2.Length, this);
-                rootDirectory.Children.Remove(OriginalBundles2);
-                rootDirectory.Children.Add(FakeBundles2);
-                foreach (var f in Index.Files)
-                    BuildBundleTree(f, FakeBundles2);
+                if (BuildTree) {
+                    FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), (int)OriginalBundles2.Offset, OriginalBundles2.Length, this);
+                    rootDirectory.Children.Remove(OriginalBundles2);
+                    rootDirectory.Children.Add(FakeBundles2);
+                    foreach (var f in Index.Files)
+                        BuildBundleTree(f, FakeBundles2);
+                }
             }
             _RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>(Index.Bundles.Length);
         }
@@ -234,7 +236,7 @@ namespace LibGGPK2
                     {
                         ms?.Close();
                         br = bfn.BundleFileRecord.bundleRecord;
-                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(bfn.BundleFileRecord.bundleRecord).DataBegin);
+                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
                         ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
                     }
                     File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
@@ -278,9 +280,16 @@ namespace LibGGPK2
             {
                 if (SavedSize > 50000000) // 50MB per bundle
                 {
-                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
-                    BundleToSave.Bundle.offset = fr.DataBegin;
-                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                    if (fr == null)
+                    {
+                        BundleToSave.Save();
+                    }
+                    else
+                    {
+                        fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                        BundleToSave.Bundle.offset = fr.DataBegin;
+                        BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                    }
                     BundleToSave = Index.GetSmallestBundle();
                     fr = RecordOfBundle(BundleToSave);
                     SavedSize = 0;
@@ -292,11 +301,20 @@ namespace LibGGPK2
                 ProgressStep();
             }
             if (BundleToSave != null && SavedSize > 0) {
-                fr.ReplaceContent(BundleToSave.Save(Reader, RecordOfBundle(BundleToSave).DataBegin));
-                BundleToSave.Bundle.offset = fr.DataBegin;
-                BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                if (fr == null) {
+                    BundleToSave.Save();
+                } else {
+                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                    BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                }
             }
-            IndexRecord.ReplaceContent(Index.Save());
+
+            // Save Index
+            if (fr == null)
+                Index.Save("_.index.bin");
+            else
+                IndexRecord.ReplaceContent(Index.Save());
         }
 
         /// <summary>
@@ -338,8 +356,8 @@ namespace LibGGPK2
             {
                 var bfx = (BundleFileNode)x;
                 var bfy = (BundleFileNode)y;
-                var ofx = bfx.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord).DataBegin;
-                var ofy = bfy.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord).DataBegin;
+                var ofx = bfx.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
+                var ofy = bfy.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
                 if (ofx > ofy)
                     return 1;
                 else if (ofx < ofy)
