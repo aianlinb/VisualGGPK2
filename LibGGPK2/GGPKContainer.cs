@@ -206,15 +206,7 @@ namespace LibGGPK2
         public static async Task<Exception> ExportAsync(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             await Task.Delay(1).ConfigureAwait(false);
-            try
-            {
-                Export(list, ProgressStep);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
-            return null;
+            return Export(list, ProgressStep); ;
         }
 
         /// <summary>
@@ -223,28 +215,29 @@ namespace LibGGPK2
         /// <param name="list">File list to export. (generate by <see cref="RecursiveFileList"/>)
         /// The list must be sort by thier bundle to speed up exportation.</param>
         /// <param name="ProgressStep">It will be executed every time a file is exported</param>
-        public static void Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public static Exception Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            LibBundle.Records.BundleRecord br = null;
-            MemoryStream ms = null;
-            foreach (var record in list)
-            {
-                Directory.CreateDirectory(Directory.GetParent(record.Value).FullName);
-                if (record.Key is BundleFileNode bfn)
-                {
-                    if (br != bfn.BundleFileRecord.bundleRecord)
-                    {
-                        ms?.Close();
-                        br = bfn.BundleFileRecord.bundleRecord;
-                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
-                        ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
-                    }
-                    File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
+            try {
+                LibBundle.Records.BundleRecord br = null;
+                MemoryStream ms = null;
+                foreach (var record in list) {
+                    Directory.CreateDirectory(Directory.GetParent(record.Value).FullName);
+                    if (record.Key is BundleFileNode bfn) {
+                        if (br != bfn.BundleFileRecord.bundleRecord) {
+                            ms?.Close();
+                            br = bfn.BundleFileRecord.bundleRecord;
+                            br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
+                            ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
+                        }
+                        File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
+                    } else
+                        File.WriteAllBytes(record.Value, record.Key.ReadFileContent());
+                    ProgressStep?.Invoke();
                 }
-                else
-                    File.WriteAllBytes(record.Value, record.Key.ReadFileContent());
-                ProgressStep();
+            } catch (Exception ex) {
+                return ex;
             }
+            return null;
         }
 
         /// <summary>
@@ -255,15 +248,7 @@ namespace LibGGPK2
         public async Task<Exception> ReplaceAsync(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             await Task.Delay(1).ConfigureAwait(false);
-            try
-            {
-                Replace(list, ProgressStep);
-            }
-            catch (Exception ex)
-            {
-                return ex;
-            }
-            return null;
+            return Replace(list, ProgressStep);
         }
 
         /// <summary>
@@ -271,50 +256,55 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public Exception Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            var BundleToSave = Index?.GetSmallestBundle();
-            var fr = RecordOfBundle(BundleToSave);
-            var SavedSize = 0;
-            foreach (var record in list)
-            {
-                if (SavedSize > 50000000) // 50MB per bundle
-                {
-                    if (fr == null)
+            try {
+                var changed = false;
+                var BundleToSave = Index?.GetSmallestBundle();
+                var fr = RecordOfBundle(BundleToSave);
+                var SavedSize = 0;
+                foreach (var record in list) {
+                    if (SavedSize > 50000000) // 50MB per bundle
                     {
-                        BundleToSave.Save();
+                        changed = true;
+                        if (fr == null) {
+                            BundleToSave.Save();
+                        } else {
+                            fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                            BundleToSave.Bundle.offset = fr.DataBegin;
+                            BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                        }
+                        BundleToSave = Index.GetSmallestBundle();
+                        fr = RecordOfBundle(BundleToSave);
+                        SavedSize = 0;
                     }
+                    if (record.Key is BundleFileNode bfn)
+                        SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
                     else
-                    {
+                        record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
+                    ProgressStep();
+                }
+                if (BundleToSave != null && SavedSize > 0) {
+                    changed = true;
+                    if (fr == null) {
+                        BundleToSave.Save();
+                    } else {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
                         BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
                     }
-                    BundleToSave = Index.GetSmallestBundle();
-                    fr = RecordOfBundle(BundleToSave);
-                    SavedSize = 0;
                 }
-                if (record.Key is BundleFileNode bfn)
-                    SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
-                else
-                    record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
-                ProgressStep();
-            }
-            if (BundleToSave != null && SavedSize > 0) {
-                if (fr == null) {
-                    BundleToSave.Save();
-                } else {
-                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
-                    BundleToSave.Bundle.offset = fr.DataBegin;
-                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
-                }
-            }
 
-            // Save Index
-            if (fr == null)
-                Index.Save("_.index.bin");
-            else
-                IndexRecord.ReplaceContent(Index.Save());
+                // Save Index
+                if (changed)
+                    if (fr == null)
+                        Index.Save("_.index.bin");
+                    else
+                        IndexRecord.ReplaceContent(Index.Save());
+            } catch (Exception ex) {
+                return ex;
+			}
+            return null;
         }
 
         /// <summary>
