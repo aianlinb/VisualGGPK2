@@ -33,7 +33,7 @@ namespace VisualGGPK2
         public static readonly ContextMenu TreeMenu = new ContextMenu();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
-        public readonly bool BundleMode = true;
+        public readonly bool BundleMode = false;
         public readonly bool SteamMode = false;
 
         public MainWindow() {
