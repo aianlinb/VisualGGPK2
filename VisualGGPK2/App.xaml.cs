@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace VisualGGPK2
 {
@@ -29,16 +31,21 @@ namespace VisualGGPK2
 
         public void OnUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            var ew = new ErrorWindow();
-            var t = new Thread(new ParameterizedThreadStart(ew.ShowError))
-            {
-                CurrentCulture = new System.Globalization.CultureInfo("en-US"),
-                CurrentUICulture = new System.Globalization.CultureInfo("en-US")
-            };
-            t.Start(e.Exception);
+            HandledException(e.Exception);
             e.Handled = true;
-            if (ew.ShowDialog() != true)
-                Shutdown();
+        }
+
+        public static void HandledException(Exception ex) {
+            Current.Dispatcher.Invoke(() => {
+                var ew = new ErrorWindow();
+                var t = new Thread(new ParameterizedThreadStart(ew.ShowError)) {
+                    CurrentCulture = new System.Globalization.CultureInfo("en-US"),
+                    CurrentUICulture = new System.Globalization.CultureInfo("en-US")
+                };
+                t.Start(ex);
+                if (ew.ShowDialog() != true)
+                    Current.Shutdown();
+            });
         }
     }
 }

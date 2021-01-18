@@ -10,6 +10,7 @@ using System.Dynamic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -327,12 +328,16 @@ namespace VisualGGPK2
                 var list = new Collection<KeyValuePair<IFileRecord, string>>();
                 GGPKContainer.RecursiveFileList(ggpkContainer.rootDirectory, dropped[0], list, false);
                 var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
-                ggpkContainer.ReplaceAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
-                    if (tsk.Result == null)
-                        MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                    else
-                        Dispatcher.Invoke(() => { throw tsk.Result; });
-                    bkg.Close();
+                Task.Run(() => {
+                    try {
+                        ggpkContainer.Replace(list, bkg.NextProgress);
+                        Dispatcher.Invoke(() => {
+                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                            bkg.Close();
+                        });
+                    } catch (Exception ex) {
+                        App.HandledException(ex);
+                    }
                 });
                 bkg.ShowDialog();
             }
@@ -361,12 +366,16 @@ namespace VisualGGPK2
                         var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
                         GGPKContainer.RecursiveFileList(rtn, path, list, true);
                         var bkg = new BackgroundDialog { ProgressText = "Exported {0}/" + list.Count.ToString() + " Files . . ." };
-                        GGPKContainer.ExportAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
-                            if (tsk.Result == null)
-                                MessageBox.Show("Exported " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                            else
-                                Dispatcher.Invoke(() => { throw tsk.Result; });
-                            bkg.Close();
+                        Task.Run(() => {
+                            try {
+                                GGPKContainer.Export(list, bkg.NextProgress);
+                                Dispatcher.Invoke(() => {
+                                    MessageBox.Show("Exported " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    bkg.Close();
+                                });
+                            } catch (Exception ex) {
+                                App.HandledException(ex);
+                            }
                         });
                         bkg.ShowDialog();
                     }
@@ -395,12 +404,16 @@ namespace VisualGGPK2
                         var list = new Collection<KeyValuePair<IFileRecord, string>>();
                         GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
                         var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
-                        ggpkContainer.ReplaceAsync(list, bkg.NextProgress).ContinueWith((tsk) => {
-                            if (tsk.Result == null)
-                                MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                            else
-                                Dispatcher.Invoke(() => { throw tsk.Result; });
-                            bkg.Close();
+                        Task.Run(() => {
+                            try {
+                                ggpkContainer.Replace(list, bkg.NextProgress);
+                                Dispatcher.Invoke(() => {
+                                    MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    bkg.Close();
+                                });
+                            } catch (Exception ex) {
+                                App.HandledException(ex);
+                            }
                         });
                         bkg.ShowDialog();
                     }
@@ -440,8 +453,7 @@ namespace VisualGGPK2
                 DatContainer.ReloadDefinitions();
                 OnTreeSelectedChanged(null, null);
             } catch (Exception ex) {
-                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                App.HandledException(ex);
             }
         }
 	}

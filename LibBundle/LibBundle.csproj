@@ -21,10 +21,4 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Update="oo2core_8_win64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

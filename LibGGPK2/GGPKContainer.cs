@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace LibGGPK2
 {
@@ -155,8 +154,7 @@ namespace LibGGPK2
         public RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
         {
             var SplittedPath = path.Split(new char[] { '/', '\\' });
-            if (parent == null)
-                parent = rootDirectory;
+            parent ??= rootDirectory;
             for (int i = 0; i < SplittedPath.Length; i++)
             {
                 var name = SplittedPath[i];
@@ -166,17 +164,6 @@ namespace LibGGPK2
                 parent = next;
             }
             return parent;
-        }
-
-        /// <summary>
-        /// Defragment the GGPK asynchronously.
-        /// Currently isn't implemented.
-        /// Throw a <see cref="NotImplementedException"/>.
-        /// </summary>
-        public async Task DefragmentAsync()
-        {
-            await Task.Delay(1).ConfigureAwait(false);
-            Defragment();
         }
 
         /// <summary>
@@ -198,57 +185,29 @@ namespace LibGGPK2
         }
 
         /// <summary>
-        /// Export files asynchronously
-        /// </summary>
-        /// <param name="record">File/Directory Record to export</param>
-        /// <param name="path">Path to save</param>
-        /// <param name="ProgressStep">It will be executed every time a file is exported</param>
-        public static async Task<Exception> ExportAsync(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
-        {
-            await Task.Delay(1).ConfigureAwait(false);
-            return Export(list, ProgressStep); ;
-        }
-
-        /// <summary>
         /// Export files synchronously
         /// </summary>
         /// <param name="list">File list to export. (generate by <see cref="RecursiveFileList"/>)
         /// The list must be sort by thier bundle to speed up exportation.</param>
         /// <param name="ProgressStep">It will be executed every time a file is exported</param>
-        public static Exception Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public static void Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            try {
-                LibBundle.Records.BundleRecord br = null;
-                MemoryStream ms = null;
-                foreach (var record in list) {
-                    Directory.CreateDirectory(Directory.GetParent(record.Value).FullName);
-                    if (record.Key is BundleFileNode bfn) {
-                        if (br != bfn.BundleFileRecord.bundleRecord) {
-                            ms?.Close();
-                            br = bfn.BundleFileRecord.bundleRecord;
-                            br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
-                            ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
-                        }
-                        File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
-                    } else
-                        File.WriteAllBytes(record.Value, record.Key.ReadFileContent());
-                    ProgressStep?.Invoke();
-                }
-            } catch (Exception ex) {
-                return ex;
+            LibBundle.Records.BundleRecord br = null;
+            MemoryStream ms = null;
+            foreach (var record in list) {
+                Directory.CreateDirectory(Directory.GetParent(record.Value).FullName);
+                if (record.Key is BundleFileNode bfn) {
+                    if (br != bfn.BundleFileRecord.bundleRecord) {
+                        ms?.Close();
+                        br = bfn.BundleFileRecord.bundleRecord;
+                        br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
+                        ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
+                    }
+                    File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
+                } else
+                    File.WriteAllBytes(record.Value, record.Key.ReadFileContent());
+                ProgressStep?.Invoke();
             }
-            return null;
-        }
-
-        /// <summary>
-        /// Replace files asynchronously
-        /// </summary>
-        /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
-        /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public async Task<Exception> ReplaceAsync(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
-        {
-            await Task.Delay(1).ConfigureAwait(false);
-            return Replace(list, ProgressStep);
         }
 
         /// <summary>
@@ -256,35 +215,15 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public Exception Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
-            try {
-                var changed = false;
-                var BundleToSave = Index?.GetSmallestBundle();
-                var fr = RecordOfBundle(BundleToSave);
-                var SavedSize = 0;
-                foreach (var record in list) {
-                    if (SavedSize > 50000000) // 50MB per bundle
-                    {
-                        changed = true;
-                        if (fr == null) {
-                            BundleToSave.Save();
-                        } else {
-                            fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
-                            BundleToSave.Bundle.offset = fr.DataBegin;
-                            BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
-                        }
-                        BundleToSave = Index.GetSmallestBundle();
-                        fr = RecordOfBundle(BundleToSave);
-                        SavedSize = 0;
-                    }
-                    if (record.Key is BundleFileNode bfn)
-                        SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
-                    else
-                        record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
-                    ProgressStep();
-                }
-                if (BundleToSave != null && SavedSize > 0) {
+            var changed = false;
+            var BundleToSave = Index?.GetSmallestBundle();
+            var fr = RecordOfBundle(BundleToSave);
+            var SavedSize = 0;
+            foreach (var record in list) {
+                if (SavedSize > 50000000) // 50MB per bundle
+                {
                     changed = true;
                     if (fr == null) {
                         BundleToSave.Save();
@@ -293,18 +232,33 @@ namespace LibGGPK2
                         BundleToSave.Bundle.offset = fr.DataBegin;
                         BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
                     }
+                    BundleToSave = Index.GetSmallestBundle();
+                    fr = RecordOfBundle(BundleToSave);
+                    SavedSize = 0;
                 }
+                if (record.Key is BundleFileNode bfn) // In Bundle
+                    SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
+                else // In GGPK
+                    record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
+                ProgressStep();
+            }
+            if (BundleToSave != null && SavedSize > 0) {
+                changed = true;
+                if (fr == null) {
+                    BundleToSave.Save();
+                } else {
+                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                    BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                }
+            }
 
-                // Save Index
-                if (changed)
-                    if (fr == null)
-                        Index.Save("_.index.bin");
-                    else
-                        IndexRecord.ReplaceContent(Index.Save());
-            } catch (Exception ex) {
-                return ex;
-			}
-            return null;
+            // Save Index
+            if (changed)
+                if (fr == null)
+                    Index.Save("_.index.bin");
+                else
+                    IndexRecord.ReplaceContent(Index.Save());
         }
 
         /// <summary>
@@ -314,6 +268,7 @@ namespace LibGGPK2
         /// <param name="path">Path to save</param>
         /// <param name="list">File list</param>
         /// <param name="export">True for export False for replace</param>
+        /// <param name="regex">Regular Expression for filtering files</param>
         public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> list, bool export, string regex = null)
         {
             if (record is IFileRecord fr)
@@ -334,27 +289,26 @@ namespace LibGGPK2
     {
         public virtual int Compare(IFileRecord x, IFileRecord y)
         {
+            // In GGPK
             if (x is FileRecord frx)
                 if (y is FileRecord fry)
                     return frx.DataBegin > fry.DataBegin ? 1 : -1;
                 else
                     return -1;
-            else
-                if (y is FileRecord)
+            else if (y is FileRecord)
                 return 1;
+
+            // In Bundle
+            var bfx = (BundleFileNode)x;
+            var bfy = (BundleFileNode)y;
+            var ofx = bfx.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
+            var ofy = bfy.ggpkContainer.RecordOfBundle(bfy.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
+            if (ofx > ofy)
+                return 1;
+            else if (ofx < ofy)
+                return -1;
             else
-            {
-                var bfx = (BundleFileNode)x;
-                var bfy = (BundleFileNode)y;
-                var ofx = bfx.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
-                var ofy = bfy.ggpkContainer.RecordOfBundle(bfx.BundleFileRecord.bundleRecord)?.DataBegin ?? 0;
-                if (ofx > ofy)
-                    return 1;
-                else if (ofx < ofy)
-                    return -1;
-                else
-                    return bfx.Offset > bfy.Offset ? 1 : -1;
-            }
+                return bfx.Offset > bfy.Offset ? 1 : -1;
         }
     }
 }
