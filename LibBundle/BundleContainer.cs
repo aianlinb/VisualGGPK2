@@ -155,7 +155,7 @@ namespace LibBundle {
             var lastChunkCompressedData = new byte[lastCunkCompressedSize];
             originalData.Read(lastChunkCompressedData, 0, lastCunkCompressedSize);
             var lastCunkDecompressedData = new byte[lastCunkDecompressedSize + 64];
-            OodleLZ_Decompress(lastChunkCompressedData, lastCunkCompressedSize, lastCunkDecompressedData, lastCunkDecompressedSize, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
+			_ = OodleLZ_Decompress(lastChunkCompressedData, lastCunkCompressedSize, lastCunkDecompressedData, lastCunkDecompressedSize, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
 
             newData.Seek(0, SeekOrigin.Begin);
             compressed_size -= lastCunkCompressedSize;
@@ -163,12 +163,12 @@ namespace LibBundle {
 
             var FirstNewDataChunk = new byte[Math.Min(chunk_size - lastCunkDecompressedSize, newData.Length)];
             newData.Read(FirstNewDataChunk, 0, FirstNewDataChunk.Length);
-            FirstNewDataChunk = lastCunkDecompressedData.Take(lastCunkDecompressedSize).Concat(FirstNewDataChunk).ToArray(); // Decompressed
+            FirstNewDataChunk = lastCunkDecompressedData.Take(lastCunkDecompressedSize).Concat(FirstNewDataChunk).ToArray();
             var CompressedChunk = new byte[FirstNewDataChunk.Length + 548];
             var CompressedLength = OodleLZ_Compress(encoder, FirstNewDataChunk, FirstNewDataChunk.Length, CompressedChunk, Compression_Level, IntPtr.Zero, 0, 0, IntPtr.Zero, 0);
             compressed_size += NewChunkCompressedSizes[0] = CompressedLength;
-            bw.Write(CompressedChunk, 0, CompressedLength); // Compressed
-            for (var i = 0; i < NewChunkCompressedSizes.Length; i++) {
+            bw.Write(CompressedChunk, 0, CompressedLength);
+            for (var i = 1; i < NewChunkCompressedSizes.Length; i++) {
                 var size = (i + 1 == NewChunkCompressedSizes.Length) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size;
                 var b = new byte[size];
                 newData.Read(b, 0, size);
