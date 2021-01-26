@@ -188,10 +188,10 @@ namespace LibBundle
                 str = str.ToLower() + "++";
 
             var bs = Encoding.UTF8.GetBytes(str);
-            var hash = 0xcbf29ce484222325L;
+            var hash = 0xCBF29CE484222325UL;
             foreach (var by in bs)
-                hash = (hash ^ by) * 0x100000001b3;
-            // Equal to: bs.Aggregate(0xcbf29ce484222325, (current, by) => (current ^ by) * 0x100000001b3);
+                hash = (hash ^ by) * 0x100000001B3;
+            // Equal to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
             return hash;
         }
     }

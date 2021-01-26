@@ -4,8 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020 aianlinb.</Copyright>
-    <AssemblyVersion>2.4.1.0</AssemblyVersion>
+    <AssemblyVersion>2.4.1.1</AssemblyVersion>
     <Platforms>x64</Platforms>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

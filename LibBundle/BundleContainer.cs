@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -7,10 +6,8 @@ using System.Runtime.InteropServices;
 namespace LibBundle {
     public class BundleContainer {
         [DllImport("oo2core_8_win64.dll")]
-        [SuppressMessage("Interoperability", "CA1401:不應看得見 P/Invoke")]
         public static extern int OodleLZ_Decompress(byte[] buffer, int bufferSize, byte[] result, long outputBufferSize, int a, int b, int c, IntPtr d, long e, IntPtr f, IntPtr g, IntPtr h, long i, int ThreadModule);
         [DllImport("oo2core_8_win64.dll")]
-        [SuppressMessage("Interoperability", "CA1401:不應看得見 P/Invoke")]
         public static extern int OodleLZ_Compress(ENCODE_TYPES format, byte[] buffer, long bufferSize, byte[] outputBuffer, COMPRESSTION_LEVEL level, IntPtr opts, long offs, long unused, IntPtr scratch, long scratch_size);
         public enum ENCODE_TYPES {
             LZH = 0,
@@ -118,7 +115,7 @@ namespace LibBundle {
                 var b = br.ReadBytes(chunks[i]);
                 var size = (i + 1 == entry_count) ? uncompressed_size - (chunk_size * (entry_count - 1)) : chunk_size; // isLast ?
                 var toSave = new byte[size + 64];
-                OodleLZ_Decompress(b, b.Length, toSave, size, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
+                _ = OodleLZ_Decompress(b, b.Length, toSave, size, 0, 0, 0, IntPtr.Zero, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, 0, 3);
                 data.Write(toSave, 0, size);
             }
 

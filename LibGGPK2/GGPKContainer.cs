@@ -14,7 +14,7 @@ namespace LibGGPK2
     /// </summary>
     public class GGPKContainer : IDisposable
     {
-        public static readonly BundleSortComp BundleComparer = new BundleSortComp();
+        public static readonly BundleSortComp BundleComparer = new();
 
         public readonly FileStream fileStream;
         public readonly BinaryReader Reader;
@@ -31,7 +31,7 @@ namespace LibGGPK2
         public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord) {
             if (_RecordOfBundle == null) return null;
             if (!_RecordOfBundle.TryGetValue(bundleRecord, out var fr))
-                fr = (FileRecord)FindRecord(bundleRecord.Name, OriginalBundles2);
+                _RecordOfBundle.Add(bundleRecord, fr = (FileRecord)FindRecord(bundleRecord.Name, OriginalBundles2));
             return fr;
         }
 
@@ -45,6 +45,7 @@ namespace LibGGPK2
             if (SteamMode) {
                 if (BundleMode)
                     throw new NotSupportedException("BundleMode and SteamMode cannot be both true");
+                Environment.CurrentDirectory = Directory.GetParent(path).FullName;
                 Index = new IndexContainer(path);
                 rootDirectory = FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), 0, 0, this);
                 foreach (var f in Index.Files)
@@ -66,7 +67,7 @@ namespace LibGGPK2
 
             // Build Linked FreeRecord List
             LinkedFreeRecords = new LinkedList<FreeRecord>();
-            long NextFreeOffset = ggpkRecord.FirstFreeRecordOffset;
+            var NextFreeOffset = ggpkRecord.FirstFreeRecordOffset;
             while (NextFreeOffset > 0)
             {
                 FreeRecord current = GetRecord(NextFreeOffset) as FreeRecord;
@@ -98,7 +99,7 @@ namespace LibGGPK2
         {
             var SplittedPath = fr.path.Split('/');
             var path = "";
-            for (int i = 0; i < SplittedPath.Length; i++)
+            for (var i = 0; i < SplittedPath.Length; i++)
             {
                 var name = SplittedPath[i];
                 var isFile = (i + 1 == SplittedPath.Length);
@@ -153,11 +154,10 @@ namespace LibGGPK2
         /// </summary>
         public RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
         {
-            var SplittedPath = path.Split(new char[] { '/', '\\' });
+            var SplittedPath = path.Split('/', '\\');
             parent ??= rootDirectory;
-            for (int i = 0; i < SplittedPath.Length; i++)
+            foreach (var name in SplittedPath)
             {
-                var name = SplittedPath[i];
                 var next = parent.GetChildItem(name);
                 if (next == null)
                     return null;
@@ -177,12 +177,14 @@ namespace LibGGPK2
             //TODO
         }
 
-        public void Dispose()
-        {
+#pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
+		public void Dispose()
+		{
             Writer.Flush();
             Writer.Close();
             Reader.Close();
         }
+#pragma warning restore CA1816 // Dispose 方法應該呼叫 SuppressFinalize
 
         /// <summary>
         /// Export files synchronously
@@ -190,7 +192,7 @@ namespace LibGGPK2
         /// <param name="list">File list to export. (generate by <see cref="RecursiveFileList"/>)
         /// The list must be sort by thier bundle to speed up exportation.</param>
         /// <param name="ProgressStep">It will be executed every time a file is exported</param>
-        public static void Export(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public static void Export(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             LibBundle.Records.BundleRecord br = null;
             MemoryStream ms = null;

@@ -56,8 +56,10 @@ namespace LibBundle.Records
         public void Save(string newPath = null, string originalPath = null)
         {
             if (newPath == null && originalPath == null && Bundle.path == null)
-                throw new ArgumentNullException();
-            var data = new MemoryStream();
+#pragma warning disable CA2208 // 正確地將引數例外狀況具現化
+				throw new ArgumentNullException();
+#pragma warning restore CA2208 // 正確地將引數例外狀況具現化
+			var data = new MemoryStream();
             foreach (var d in FileToAdd)
             {
                 d.Key.Offset = (int)data.Position + Bundle.uncompressed_size;

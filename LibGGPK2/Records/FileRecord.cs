@@ -188,100 +188,89 @@ namespace LibGGPK2.Records
             throw new System.Exception(GetPath() + " updateOffset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
         }
 
-        private DataFormats? _DataFormat = null;
+        private DataFormats? _DataFormat;
         /// <summary>
         /// Content data format of this file
         /// </summary>
-        public virtual DataFormats DataFormat
-        {
-            get
-            {
-                if (_DataFormat == null)
-                {
-                    switch (Path.GetExtension(Name).ToLower())
-                    {
-                        case ".act":
-                        case ".ais":
-                        case ".amd": // Animated Meta Data
-                        case ".ao": // Animated Object
-                        case ".aoc": // Animated Object Controller
-                        case ".arl":
-                        case ".arm": // Rooms
-                        case ".atlas":
-                        case ".cht": // ChestData
-                        case ".clt":
-                        case ".dct": // Decals
-                        case ".ddt": // Doodads
-                        case ".dgr":
-                        case ".dlp":
-                        case ".ecf":
-                        case ".edp":
-                        case ".env": // Environment
-                        case ".epk":
-                        case ".et":
-                        case ".ffx": // FFX Render
-                        case ".fmt":
-                        case ".fxgraph":
-                        case ".gft":
-                        case ".gt": // Ground Types
-                        case ".idl":
-                        case ".idt":
-                        case ".mat": // Materials
-                        case ".mtd":
-                        case ".ot":
-                        case ".otc":
-                        case ".pet":
-                        case ".red":
-                        case ".rs": // Room Set
-                        case ".sm": // Skin Mesh
-                        case ".tgr":
-                        case ".tgt":
-                        case ".trl": // Trails Effect
-                        case ".tsi":
-                        case ".tst":
-                        case ".txt":
-                        case ".ui": // User Interface
-                        case ".xml":
-                            _DataFormat = DataFormats.Unicode;
-                            break;
-                        case ".ast":
-                        case ".csv":
-                        case ".filter": // Item/loot Filter
-                        case ".fx": // Shader
-                        case ".hlsl": // Shader
-                        case ".mel": // Maya Embedded Language
-                        case ".mtp":
-                        case ".properties":
-                        case ".slt":
-                        case ".smd": // Skin Mesh Data
-                            _DataFormat = DataFormats.Ascii;
-                            break;
-                        case ".dat":
-                        case ".dat64":
-                            _DataFormat = DataFormats.Dat;
-                            break;
-                        case ".dds":
-                            _DataFormat = DataFormats.TextureDds;
-                            break;
-                        case ".jpg":
-                        case ".png":
-                            _DataFormat = DataFormats.Image;
-                            break;
-                        case ".ogg":
-                            _DataFormat = DataFormats.OGG;
-                            break;
-                        case ".bk2":
-                            _DataFormat = DataFormats.BK2;
-                            break;
-                        case ".bank":
-                            _DataFormat = DataFormats.BANK;
-                            break;
-                        default:
-                            _DataFormat = DataFormats.Unknown;
-                            break;
-                    }
-                }
+        public virtual DataFormats DataFormat {
+            get {
+                _DataFormat ??= GetDataFormat(Name);
                 return _DataFormat.Value;
+            }
+        }
+
+        public static DataFormats GetDataFormat(string name) {
+            switch (Path.GetExtension(name).ToLower()) {
+                case ".act":
+                case ".ais":
+                case ".amd": // Animated Meta Data
+                case ".ao": // Animated Object
+                case ".aoc": // Animated Object Controller
+                case ".arl":
+                case ".arm": // Rooms
+                case ".atlas":
+                case ".cht": // ChestData
+                case ".clt":
+                case ".dct": // Decals
+                case ".ddt": // Doodads
+                case ".dgr":
+                case ".dlp":
+                case ".ecf":
+                case ".edp":
+                case ".env": // Environment
+                case ".epk":
+                case ".et":
+                case ".ffx": // FFX Render
+                case ".fmt":
+                case ".fxgraph":
+                case ".gft":
+                case ".gt": // Ground Types
+                case ".idl":
+                case ".idt":
+                case ".mat": // Materials
+                case ".mtd":
+                case ".ot":
+                case ".otc":
+                case ".pet":
+                case ".red":
+                case ".rs": // Room Set
+                case ".sm": // Skin Mesh
+                case ".tgr":
+                case ".tgt":
+                case ".trl": // Trails Effect
+                case ".tsi":
+                case ".tst":
+                case ".txt":
+                case ".ui": // User Interface
+                case ".xml":
+                    return DataFormats.Unicode;
+                case ".ast":
+                case ".csv":
+                case ".filter": // Item/loot Filter
+                case ".fx": // Shader
+                case ".hlsl": // Shader
+                case ".mel": // Maya Embedded Language
+                case ".mtp":
+                case ".properties":
+                case ".slt":
+                case ".smd": // Skin Mesh Data
+                    return DataFormats.Ascii;
+                case ".dat":
+                case ".dat64":
+                    return DataFormats.Dat;
+                case ".dds":
+                    return DataFormats.TextureDds;
+                case ".jpg":
+                case ".png":
+                    return DataFormats.Image;
+                case ".ogg":
+                    return DataFormats.OGG;
+                case ".bk2":
+                    return DataFormats.BK2;
+                case ".bank":
+                    return DataFormats.BANK;
+                default:
+                    return DataFormats.Unknown;
             }
         }
     }
