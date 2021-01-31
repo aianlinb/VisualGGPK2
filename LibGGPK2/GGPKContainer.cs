@@ -77,8 +77,7 @@ namespace LibGGPK2
 
             if (BundleMode) return;
             // Read Bundles
-            var Bundles2DirectoryNameHash = MurmurHash2Unsafe.Hash("bundles2", 0);
-            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == Bundles2DirectoryNameHash) as DirectoryRecord;
+            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
             if (OriginalBundles2.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
             {
                 IndexRecord = _index;

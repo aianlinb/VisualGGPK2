@@ -92,6 +92,8 @@ namespace LibGGPK2.Records
                 BundleFileRecord.Move(BundleToSave);
             if (ggpkContainer.Reader == null) {
                 BundleToSave.Save();
+                ggpkContainer.Index.Save("_.index.bin");
+                UpdateCache(BundleToSave);
             } else {
                 var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
                 var fr = ggpkContainer.RecordOfBundle(BundleToSave);
