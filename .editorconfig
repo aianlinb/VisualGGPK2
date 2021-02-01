@@ -1,0 +1,13 @@
+﻿[*.cs]
+
+# CA2211: 非常數欄位不應可見
+dotnet_diagnostic.CA2211.severity = none
+
+# CA1707: 識別項不應包含底線
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1401: 不應看得見 P/Invoke
+dotnet_diagnostic.CA1401.severity = none
+
+# CA1050: 在命名空間中宣告類型
+dotnet_diagnostic.CA1050.severity = none

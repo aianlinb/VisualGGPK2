@@ -57,7 +57,7 @@ namespace LibBundle
             databr.BaseStream.Seek(tmp, SeekOrigin.Begin);
 
             var directoryBundle = new BundleContainer(databr);
-            var br2 = new BinaryReader(directoryBundle.Read(databr));
+            var br2 = new BinaryReader(directoryBundle.Read(databr), Encoding.UTF8);
             // Array.Sort(Directorys, new Comparison<DirectoryRecord>((dr1, dr2) => { return dr1.Offset > dr2.Offset ? 1 : -1; }));
             foreach (var d in Directorys)
             {
@@ -183,14 +183,14 @@ namespace LibBundle
         public static ulong FNV1a64Hash(string str)
         {
             if (str.EndsWith('/'))
-                str = str.TrimEnd(new char[] { '/' }) + "++";
+                str = str.TrimEnd('/') + "++";
             else
                 str = str.ToLower() + "++";
 
             var bs = Encoding.UTF8.GetBytes(str);
             var hash = 0xCBF29CE484222325UL;
             foreach (var by in bs)
-                hash = (hash ^ by) * 0x100000001B3;
+                hash = (hash ^ by) * 0x100000001B3UL;
             // Equal to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
             return hash;
         }

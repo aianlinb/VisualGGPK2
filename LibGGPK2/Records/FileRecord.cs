@@ -200,8 +200,10 @@ namespace LibGGPK2.Records
         }
 
         public static DataFormats GetDataFormat(string name) {
-            switch (Path.GetExtension(name).ToLower()) {
-                case ".act":
+#pragma warning disable IDE0079 // 移除非必要的隱藏項目
+#pragma warning disable IDE0066 // 將 switch 陳述式轉換為運算式
+			switch (Path.GetExtension(name).ToLower()) {
+				case ".act":
                 case ".ais":
                 case ".amd": // Animated Meta Data
                 case ".ao": // Animated Object

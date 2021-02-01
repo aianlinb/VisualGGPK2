@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -13,6 +14,8 @@ namespace VisualGGPK2
         protected override void OnStartup(StartupEventArgs e)
         {
             DispatcherUnhandledException += OnUnhandledException;
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
             base.OnStartup(e);
         }
 
@@ -23,14 +26,12 @@ namespace VisualGGPK2
         }
 
         public static void HandledException(Exception ex) {
-            var ew = new ErrorWindow();
-            var t = new Thread(new ParameterizedThreadStart(ew.ShowError)) { // Show Error In English
-                CurrentCulture = new System.Globalization.CultureInfo("en-US"),
-                CurrentUICulture = new System.Globalization.CultureInfo("en-US")
-            };
-            t.Start(ex);
-            if (Current.Dispatcher.Invoke(ew.ShowDialog) != true)
-                Current.Shutdown();
+            Current.Dispatcher.Invoke(() => {
+                var ew = new ErrorWindow();
+                ew.ShowError(ex);
+                if (ew.ShowDialog() != true)
+                    Current.Shutdown();
+            });
         }
     }
 }

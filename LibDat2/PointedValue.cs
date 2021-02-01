@@ -22,7 +22,7 @@ namespace LibDat2 {
 				Length = GetLength(Value.Value);
 		}
 
-		private int GetLength(object value) {
+		private static int GetLength(object value) {
 			if (value is string s)
 				return (s.Length + 2) * 2;
 			else if (value is null)

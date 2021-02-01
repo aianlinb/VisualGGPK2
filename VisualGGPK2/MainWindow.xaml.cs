@@ -297,7 +297,7 @@ namespace VisualGGPK2
         /// </summary>
         private void OnTreePreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (!(e.Source is DependencyObject ui) || ui is TreeView) return;
+            if (e.Source is not DependencyObject ui || ui is TreeView) return;
             while (!(ui is TreeViewItem))
                 ui = VisualTreeHelper.GetParent(ui);
             var tvi = ui as TreeViewItem;

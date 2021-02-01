@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Windows;
 namespace VisualGGPK2
 {
@@ -9,16 +10,12 @@ namespace VisualGGPK2
             InitializeComponent();
         }
 
-        public void ShowError(object e)
+        public void ShowError(Exception e)
         {
-            var ex = e as System.Exception;
-            var error = ex.ToString();
-            Dispatcher.Invoke(new System.Action(() => {
-                ErrorBox.Text = error;
-                ButtonCopy.IsEnabled = true;
-                ButtonResume.IsEnabled = true;
-                ButtonStop.IsEnabled = true;
-            }));
+            ErrorBox.Text = e.ToString();
+            ButtonCopy.IsEnabled = true;
+            ButtonResume.IsEnabled = true;
+            ButtonStop.IsEnabled = true;
         }
 
         private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
