@@ -37,14 +37,14 @@ namespace VisualGGPK2
         {
             Closing -= OnClosing;
             DialogResult = true;
-            Close();
+            Close(); // This line will never reached
         }
 
         private void OnStopClick(object sender, RoutedEventArgs e)
         {
             Closing -= OnClosing;
             DialogResult = false;
-            Close();
+            Close(); // This line will never reached
         }
     }
 }
