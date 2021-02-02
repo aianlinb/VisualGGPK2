@@ -220,9 +220,14 @@ namespace VisualGGPK2
                                         f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
                                         buffer = f.ReadFileContent(ggpkContainer.fileStream);
                                     }
-                                    if (buffer[0] != 'D' || buffer[1] != 'D' || buffer[2] != 'S' || buffer[3] != ' ')
-                                        buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
-                                    var image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
+                                    Pfim.IImage image;
+                                    if (rtn.Name.EndsWith(".header"))
+                                        image = Pfim.Pfim.FromStream(new MemoryStream(buffer, 16, buffer.Length - 16));
+                                    else {
+                                        if (buffer[0] != 'D' || buffer[1] != 'D' || buffer[2] != 'S' || buffer[3] != ' ')
+                                            buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
+                                        image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
+                                    }
                                     image.Decompress();
                                     ImageView.Tag = rtn.Name;
                                     ImageView.Source = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,

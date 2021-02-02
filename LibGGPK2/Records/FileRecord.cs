@@ -261,6 +261,7 @@ namespace LibGGPK2.Records
                 case ".dat64":
                     return DataFormats.Dat;
                 case ".dds":
+                case ".header":
                     return DataFormats.TextureDds;
                 case ".jpg":
                 case ".png":
