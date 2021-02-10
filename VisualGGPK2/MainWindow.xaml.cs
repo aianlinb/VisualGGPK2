@@ -461,9 +461,25 @@ namespace VisualGGPK2
                 App.HandledException(ex);
             }
         }
+
+		private void FilterButton_Click(object sender, RoutedEventArgs e) {
+            Tree.Items.Clear();
+            ggpkContainer.FakeBundles2.Children.Clear();
+            foreach (var f in ggpkContainer.Index.Files)
+                if (f.path.Contains(FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
+            var root = CreateNode(ggpkContainer.rootDirectory);
+            Tree.Items.Add(root);
+            root.IsExpanded = true;
+        }
+
+		private void FilterBox_KeyDown(object sender, KeyEventArgs e) {
+            if (e.Key != Key.Enter) return;
+            FilterButton_Click(null, null);
+            e.Handled = true;
+        }
 	}
 
-    public static class GetTupleEnumerator {
+	public static class GetTupleEnumerator {
         public static IEnumerator<(object, object)> GetEnumerator(this (IEnumerable, IEnumerable) TupleEnumerable) => new TupleEnumerator(TupleEnumerable);
 
         public class TupleEnumerator : ITuple, IEnumerator<(object, object)> {

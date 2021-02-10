@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>aianlinb</Authors>
-    <Copyright>Copyright © 2020 aianlinb.</Copyright>
+    <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
     <AssemblyVersion>2.4.2.0</AssemblyVersion>
     <Platforms>x64</Platforms>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>

@@ -47,9 +47,11 @@ namespace LibGGPK2
                     throw new NotSupportedException("BundleMode and SteamMode cannot be both true");
                 Environment.CurrentDirectory = Directory.GetParent(path).FullName;
                 Index = new IndexContainer(path);
-                rootDirectory = FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), 0, 0, this);
-                foreach (var f in Index.Files)
-                    BuildBundleTree(f, rootDirectory);
+                if (BuildTree) {
+                    rootDirectory = FakeBundles2 = new BundleDirectoryNode("Bundles2", "", MurmurHash2Unsafe.Hash("bundles2", 0), 0, 0, this);
+                    foreach (var f in Index.Files)
+                        BuildBundleTree(f, rootDirectory);
+                }
                 return;
             }
 

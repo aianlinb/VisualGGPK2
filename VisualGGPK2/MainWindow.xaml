@@ -1,19 +1,35 @@
 ﻿<Window x:Class="VisualGGPK2.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="VisualGGPK2 v0.8.4" Width="960" Height="540" AllowDrop="True" Loaded="OnLoaded" DragEnter="OnDragEnter" Drop="OnDragDrop">
+        Title="VisualGGPK2 v0.8.5" Width="960" Height="560" AllowDrop="True" Loaded="OnLoaded" DragEnter="OnDragEnter" Drop="OnDragDrop">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="270" MinWidth="10"/>
+            <ColumnDefinition Width="280" MinWidth="10"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <TextBox x:Name="FilterBox"
+                 Height="30"
+                 Margin="0,0,72,0"
+                 FontSize="18"
+                 VerticalContentAlignment="Center"
+                 VerticalAlignment="Top"
+                 KeyDown="FilterBox_KeyDown"/>
+        <Button x:Name="FilterButton"
+                Content="Filter"
+                Width="70"
+                Height="30"
+                FontSize="16"
+                Margin="0,0,2,0"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Right"
+                Click="FilterButton_Click"/>
         <TreeView x:Name="Tree"
+                  Margin="0,30,2,0"
                   TreeViewItem.Expanded= "OnTreeExpanded"
                   PreviewMouseDown="OnTreePreviewMouseDown"
                   SelectedItemChanged="OnTreeSelectedChanged"
                   VirtualizingStackPanel.IsVirtualizing="True"
-                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                  Margin="0,0,2,0"/>
+                  VirtualizingStackPanel.VirtualizationMode="Recycling"/>
         <GridSplitter Width="2"/>
         <TextBlock Text="RecordOffset:" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,2,0,0"/>
         <TextBox x:Name="TextBoxOffset" IsReadOnly="True" Width="100" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="100,1,0,0"/>

@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <Authors>aianlinb</Authors>
-    <Copyright>Copyright © 2020 aianlinb.</Copyright>
-    <AssemblyVersion>0.8.3.0</AssemblyVersion>
+    <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
+    <AssemblyVersion>0.8.5.0</AssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

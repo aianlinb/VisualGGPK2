@@ -246,7 +246,6 @@ namespace LibGGPK2.Records
                 case ".ui": // User Interface
                 case ".xml":
                     return DataFormats.Unicode;
-                case ".ast":
                 case ".csv":
                 case ".filter": // Item/loot Filter
                 case ".fx": // Shader
