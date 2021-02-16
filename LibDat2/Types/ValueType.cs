@@ -46,7 +46,7 @@ namespace LibDat2.Types {
 			}
 		}
 
-		private ValueType(bool x64, object value) : base(x64) {
+		protected ValueType(bool x64, object value) : base(x64) {
 			base.Value = value;
 			Type = Value.GetType();
 		}

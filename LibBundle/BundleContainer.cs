@@ -67,7 +67,7 @@ namespace LibBundle {
         public BundleContainer(BinaryReader br) {
             Initialize(br);
         }
-        private void Initialize(BinaryReader br) {
+        protected virtual void Initialize(BinaryReader br) {
             offset = br.BaseStream.Position;
             uncompressed_size = br.ReadInt32();
             compressed_size = br.ReadInt32();

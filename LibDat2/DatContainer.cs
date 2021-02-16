@@ -13,7 +13,7 @@ namespace LibDat2 {
         /// <summary>
         /// Structure definition of dat files
         /// </summary>
-        private static JsonElement DatDefinitions = JsonDocument.Parse(File.ReadAllText("DatDefinitions.json"), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }).RootElement;
+        protected static JsonElement DatDefinitions = JsonDocument.Parse(File.ReadAllText("DatDefinitions.json"), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }).RootElement;
 
         /// <summary>
         /// Whether the file extension is .dat64
@@ -47,7 +47,7 @@ namespace LibDat2 {
         /// <summary>
         /// Offset of the data section in the dat file (Starts with 0xBBBBBBBBBBBBBBBB)
         /// </summary>
-        internal long DataSectionOffset { get; private set; }
+        public long DataSectionOffset { get; protected set; }
 
         public struct ErrorStruct {
             public Exception Exception;
@@ -60,7 +60,7 @@ namespace LibDat2 {
 
         public readonly ErrorStruct? FirstError;
 
-        private static FileStream tmp;
+        protected static FileStream tmp;
         /// <summary>
         /// Parses the dat file contents from a file
         /// </summary>
@@ -148,7 +148,7 @@ namespace LibDat2 {
         /// Haven't implemented yet.
         /// </summary>
         /// <exception cref="NotImplementedException">Always thrown</exception>
-        public byte[] Save() {
+        public virtual byte[] Save() {
             throw new NotImplementedException();
 		}
 

@@ -12,18 +12,18 @@
             InitializeComponent();
         }
 
-        public void NextProgress()
+        public virtual void NextProgress()
         {
             progress++;
             Dispatcher.BeginInvoke((System.Action)(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); }));
         }
 
-        private void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        protected virtual void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
         }
 
-        public new void Close()
+        public virtual new void Close()
         {
             Closing -= OnClosing;
             Dispatcher.Invoke(base.Close);

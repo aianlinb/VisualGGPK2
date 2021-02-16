@@ -16,7 +16,7 @@ namespace LibBundle.Records
         public int validSize;
         public readonly List<FileRecord> Files = new List<FileRecord>();
         internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new Dictionary<FileRecord, byte[]>();
-        private BundleContainer _bundle;
+        protected BundleContainer _bundle;
 
         public BundleContainer Bundle
         {
@@ -35,7 +35,7 @@ namespace LibBundle.Records
             UncompressedSize = br.ReadInt32();
         }
 
-        public void Read(BinaryReader br = null, long? Offset = null)
+        public virtual void Read(BinaryReader br = null, long? Offset = null)
         {
             if (_bundle != null) return;
             if (Offset.HasValue)
@@ -53,7 +53,7 @@ namespace LibBundle.Records
             }
         }
 
-        public void Save(string newPath = null, string originalPath = null)
+        public virtual void Save(string newPath = null, string originalPath = null)
         {
             if (newPath == null && originalPath == null && Bundle.path == null)
 #pragma warning disable CA2208 // 正確地將引數例外狀況具現化
@@ -75,7 +75,7 @@ namespace LibBundle.Records
                 File.WriteAllBytes(Bundle.path, Bundle.AppendAndSave(data, originalPath));
         }
 
-        public byte[] Save(BinaryReader br, long? Offset = null)
+        public virtual byte[] Save(BinaryReader br, long? Offset = null)
         {
             Read(br, Offset);
             var data = new MemoryStream();

@@ -10,6 +10,7 @@ using System.Dynamic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -183,7 +184,6 @@ namespace VisualGGPK2
                                 break;
                             case IFileRecord.DataFormats.Ascii:
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = "UTF8";
                                 TextView.Text = UTF8.GetString(f.ReadFileContent(ggpkContainer.fileStream));
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
@@ -192,7 +192,6 @@ namespace VisualGGPK2
                                 if (rtn.Parent.Name == "Bundles")
                                     goto case IFileRecord.DataFormats.Ascii;
                                 TextView.IsReadOnly = false;
-                                TextView.Tag = "Unicode";
                                 TextView.Text = Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream)).TrimStart('\xFEFF');
                                 TextView.Visibility = Visibility.Visible;
                                 ButtonSave.Visibility = Visibility.Visible;
@@ -430,12 +429,19 @@ namespace VisualGGPK2
         {
             if (Tree.SelectedItem is TreeViewItem tvi && tvi.Tag is IFileRecord fr)
             {
-                if ((string)TextView.Tag == "Unicode") {
-                    fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));
-                } else if ((string)TextView.Tag == "UTF8") {
-                    fr.ReplaceContent(UTF8.GetBytes(TextView.Text));
-                } else
-                    return; 
+                switch (fr.DataFormat) {
+                    case IFileRecord.DataFormats.Ascii:
+                        fr.ReplaceContent(UTF8.GetBytes(TextView.Text));
+                        break;
+                    case IFileRecord.DataFormats.Unicode:
+                        if (((RecordTreeNode)fr).GetPath().EndsWith(".amd"))
+                            fr.ReplaceContent(Unicode.GetBytes(TextView.Text));
+                        else
+                            fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));
+                        break;
+                    default:
+                        return;
+                }
                 MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -466,7 +472,7 @@ namespace VisualGGPK2
             Tree.Items.Clear();
             ggpkContainer.FakeBundles2.Children.Clear();
             foreach (var f in ggpkContainer.Index.Files)
-                if (f.path.Contains(FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
+                if (Regex.IsMatch(f.path, FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
             var root = CreateNode(ggpkContainer.rootDirectory);
             Tree.Items.Add(root);
             root.IsExpanded = true;

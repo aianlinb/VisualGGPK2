@@ -133,7 +133,7 @@ namespace LibGGPK2.Records
             throw new NotSupportedException("A virtual node of bundles cannot be written");
         }
 
-        public void UpdateCache(BundleRecord br) {
+        public virtual void UpdateCache(BundleRecord br) {
             Hash = BundleFileRecord.NameHash;
             Offset = BundleFileRecord.Offset;
             Length = BundleFileRecord.Size;
@@ -147,7 +147,7 @@ namespace LibGGPK2.Records
             }
         }
 
-        private DataFormats? _DataFormat = null;
+        protected DataFormats? _DataFormat = null;
         /// <summary>
         /// Content data format of this file
         /// </summary>

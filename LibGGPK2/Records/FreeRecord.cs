@@ -56,7 +56,7 @@ namespace LibGGPK2.Records
         /// Remove this FreeRecord from the Linked FreeRecord List
         /// </summary>
         /// <param name="node">Node in <see cref="GGPKContainer.LinkedFreeRecords"/> to remove</param>
-        public void Remove(LinkedListNode<FreeRecord> node = null)
+        public virtual void Remove(LinkedListNode<FreeRecord> node = null)
         {
             node ??= ggpkContainer.LinkedFreeRecords.Find(this);
             var previous = node.Previous?.Value;

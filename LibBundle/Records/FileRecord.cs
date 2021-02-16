@@ -23,7 +23,7 @@ namespace LibBundle.Records
             Size = br.ReadInt32();
         }
 
-        public byte[] Read(Stream stream = null)
+        public virtual byte[] Read(Stream stream = null)
         {
             if (bundleRecord.FileToAdd.TryGetValue(this, out var b)) return b;
             b = new byte[Size];
@@ -33,7 +33,7 @@ namespace LibBundle.Records
             return b;
         }
 
-        public void Move(BundleRecord target)
+        public virtual void Move(BundleRecord target)
         {
             if (bundleRecord.FileToAdd.TryGetValue(this, out var data))
                 bundleRecord.FileToAdd.Remove(this);
@@ -45,7 +45,7 @@ namespace LibBundle.Records
             BundleIndex = target.bundleIndex;
         }
 
-        public void Write(byte[] data)
+        public virtual void Write(byte[] data)
         {
             Size = data.Length;
             bundleRecord.FileToAdd[this] = data;

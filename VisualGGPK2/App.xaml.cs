@@ -19,7 +19,7 @@ namespace VisualGGPK2
             base.OnStartup(e);
         }
 
-        public void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        public static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             HandledException(e.Exception);
             e.Handled = true;

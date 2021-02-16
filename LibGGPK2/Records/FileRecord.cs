@@ -188,7 +188,7 @@ namespace LibGGPK2.Records
             throw new System.Exception(GetPath() + " updateOffset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
         }
 
-        private DataFormats? _DataFormat;
+        protected DataFormats? _DataFormat;
         /// <summary>
         /// Content data format of this file
         /// </summary>

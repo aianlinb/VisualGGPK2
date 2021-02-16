@@ -26,7 +26,7 @@ namespace LibGGPK2
         public readonly IndexContainer Index;
         public readonly FileRecord IndexRecord;
         public readonly LinkedList<FreeRecord> LinkedFreeRecords;
-        private readonly Dictionary<LibBundle.Records.BundleRecord, FileRecord> _RecordOfBundle;
+        protected readonly Dictionary<LibBundle.Records.BundleRecord, FileRecord> _RecordOfBundle;
 
         public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord) {
             if (_RecordOfBundle == null) return null;
@@ -96,7 +96,7 @@ namespace LibGGPK2
             _RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>(Index.Bundles.Length);
         }
 
-        public void BuildBundleTree(LibBundle.Records.FileRecord fr, RecordTreeNode parent)
+        public virtual void BuildBundleTree(LibBundle.Records.FileRecord fr, RecordTreeNode parent)
         {
             var SplittedPath = fr.path.Split('/');
             var path = "";
@@ -132,7 +132,7 @@ namespace LibGGPK2
         /// <summary>
         /// Read a record from GGPK at <paramref name="offset"/>
         /// </summary>
-        public BaseRecord GetRecord(long? offset = null)
+        public virtual BaseRecord GetRecord(long? offset = null)
         {
             if (offset.HasValue)
                 fileStream.Seek(offset.Value, SeekOrigin.Begin);
@@ -153,7 +153,7 @@ namespace LibGGPK2
         /// <summary>
         /// Find the record with a <paramref name="path"/>
         /// </summary>
-        public RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
+        public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
         {
             var SplittedPath = path.Split('/', '\\');
             parent ??= rootDirectory;
@@ -172,14 +172,14 @@ namespace LibGGPK2
         /// Currently isn't implemented.
         /// Throw a <see cref="NotImplementedException"/>.
         /// </summary>
-        public void Defragment()
+        public virtual void Defragment()
         {
             throw new NotImplementedException();
             //TODO
         }
 
 #pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
-		public void Dispose()
+        public virtual void Dispose()
 		{
             Writer.Flush();
             Writer.Close();
@@ -218,7 +218,7 @@ namespace LibGGPK2
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public virtual void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             var changed = false;
             var BundleToSave = Index?.GetSmallestBundle();
@@ -271,7 +271,7 @@ namespace LibGGPK2
         /// <param name="path">Path to save</param>
         /// <param name="list">File list</param>
         /// <param name="export">True for export False for replace</param>
-        /// <param name="regex">Regular Expression for filtering files</param>
+        /// <param name="regex">Regular Expression for filtering files by their path</param>
         public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> list, bool export, string regex = null)
         {
             if (record is IFileRecord fr)
@@ -282,6 +282,21 @@ namespace LibGGPK2
             else
                 foreach (var f in record.Children)
                     RecursiveFileList(f, path + "\\" + f.Name, list, export, regex);
+        }
+
+        /// <summary>
+        /// Get the file list to export
+        /// </summary>
+        /// <param name="record">File/Directory Record</param>
+        /// <param name="list">File list</param>
+        /// <param name="regex">Regular Expression for filtering files by their path</param>
+        public static void RecursiveFileList(RecordTreeNode record, ICollection<IFileRecord> list, string regex = null) {
+            if (record is IFileRecord fr) {
+                if (regex == null || Regex.IsMatch(record.GetPath(), regex))
+                    list.Add(fr);
+            } else
+                foreach (var f in record.Children)
+                    RecursiveFileList(f, list, regex);
         }
     }
 

@@ -16,7 +16,7 @@ namespace LibBundle
         public readonly HashSet<string> Paths = new HashSet<string>();
         public readonly byte[] directoryBundleData;
 
-        private static BinaryReader tmp;
+        protected static BinaryReader tmp;
         public IndexContainer(string path) : this(tmp = new BinaryReader(File.OpenRead(path)))
         {
             tmp.Close();
@@ -166,7 +166,7 @@ namespace LibBundle
             return BundleContainer.Save(bw.BaseStream);
         }
 
-        public BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
+        public virtual BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
         {
             Bundles ??= this.Bundles;
             var result = Bundles.ElementAt(0);
