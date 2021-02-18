@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace LibDat2 {
     public class DatContainer {
@@ -151,6 +152,31 @@ namespace LibDat2 {
         public virtual byte[] Save() {
             throw new NotImplementedException();
 		}
+
+        public virtual string ToCsv() {
+            var f = new StringBuilder();
+            var reg = new Regex("\n|\r|,", RegexOptions.Compiled);
+            foreach (var field in FieldDefinitions.Keys)
+                if (reg.IsMatch(field))
+                    f.Append("\"" + field + "\",");
+                else
+                    f.Append(field + ",");
+            f.Remove(f.Length - 1, 1);
+            f.AppendLine();
+            foreach (var row in FieldDatas) {
+                foreach (var col in row) {
+                    var s = col.Value.ToString();
+                    if (reg.IsMatch(s))
+                        f.Append("\"" + s + "\",");
+                    else
+                        f.Append(s + ",");
+                }
+                f.Remove(f.Length - 1, 1);
+                f.AppendLine();
+            }
+            f.Remove(f.Length - 2, 2);
+            return f.ToString();
+        }
 
         /// <summary>
         /// Get the length of records in the dat file

@@ -11,16 +11,16 @@ Rewrite of https://github.com/aianlinb/libggpk
 - No longer allow other programs to modify GGPK file when opening it.
 - Left click the folder to expand it.
 - Replacing by directory.
+- Filter files by their path.
+- Recovering files from patch server.
 - Vista style folder selector.
 - Export/Replace in background.
 - Fix DDS viewer.
 - Directly edit and save in TextViewer.
 - Custom exception window instead of crashing.
-- Port from .NET Framework to .NET Core
+- Port from .NET Framework to .NET Core.
 - Remove unnecessary code.
 
 # Working on . . .
-- Viewer of .dat .ogg .bank .bk2 etc..
-- Files Filter
-- Dat Editor
-- Recovering files from official patch server
+- Viewer of .ogg .bank .bk2 etc..
+- .dat Editing

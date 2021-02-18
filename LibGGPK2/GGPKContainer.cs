@@ -14,7 +14,7 @@ namespace LibGGPK2
     /// </summary>
     public class GGPKContainer : IDisposable
     {
-        public static readonly BundleSortComp BundleComparer = new();
+        public static readonly BundleSortComparer BundleComparer = new();
 
         public readonly FileStream fileStream;
         public readonly BinaryReader Reader;
@@ -28,6 +28,9 @@ namespace LibGGPK2
         public readonly LinkedList<FreeRecord> LinkedFreeRecords;
         protected readonly Dictionary<LibBundle.Records.BundleRecord, FileRecord> _RecordOfBundle;
 
+        /// <summary>
+        /// Get the FileRecord of a bundle
+        /// </summary>
         public FileRecord RecordOfBundle(LibBundle.Records.BundleRecord bundleRecord) {
             if (_RecordOfBundle == null) return null;
             if (!_RecordOfBundle.TryGetValue(bundleRecord, out var fr))
@@ -152,10 +155,12 @@ namespace LibGGPK2
 
         /// <summary>
         /// Find the record with a <paramref name="path"/>
+        /// <param name="path">Path in GGPK from <paramref name="parent"/></param>
+        /// <param name="parent">null for ROOT directory in GGPK</param>
         /// </summary>
         public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
         {
-            var SplittedPath = path.Split('/', '\\');
+            var SplittedPath = Regex.Replace(path, @"^ROOT(/|\\)", "").Split('/', '\\');
             parent ??= rootDirectory;
             foreach (var name in SplittedPath)
             {
@@ -178,14 +183,14 @@ namespace LibGGPK2
             //TODO
         }
 
-#pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
+#pragma warning disable CA1816 // Dispose should call SuppressFinalize
         public virtual void Dispose()
 		{
             Writer.Flush();
             Writer.Close();
             Reader.Close();
         }
-#pragma warning restore CA1816 // Dispose 方法應該呼叫 SuppressFinalize
+#pragma warning restore CA1816 // Dispose should call SuppressFinalize
 
         /// <summary>
         /// Export files synchronously
@@ -265,11 +270,11 @@ namespace LibGGPK2
         }
 
         /// <summary>
-        /// Get the file list to export
+        /// Get the file list under a node to export/replace
         /// </summary>
         /// <param name="record">File/Directory Record to export</param>
         /// <param name="path">Path to save</param>
-        /// <param name="list">File list</param>
+        /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="export">True for export False for replace</param>
         /// <param name="regex">Regular Expression for filtering files by their path</param>
         public static void RecursiveFileList(RecordTreeNode record, string path, ICollection<KeyValuePair<IFileRecord, string>> list, bool export, string regex = null)
@@ -277,7 +282,7 @@ namespace LibGGPK2
             if (record is IFileRecord fr)
             {
                 if ((export || File.Exists(path)) && (regex == null || Regex.IsMatch(record.GetPath(), regex)))
-                    list.Add(new KeyValuePair<IFileRecord, string>(fr, path));
+                    list.Add(new(fr, path));
             }
             else
                 foreach (var f in record.Children)
@@ -285,10 +290,10 @@ namespace LibGGPK2
         }
 
         /// <summary>
-        /// Get the file list to export
+        /// Get the file list under a node
         /// </summary>
         /// <param name="record">File/Directory Record</param>
-        /// <param name="list">File list</param>
+        /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="regex">Regular Expression for filtering files by their path</param>
         public static void RecursiveFileList(RecordTreeNode record, ICollection<IFileRecord> list, string regex = null) {
             if (record is IFileRecord fr) {
@@ -298,12 +303,28 @@ namespace LibGGPK2
                 foreach (var f in record.Children)
                     RecursiveFileList(f, list, regex);
         }
+
+        /// <summary>
+        /// Get the file list to replace from a folder on disk
+        /// </summary>
+        /// <param name="ROOTPath">"ROOT" folder on disk</param>
+        /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
+        /// <param name="searchPattern">Use to filter files in "ROOT" folder on disk</param>
+        /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
+        public void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
+            ROOTPath = Path.GetFullPath(ROOTPath);
+            var files = Directory.GetFiles(ROOTPath, searchPattern, SearchOption.AllDirectories);
+            foreach (var f in files) {
+                var fr = FindRecord(f[(ROOTPath.Length + 1)..]);
+                if (fr is IFileRecord ifr) list.Add(new(ifr, f));
+			}
+        }
     }
 
     /// <summary>
     /// Use to sort the files by their bundle.
     /// </summary>
-    public class BundleSortComp : IComparer<IFileRecord>
+    public class BundleSortComparer : IComparer<IFileRecord>
     {
         public virtual int Compare(IFileRecord x, IFileRecord y)
         {

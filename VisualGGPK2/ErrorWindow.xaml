@@ -1,10 +1,13 @@
 ﻿<Window x:Class="VisualGGPK2.ErrorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ErrorWindow" Width="520" Height="600" WindowStartupLocation="CenterScreen" Closing="OnClosing">
+        Title="ErrorWindow (v0.9.0)" Width="560" Height="500" WindowStartupLocation="CenterScreen" Closing="OnClosing">
     <Grid>
         <TextBox x:Name="ErrorBox" Text="Loading Exception . . ." IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,30" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
-        <TextBlock FontSize="14" HorizontalAlignment="Right" TextWrapping="Wrap" Text="Copyright © 2020 aianlinb." VerticalAlignment="Bottom" Margin="0,0,10,7"/>
+		<TextBlock FontSize="14"
+				   HorizontalAlignment="Right"
+				   TextWrapping="Wrap"
+				   Text="Copyright © 2020-2021 aianlinb." VerticalAlignment="Bottom" Margin="0,0,10,7"/>
         <Button x:Name="ButtonCopy" Content="CopyText" IsEnabled="False" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="70" Margin="10,0,0,6" Click="OnCopyClick"/>
         <Button x:Name="ButtonGitHub" Content="OpenGitHub" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="85" Margin="90,0,0,6" Click="OnGitHubClick"/>
         <Button x:Name="ButtonResume" Content="Resume" IsEnabled="False" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="60" Margin="190,0,0,6" Click="OnResumeClick"/>

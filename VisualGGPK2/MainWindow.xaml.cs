@@ -1,4 +1,6 @@
-﻿using LibDat2;
+﻿using LibBundle;
+using LibDat2;
+using LibDat2.Types;
 using LibGGPK2;
 using LibGGPK2.Records;
 using Microsoft.Win32;
@@ -8,6 +10,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,8 +40,10 @@ namespace VisualGGPK2
         public static readonly ContextMenu TreeMenu = new ContextMenu();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
+        public WebClient Web;
         public readonly bool BundleMode = false;
         public readonly bool SteamMode = false;
+        internal static byte SelectedVersion;
 
         public MainWindow() {
             var args = Environment.GetCommandLineArgs();
@@ -91,6 +98,9 @@ namespace VisualGGPK2
             TreeMenu.Items.Add(mi);
             mi = new MenuItem { Header = "Replace" };
             mi.Click += OnReplaceClicked;
+            TreeMenu.Items.Add(mi);
+            mi = new MenuItem { Header = "Recovery" };
+            mi.Click += OnRecoveryClicked;
             TreeMenu.Items.Add(mi);
 
             var imageMenu = new ContextMenu();
@@ -254,6 +264,7 @@ namespace VisualGGPK2
 
         DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
         private void ShowDatFile(DatContainer dat) {
+            DatTable.Tag = dat;
             DatTable.Columns.Clear();
             var eos = new List<ExpandoObject>(dat.FieldDefinitions.Count);
             for (var i = 0; i < dat.FieldDatas.Count; i++) {
@@ -302,13 +313,16 @@ namespace VisualGGPK2
         private void OnTreePreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.Source is not DependencyObject ui || ui is TreeView) return;
-            while (!(ui is TreeViewItem))
+
+            // Get Clicked TreeViewItem
+            while (ui is not TreeViewItem)
                 ui = VisualTreeHelper.GetParent(ui);
             var tvi = ui as TreeViewItem;
-            if (e.ChangedButton != MouseButton.Left) // Select when clicked
-                tvi.IsSelected = true;
-            else if ((tvi.Tag is DirectoryRecord || tvi.Tag is BundleDirectoryNode) && !(e.Source is TreeViewItem)) // Expand when left clicked
-                tvi.IsExpanded = true;
+
+            if (e.ChangedButton != MouseButton.Left)
+                tvi.IsSelected = true; // Select when clicked
+            else if (tvi.Tag is DirectoryRecord or BundleDirectoryNode && e.Source is not TreeViewItem) // Is Directory
+                tvi.IsExpanded = true; // Expand when left clicked (but not on arrow)
         }
 
         private void OnDragEnter(object sender, DragEventArgs e)
@@ -326,25 +340,23 @@ namespace VisualGGPK2
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (MessageBox.Show("Replace files?", "Replace Confirm",
-                MessageBoxButton.OKCancel, MessageBoxImage.Question, MessageBoxResult.Cancel) == MessageBoxResult.OK)
-            {
-                var list = new Collection<KeyValuePair<IFileRecord, string>>();
-                GGPKContainer.RecursiveFileList(ggpkContainer.rootDirectory, dropped[0], list, false);
-                var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
-                Task.Run(() => {
-                    try {
-                        ggpkContainer.Replace(list, bkg.NextProgress);
-                        Dispatcher.Invoke(() => {
-                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                            bkg.Close();
-                        });
-                    } catch (Exception ex) {
-                        App.HandledException(ex);
-                    }
-                });
-                bkg.ShowDialog();
-            }
+            var list = new Collection<KeyValuePair<IFileRecord, string>>();
+            ggpkContainer.GetFileList(dropped[0], list);
+
+            if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            var bkg = new BackgroundDialog { ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . ." };
+            Task.Run(() => {
+                try {
+                    ggpkContainer.Replace(list, bkg.NextProgress);
+                    Dispatcher.Invoke(() => {
+                        MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        bkg.Close();
+                    });
+                } catch (Exception ex) {
+                    App.HandledException(ex);
+                }
+            });
+            bkg.ShowDialog();
         }
 
         private void OnExportClicked(object sender, RoutedEventArgs e)
@@ -369,7 +381,7 @@ namespace VisualGGPK2
                         var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
                         var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
                         GGPKContainer.RecursiveFileList(rtn, path, list, true);
-                        var bkg = new BackgroundDialog { ProgressText = "Exported {0}/" + list.Count.ToString() + " Files . . ." };
+                        var bkg = new BackgroundDialog { ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . ." };
                         Task.Run(() => {
                             try {
                                 GGPKContainer.Export(list, bkg.NextProgress);
@@ -407,7 +419,7 @@ namespace VisualGGPK2
                     {
                         var list = new Collection<KeyValuePair<IFileRecord, string>>();
                         GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
-                        var bkg = new BackgroundDialog { ProgressText = "Replaced {0}/" + list.Count.ToString() + " Files . . ." };
+                        var bkg = new BackgroundDialog { ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . ." };
                         Task.Run(() => {
                             try {
                                 ggpkContainer.Replace(list, bkg.NextProgress);
@@ -436,6 +448,8 @@ namespace VisualGGPK2
                     case IFileRecord.DataFormats.Unicode:
                         if (((RecordTreeNode)fr).GetPath().EndsWith(".amd"))
                             fr.ReplaceContent(Unicode.GetBytes(TextView.Text));
+                        else if (((RecordTreeNode)fr).Parent.Name == "Bundles")
+                            goto case IFileRecord.DataFormats.Ascii;
                         else
                             fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));
                         break;
@@ -444,6 +458,76 @@ namespace VisualGGPK2
                 }
                 MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
+
+        private void OnRecoveryClicked(object sender, RoutedEventArgs e) {
+            if (new VersionSelector().ShowDialog() != true) return;
+            Web ??= new WebClient();
+            string PatchServer = null;
+            var indexUrl = SelectedVersion switch {
+                1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
+                2 => (PatchServer = GetPatchServer(true)) + "Bundles2/_.index.bin",
+                3 => "http://poesmoother.eu/owncloud/index.php/s/GKuEGtTyAsRueqC/download",
+                _ => null
+            };
+            var l = new List<IFileRecord>();
+            GGPKContainer.RecursiveFileList((RecordTreeNode)((TreeViewItem)Tree.SelectedItem).Tag, l);
+            BinaryReader br = null;
+            IndexContainer i = null;
+            if (l.Any((ifr) => ifr is BundleFileNode)) {
+                if (SelectedVersion == 3) {
+                    MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory !", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+				}
+                br = new BinaryReader(new MemoryStream(Web.DownloadData(indexUrl)));
+                i = new IndexContainer(br);
+            }
+
+            var bkg = new BackgroundDialog { ProgressText = "Recovering {0}/" + l.Count.ToString() + " Files . . ." };
+            Task.Run(() => {
+                try {
+                    foreach (var f in l) {
+                        if (f is BundleFileNode bfn) {
+                            var bfr = bfn.BundleFileRecord;
+                            var newbfr = i.FindFiles[bfr.NameHash];
+                            bfr.Offset = newbfr.Offset;
+                            bfr.Size = newbfr.Size;
+                            bfr.BundleIndex = newbfr.BundleIndex;
+                        } else {
+                            var fr = f as FileRecord;
+                            var path = Regex.Replace(fr.GetPath(), "^ROOT/", "");
+                            fr.ReplaceContent(Web.DownloadData(PatchServer + path));
+                        }
+                        bkg.NextProgress();
+                    }
+                    br?.Close();
+
+                    if (i != null)
+                        if (SteamMode)
+                            ggpkContainer.Index.Save("_.index.bin");
+                        else
+                            ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
+                    Dispatcher.Invoke(() => {
+                        MessageBox.Show("Recoveried " + l.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        bkg.Close();
+                    });
+                } catch (Exception ex) {
+                    App.HandledException(ex);
+                }
+            });
+            bkg.ShowDialog();
+		}
+
+		private static string GetPatchServer(bool garena = false) {
+            var tcp = new TcpClient() { NoDelay = true };
+            tcp.Connect(Dns.GetHostAddresses(garena ? "login.tw.pathofexile.com" : "us.login.pathofexile.com"), garena ? 12999 : 12995);
+            var tcs = tcp.GetStream();
+            tcs.Write(new byte[] { 1, 4 }, 0, 2);
+            var b = new byte[256];
+            tcs.Read(b, 0, 256);
+            tcs.Close();
+            tcp.Close();
+            return Encoding.Unicode.GetString(b, 35, b[34] * 2);
         }
 
         private void OnSavePngClicked(object sender, RoutedEventArgs e) {
@@ -460,12 +544,19 @@ namespace VisualGGPK2
         }
 
 		private void ReloadClick(object sender, RoutedEventArgs e) {
-            try {
-                DatContainer.ReloadDefinitions();
+            DatContainer.ReloadDefinitions();
                 OnTreeSelectedChanged(null, null);
-            } catch (Exception ex) {
-                App.HandledException(ex);
-            }
+        }
+
+		private void CSVClick(object sender, RoutedEventArgs e) {
+            var dat = DatTable.Tag as DatContainer;
+            var sfd = new SaveFileDialog() {
+                FileName = dat.DatName + ".csv",
+                DefaultExt = "csv"
+            };
+            if (sfd.ShowDialog() != true) return;
+            File.WriteAllText(sfd.FileName, dat.ToCsv());
+            MessageBox.Show($"Exported " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
 		private void FilterButton_Click(object sender, RoutedEventArgs e) {

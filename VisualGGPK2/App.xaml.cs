@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -16,6 +17,8 @@ namespace VisualGGPK2
             DispatcherUnhandledException += OnUnhandledException;
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             base.OnStartup(e);
         }
 
