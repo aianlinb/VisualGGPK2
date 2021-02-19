@@ -1,8 +1,5 @@
 ﻿namespace VisualGGPK2
 {
-    /// <summary>
-    /// When background working, show this dialog.
-    /// </summary>
     public partial class BackgroundDialog : System.Windows.Window
     {
         public int progress = 0;

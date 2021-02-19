@@ -223,12 +223,12 @@ namespace LibGGPK2.Records
                 case ".epk":
                 case ".et":
                 case ".ffx": // FFX Render
-                case ".fmt":
                 case ".fxgraph":
                 case ".gft":
                 case ".gt": // Ground Types
                 case ".idl":
                 case ".idt":
+                case ".json":
                 case ".mat": // Materials
                 case ".mtd":
                 case ".ot":
@@ -251,10 +251,8 @@ namespace LibGGPK2.Records
                 case ".fx": // Shader
                 case ".hlsl": // Shader
                 case ".mel": // Maya Embedded Language
-                case ".mtp":
                 case ".properties":
                 case ".slt":
-                case ".smd": // Skin Mesh Data
                     return DataFormats.Ascii;
                 case ".dat":
                 case ".dat64":
@@ -264,6 +262,7 @@ namespace LibGGPK2.Records
                     return DataFormats.TextureDds;
                 case ".jpg":
                 case ".png":
+                case ".bmp":
                     return DataFormats.Image;
                 case ".ogg":
                     return DataFormats.OGG;
@@ -271,6 +270,9 @@ namespace LibGGPK2.Records
                     return DataFormats.BK2;
                 case ".bank":
                     return DataFormats.BANK;
+                case ".fmt":
+                case ".mtp":
+                case ".smd": // Skin Mesh Data
                 default:
                     return DataFormats.Unknown;
             }

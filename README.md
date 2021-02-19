@@ -1,9 +1,12 @@
 # LibGGPK2
-Library for Content.ggpk of PathOfExile
+Library for Content.ggpk of game PathOfExile.
 
 Rewrite of https://github.com/aianlinb/libggpk
+## VisualGGPK2
+A visual program to view/edit ggpk file.
 
-# What's New?
+![image](https://github.com/aianlinb/LibGGPK2/blob/master/.github/example.png)
+## What's New?
 - Directly access the files in bundles.
 - No longer read all Records at the beginning.
 - The new file added will replace existing FreeRecord instead of being appended to the end of the GGPK.
@@ -20,7 +23,6 @@ Rewrite of https://github.com/aianlinb/libggpk
 - Custom exception window instead of crashing.
 - Port from .NET Framework to .NET Core.
 - Remove unnecessary code.
-
-# Working on . . .
+## Working on . . .
 - Viewer of .ogg .bank .bk2 etc..
 - .dat Editing

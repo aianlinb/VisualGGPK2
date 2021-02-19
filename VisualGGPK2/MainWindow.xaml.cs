@@ -223,20 +223,20 @@ namespace VisualGGPK2
                                 try
                                 {
                                     var buffer = f.ReadFileContent(ggpkContainer.fileStream);
+                                    if (rtn.Name.EndsWith(".header"))
+                                        buffer = buffer[16..];
                                     while (buffer[0] == '*')
                                     {
                                         var path = UTF8.GetString(buffer, 1, buffer.Length - 1);
                                         f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
                                         buffer = f.ReadFileContent(ggpkContainer.fileStream);
+                                        if (path.EndsWith(".header"))
+                                            buffer = buffer[16..];
                                     }
                                     Pfim.IImage image;
-                                    if (rtn.Name.EndsWith(".header"))
-                                        image = Pfim.Pfim.FromStream(new MemoryStream(buffer, 16, buffer.Length - 16));
-                                    else {
-                                        if (buffer[0] != 'D' || buffer[1] != 'D' || buffer[2] != 'S' || buffer[3] != ' ')
-                                            buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
-                                        image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
-                                    }
+                                    if (buffer[0] != 'D' || buffer[1] != 'D' || buffer[2] != 'S' || buffer[3] != ' ')
+                                        buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
+                                    image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
                                     image.Decompress();
                                     ImageView.Tag = rtn.Name;
                                     ImageView.Source = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
@@ -563,7 +563,7 @@ namespace VisualGGPK2
             Tree.Items.Clear();
             ggpkContainer.FakeBundles2.Children.Clear();
             foreach (var f in ggpkContainer.Index.Files)
-                if (Regex.IsMatch(f.path, FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
+                if (RegexCheckBox.IsChecked.Value && Regex.IsMatch(f.path, FilterBox.Text) || !RegexCheckBox.IsChecked.Value && f.path.Contains(FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
             var root = CreateNode(ggpkContainer.rootDirectory);
             Tree.Items.Add(root);
             root.IsExpanded = true;
