@@ -89,11 +89,11 @@ namespace LibGGPK2.Records
             var BundleToSave = BundleFileRecord.bundleRecord;
             BundleFileRecord.Write(NewContent);
             if (ggpkContainer.Reader == null) {
-                BundleToSave.Save();
+                BundleToSave.SaveWithRecompression();
                 ggpkContainer.Index.Save("_.index.bin");
                 UpdateCache(BundleToSave);
             } else {
-                var NewBundleData = BundleToSave.Save(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
+                var NewBundleData = BundleToSave.SaveWithRecompression(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
                 var fr = ggpkContainer.RecordOfBundle(BundleToSave);
                 fr.ReplaceContent(NewBundleData);
                 BundleToSave.Bundle.offset = fr.DataBegin;
