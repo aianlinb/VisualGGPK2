@@ -86,10 +86,8 @@ namespace LibGGPK2.Records
         /// <returns>Size of imported bytes</returns>
         public virtual void ReplaceContent(byte[] NewContent)
         {
-            var BundleToSave = ggpkContainer.Index.GetSmallestBundle();
+            var BundleToSave = BundleFileRecord.bundleRecord;
             BundleFileRecord.Write(NewContent);
-            if (BundleFileRecord.bundleRecord != BundleToSave)
-                BundleFileRecord.Move(BundleToSave);
             if (ggpkContainer.Reader == null) {
                 BundleToSave.Save();
                 ggpkContainer.Index.Save("_.index.bin");
