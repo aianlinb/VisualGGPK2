@@ -1,6 +1,5 @@
 ﻿using LibBundle;
 using LibDat2;
-using LibDat2.Types;
 using LibGGPK2;
 using LibGGPK2.Records;
 using Microsoft.Win32;
@@ -43,17 +42,22 @@ namespace VisualGGPK2
         public WebClient Web;
         public readonly bool BundleMode = false;
         public readonly bool SteamMode = false;
+        protected string FilePath;
         internal static byte SelectedVersion;
 
         public MainWindow() {
             var args = Environment.GetCommandLineArgs();
-            for (var i = 0; i < args.Length; i++)
+            for (var i = 1; i < args.Length; i++)
                 switch (args[i].ToLower()) {
                     case "-bundle":
                         BundleMode = true;
                         break;
                     case "-steam":
                         SteamMode = true;
+                        break;
+                    default:
+                        if (FilePath == null && File.Exists(args[i]))
+                            FilePath = args[i];
                         break;
                 }
             if (BundleMode && SteamMode) {
@@ -64,29 +68,33 @@ namespace VisualGGPK2
             InitializeComponent();
         }
 
-        private void OnLoaded(object sender, RoutedEventArgs e) {
-            var ofd = new OpenFileDialog {
-                DefaultExt = "ggpk",
-                FileName = SteamMode ? "_.index.bin" : "Content.ggpk",
-                Filter = SteamMode ? "Index Bundle File|*.index.bin" : "GGPK File|*.ggpk"
-            };
+        private async void OnLoaded(object sender, RoutedEventArgs e) {
+            if (FilePath == null) {
+                var ofd = new OpenFileDialog {
+                    DefaultExt = "ggpk",
+                    FileName = SteamMode ? "_.index.bin" : "Content.ggpk",
+                    Filter = SteamMode ? "Index Bundle File|*.index.bin" : "GGPK File|*.ggpk"
+                };
 
-            var setting = Properties.Settings.Default;
-            if (setting.GGPKPath == "") {
-                string path;
-                path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
-                if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
-                    ofd.InitialDirectory = path.TrimEnd('\\');
-            } else
-                ofd.InitialDirectory = setting.GGPKPath;
+                var setting = Properties.Settings.Default;
+                if (setting.GGPKPath == "") {
+                    string path;
+                    path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
+                    if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
+                        ofd.InitialDirectory = path.TrimEnd('\\');
+                } else
+                    ofd.InitialDirectory = setting.GGPKPath;
 
-            if (ofd.ShowDialog() == true) {
-                setting.GGPKPath = Directory.GetParent(ofd.FileName).FullName;
-                setting.Save();
-            } else {
-                Close();
-                return;
+                if (ofd.ShowDialog() == true) {
+                    setting.GGPKPath = Directory.GetParent(FilePath = ofd.FileName).FullName;
+                    setting.Save();
+                } else {
+                    Close();
+                    return;
+                }
             }
+
+            await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode)); // Initial GGPK
 
             var mi = new MenuItem { Header = "Export" }; // Initial ContextMenu
             mi.Click += OnExportClicked;
@@ -104,11 +112,12 @@ namespace VisualGGPK2
             imageMenu.Items.Add(mi);
             ImageView.ContextMenu = imageMenu;
 
-            ggpkContainer = new GGPKContainer(ofd.FileName, BundleMode, SteamMode); // Initial GGPK
             var root = CreateNode(ggpkContainer.rootDirectory);
             Tree.Items.Add(root); // Initial TreeView
             root.IsExpanded = true;
 
+            RegexCheckBox.IsEnabled = true;
+            FilterButton.IsEnabled = true;
             TextView.AppendText("\r\n\r\nDone!\r\n");
         }
 
@@ -335,12 +344,16 @@ namespace VisualGGPK2
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            var list = new Collection<KeyValuePair<IFileRecord, string>>();
-            ggpkContainer.GetFileList(dropped[0], list);
-            if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
-            var bkg = new BackgroundDialog { ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . ." };
+            var bkg = new BackgroundDialog();
             Task.Run(() => {
                 try {
+                    var list = new Collection<KeyValuePair<IFileRecord, string>>();
+                    ggpkContainer.GetFileList(dropped[0], list);
+                    if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
+                        Dispatcher.Invoke(bkg.Close);
+                        return;
+					}
+                    bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                     ggpkContainer.Replace(list, bkg.NextProgress);
                     Dispatcher.Invoke(() => {
                         MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -372,12 +385,13 @@ namespace VisualGGPK2
                     sfd.FileName = rtn.Name + ".dir";
                     if (sfd.ShowDialog() == true)
                     {
-                        var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
-                        var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
-                        GGPKContainer.RecursiveFileList(rtn, path, list, true);
-                        var bkg = new BackgroundDialog { ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . ." };
+                        var bkg = new BackgroundDialog();
                         Task.Run(() => {
                             try {
+                                var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
+                                var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
+                                GGPKContainer.RecursiveFileList(rtn, path, list, true);
+                                bkg.ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . .";
                                 GGPKContainer.Export(list, bkg.NextProgress);
                                 Dispatcher.Invoke(() => {
                                     MessageBox.Show("Exported " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -411,11 +425,12 @@ namespace VisualGGPK2
                     var ofd = new OpenFolderDialog();
                     if (ofd.ShowDialog() == true)
                     {
-                        var list = new Collection<KeyValuePair<IFileRecord, string>>();
-                        GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
-                        var bkg = new BackgroundDialog { ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . ." };
+                        var bkg = new BackgroundDialog();
                         Task.Run(() => {
                             try {
+                                var list = new Collection<KeyValuePair<IFileRecord, string>>();
+                                GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
+                                bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                                 ggpkContainer.Replace(list, bkg.NextProgress);
                                 Dispatcher.Invoke(() => {
                                     MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -456,30 +471,34 @@ namespace VisualGGPK2
 
         private void OnRecoveryClicked(object sender, RoutedEventArgs e) {
             if (new VersionSelector().ShowDialog() != true) return;
-            Web ??= new WebClient();
-            string PatchServer = null;
-            var indexUrl = SelectedVersion switch {
-                1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
-                2 => (PatchServer = GetPatchServer(true)) + "Bundles2/_.index.bin",
-                3 => "http://poesmoother.eu/owncloud/index.php/s/GKuEGtTyAsRueqC/download",
-                _ => null
-            };
-            var l = new List<IFileRecord>();
-            GGPKContainer.RecursiveFileList((RecordTreeNode)((TreeViewItem)Tree.SelectedItem).Tag, l);
-            BinaryReader br = null;
-            IndexContainer i = null;
-            if (l.Any((ifr) => ifr is BundleFileNode)) {
-                if (SelectedVersion == 3) {
-                    MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory !", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-				}
-                br = new BinaryReader(new MemoryStream(Web.DownloadData(indexUrl)));
-                i = new IndexContainer(br);
-            }
 
-            var bkg = new BackgroundDialog { ProgressText = "Recovering {0}/" + l.Count.ToString() + " Files . . ." };
+            var bkg = new BackgroundDialog();
             Task.Run(() => {
                 try {
+                    Web ??= new WebClient();
+                    string PatchServer = null;
+                    var indexUrl = SelectedVersion switch {
+                        1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
+                        2 => (PatchServer = GetPatchServer(true)) + "Bundles2/_.index.bin",
+                        3 => "http://poesmoother.eu/owncloud/index.php/s/GKuEGtTyAsRueqC/download",
+                        _ => null
+                    };
+                    var l = new List<IFileRecord>();
+                    GGPKContainer.RecursiveFileList((RecordTreeNode)((TreeViewItem)Tree.SelectedItem).Tag, l);
+                    bkg.ProgressText = "Recovering {0}/" + l.Count.ToString() + " Files . . .";
+
+                    BinaryReader br = null;
+                    IndexContainer i = null;
+                    if (l.Any((ifr) => ifr is BundleFileNode)) {
+                        if (SelectedVersion == 3) {
+                            MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory !", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
+                            Dispatcher.Invoke(bkg.Close);
+                            return;
+                        }
+                        br = new BinaryReader(new MemoryStream(Web.DownloadData(indexUrl)));
+                        i = new IndexContainer(br);
+                    }
+
                     foreach (var f in l) {
                         if (f is BundleFileNode bfn) {
                             var bfr = bfn.BundleFileRecord;
