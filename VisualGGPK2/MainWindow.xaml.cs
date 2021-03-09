@@ -77,11 +77,6 @@ namespace VisualGGPK2
                 path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
                 if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
                     ofd.InitialDirectory = path.TrimEnd('\\');
-                else {
-                    path = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node\Garena\PoE")?.GetValue("Path") as string;
-                    if (path != null && File.Exists(path + @"\Content.ggpk")) // Get Garena POE path
-                        ofd.InitialDirectory = path.TrimEnd('\\');
-                }
             } else
                 ofd.InitialDirectory = setting.GGPKPath;
 
@@ -199,7 +194,7 @@ namespace VisualGGPK2
                                 ButtonSave.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.Unicode:
-                                if (rtn.Parent.Name == "Bundles")
+                                if (rtn.Parent.Name == "Bundles" || rtn.Name == "minimap_colours.txt")
                                     goto case IFileRecord.DataFormats.Ascii;
                                 TextView.IsReadOnly = false;
                                 TextView.Text = Unicode.GetString(f.ReadFileContent(ggpkContainer.fileStream)).TrimStart('\xFEFF');
@@ -342,7 +337,6 @@ namespace VisualGGPK2
             }
             var list = new Collection<KeyValuePair<IFileRecord, string>>();
             ggpkContainer.GetFileList(dropped[0], list);
-
             if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
             var bkg = new BackgroundDialog { ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . ." };
             Task.Run(() => {

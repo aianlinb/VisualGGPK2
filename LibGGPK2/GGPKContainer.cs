@@ -312,7 +312,6 @@ namespace LibGGPK2
         /// <param name="searchPattern">Use to filter files in "ROOT" folder on disk</param>
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
         public void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
-            ROOTPath = Path.GetFullPath(ROOTPath);
             var files = Directory.GetFiles(ROOTPath, searchPattern, SearchOption.AllDirectories);
             foreach (var f in files) {
                 var fr = FindRecord(f[(ROOTPath.Length + 1)..]);

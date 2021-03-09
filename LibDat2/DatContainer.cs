@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -14,7 +15,7 @@ namespace LibDat2 {
         /// <summary>
         /// Structure definition of dat files
         /// </summary>
-        protected static JsonElement DatDefinitions = JsonDocument.Parse(File.ReadAllText("DatDefinitions.json"), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }).RootElement;
+        protected static JsonElement DatDefinitions = JsonDocument.Parse(File.ReadAllText(Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName + @"\DatDefinitions.json"), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }).RootElement;
 
         /// <summary>
         /// Whether the file extension is .dat64
