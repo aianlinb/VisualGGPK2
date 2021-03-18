@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -338,30 +339,53 @@ namespace VisualGGPK2
         {
             if (!e.Effects.HasFlag(DragDropEffects.Copy)) return; // Drop File/Folder
             var dropped = e.Data.GetData(DataFormats.FileDrop) as string[];
-            if (dropped.Length != 1 || Path.GetFileName(dropped[0]) != "ROOT")
+            string fileName;
+            if (dropped.Length != 1 || (fileName = Path.GetFileName(dropped[0])) != "ROOT" && !fileName.EndsWith(".zip"))
             {
-                MessageBox.Show("The dropped directory must be \"ROOT\"", "Replace Faild",
+                MessageBox.Show("You can only drop \"ROOT\" folder or a .zip file that contains it", "Replace Faild",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             var bkg = new BackgroundDialog();
-            Task.Run(() => {
-                try {
-                    var list = new Collection<KeyValuePair<IFileRecord, string>>();
-                    ggpkContainer.GetFileList(dropped[0], list);
-                    if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
-                        Dispatcher.Invoke(bkg.Close);
-                        return;
-					}
-                    bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
-                    ggpkContainer.Replace(list, bkg.NextProgress);
-                    Dispatcher.Invoke(() => {
-                        MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                        bkg.Close();
-                    });
-                } catch (Exception ex) {
-                    App.HandledException(ex);
-                }
+            if (fileName.EndsWith(".zip"))
+                Task.Run(() => {
+                    try {
+                        var f = ZipFile.OpenRead(dropped[0]);
+                        var es = f.Entries;
+                        var list = new List<KeyValuePair<IFileRecord, ZipArchiveEntry>>(es.Count);
+                        ggpkContainer.GetFileListFromZip(es, list);
+                        if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
+                            Dispatcher.Invoke(bkg.Close);
+                            return;
+                        }
+                        bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
+                        ggpkContainer.Replace(list, bkg.NextProgress);
+                        Dispatcher.Invoke(() => {
+                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                            bkg.Close();
+                        });
+                    } catch (Exception ex) {
+                        App.HandledException(ex);
+                    }
+                });
+            else
+                Task.Run(() => {
+                    try {
+                        var list = new Collection<KeyValuePair<IFileRecord, string>>();
+                        ggpkContainer.GetFileList(dropped[0], list);
+                        if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
+                            Dispatcher.Invoke(bkg.Close);
+                            return;
+					    }
+                        bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
+                        ggpkContainer.Replace(list, bkg.NextProgress);
+                        Dispatcher.Invoke(() => {
+                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                            bkg.Close();
+                        });
+                    } catch (Exception ex) {
+                        App.HandledException(ex);
+                    }
             });
             bkg.ShowDialog();
         }
@@ -388,7 +412,7 @@ namespace VisualGGPK2
                         var bkg = new BackgroundDialog();
                         Task.Run(() => {
                             try {
-                                var list = new SortedDictionary<IFileRecord, string>(GGPKContainer.BundleComparer);
+                                var list = new SortedDictionary<IFileRecord, string>(BundleSortComparer.Instance);
                                 var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
                                 GGPKContainer.RecursiveFileList(rtn, path, list, true);
                                 bkg.ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . .";

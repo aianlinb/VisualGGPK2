@@ -3,6 +3,7 @@ using LibGGPK2.Records;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -14,8 +15,6 @@ namespace LibGGPK2
     /// </summary>
     public class GGPKContainer : IDisposable
     {
-        public static readonly BundleSortComparer BundleComparer = new();
-
         public readonly FileStream fileStream;
         public readonly BinaryReader Reader;
         public readonly BinaryWriter Writer;
@@ -193,7 +192,7 @@ namespace LibGGPK2
 #pragma warning restore CA1816 // Dispose should call SuppressFinalize
 
         /// <summary>
-        /// Export files synchronously
+        /// Export files
         /// </summary>
         /// <param name="list">File list to export. (generate by <see cref="RecursiveFileList"/>)
         /// The list must be sort by thier bundle to speed up exportation.</param>
@@ -202,34 +201,34 @@ namespace LibGGPK2
         {
             LibBundle.Records.BundleRecord br = null;
             MemoryStream ms = null;
-            foreach (var record in list) {
-                Directory.CreateDirectory(Directory.GetParent(record.Value).FullName);
-                if (record.Key is BundleFileNode bfn) {
+            foreach (var (record, path) in list) {
+                Directory.CreateDirectory(Directory.GetParent(path).FullName);
+                if (record is BundleFileNode bfn) {
                     if (br != bfn.BundleFileRecord.bundleRecord) {
                         ms?.Close();
                         br = bfn.BundleFileRecord.bundleRecord;
                         br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
                         ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
                     }
-                    File.WriteAllBytes(record.Value, bfn.BatchReadFileContent(ms));
+                    File.WriteAllBytes(path, bfn.BatchReadFileContent(ms));
                 } else
-                    File.WriteAllBytes(record.Value, record.Key.ReadFileContent());
+                    File.WriteAllBytes(path, record.ReadFileContent());
                 ProgressStep?.Invoke();
             }
         }
 
         /// <summary>
-        /// Replace files synchronously
+        /// Replace files
         /// </summary>
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        public virtual void Replace(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
+        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
             var changed = false;
             var BundleToSave = Index?.GetSmallestBundle();
             var fr = RecordOfBundle(BundleToSave);
             var SavedSize = 0;
-            foreach (var record in list) {
+            foreach (var (record, path) in list) {
                 if (SavedSize > 50000000) // 50MB per bundle
                 {
                     changed = true;
@@ -244,10 +243,64 @@ namespace LibGGPK2
                     fr = RecordOfBundle(BundleToSave);
                     SavedSize = 0;
                 }
-                if (record.Key is BundleFileNode bfn) // In Bundle
-                    SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(record.Value), BundleToSave);
+                if (record is BundleFileNode bfn) // In Bundle
+                    SavedSize += bfn.BatchReplaceContent(File.ReadAllBytes(path), BundleToSave);
                 else // In GGPK
-                    record.Key.ReplaceContent(File.ReadAllBytes(record.Value));
+                    record.ReplaceContent(File.ReadAllBytes(path));
+                ProgressStep();
+            }
+            if (BundleToSave != null && SavedSize > 0) {
+                changed = true;
+                if (fr == null) {
+                    BundleToSave.Save();
+                } else {
+                    fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                    BundleToSave.Bundle.offset = fr.DataBegin;
+                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                }
+            }
+
+            // Save Index
+            if (changed)
+                if (fr == null)
+                    Index.Save("_.index.bin");
+                else
+                    IndexRecord.ReplaceContent(Index.Save());
+        }
+
+        /// <summary>
+        /// Replace files with .zip
+        /// </summary>
+        /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
+        /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
+        public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, Action ProgressStep = null) {
+            var changed = false;
+            var BundleToSave = Index?.GetSmallestBundle();
+            var fr = RecordOfBundle(BundleToSave);
+            var SavedSize = 0;
+            foreach (var (record, zipped) in list) {
+                if (SavedSize > 50000000) // 50MB per bundle
+                {
+                    changed = true;
+                    if (fr == null) {
+                        BundleToSave.Save();
+                    } else {
+                        fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
+                        BundleToSave.Bundle.offset = fr.DataBegin;
+                        BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                    }
+                    BundleToSave = Index.GetSmallestBundle();
+                    fr = RecordOfBundle(BundleToSave);
+                    SavedSize = 0;
+                }
+                var s = zipped.Open();
+                var b = new byte[zipped.Length];
+                s.Read(b, 0, b.Length);
+                s.Close();
+                if (record is BundleFileNode bfn) // In Bundle
+                    SavedSize += bfn.BatchReplaceContent(b, BundleToSave);
+                else // In GGPK
+                    record.ReplaceContent(b);
                 ProgressStep();
             }
             if (BundleToSave != null && SavedSize > 0) {
@@ -311,11 +364,26 @@ namespace LibGGPK2
         /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="searchPattern">Use to filter files in "ROOT" folder on disk</param>
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
-        public void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
+        public virtual void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
             var files = Directory.GetFiles(ROOTPath, searchPattern, SearchOption.AllDirectories);
             foreach (var f in files) {
-                var fr = FindRecord(f[(ROOTPath.Length + 1)..]);
-                if (fr is IFileRecord ifr) list.Add(new(ifr, f));
+                var path = f[(ROOTPath.Length + 1)..];
+                if ((regex == null || Regex.IsMatch(path, regex)) && FindRecord(path) is IFileRecord ifr)
+                    list.Add(new(ifr, f));
+			}
+        }
+
+        /// <summary>
+        /// Get the file list to replace from a .zip on disk
+        /// </summary>
+        /// <param name="ZipEntries">ZipArchiveEntries to read/></param>
+        /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
+        /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
+        public virtual void GetFileListFromZip(ICollection<ZipArchiveEntry> ZipEntries, ICollection<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, string regex = null) {
+            foreach (var zae in ZipEntries) {
+                var path = zae.FullName[5..];
+                if ((regex == null || Regex.IsMatch(path, regex)) &&  FindRecord(path) is IFileRecord ifr)
+                    list.Add(new(ifr, zae));
 			}
         }
     }
@@ -325,6 +393,7 @@ namespace LibGGPK2
     /// </summary>
     public class BundleSortComparer : IComparer<IFileRecord>
     {
+        public static readonly BundleSortComparer Instance = new();
         public virtual int Compare(IFileRecord x, IFileRecord y)
         {
             // In GGPK
