@@ -124,7 +124,7 @@ namespace LibBundle {
 
         public virtual byte[] AppendAndSave(Stream newData, string originalPath = null) {
             offset = 0;
-            return AppendAndSave(newData, File.Open(path ?? this.path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+            return AppendAndSave(newData, File.Open(originalPath ?? path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
         }
 
         public virtual byte[] AppendAndSave(Stream newData, Stream originalData) {
@@ -204,7 +204,7 @@ namespace LibBundle {
 
         // Packing
         public virtual void Save(Stream newData, string savePath) {
-            var bw = new BinaryWriter(File.OpenWrite(path ?? this.path));
+            var bw = new BinaryWriter(File.OpenWrite(savePath ?? path));
 
             uncompressed_size = (int)(size_decompressed = newData.Length);
             entry_count = uncompressed_size / chunk_size;

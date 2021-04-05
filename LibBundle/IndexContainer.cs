@@ -31,7 +31,7 @@ namespace LibBundle
 
             var bundleCount = databr.ReadInt32();
             Bundles = new BundleRecord[bundleCount];
-            for (int i = 0; i < bundleCount; i++)
+            for (var i = 0; i < bundleCount; i++)
                 Bundles[i] = new BundleRecord(databr) { bundleIndex = i };
 
             var fileCount = databr.ReadInt32();

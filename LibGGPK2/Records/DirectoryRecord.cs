@@ -87,8 +87,7 @@ namespace LibGGPK2.Records
 
         internal override void Write(BinaryWriter bw = null)
         {
-            if (bw == null)
-                bw = ggpkContainer.Writer;
+            bw ??= ggpkContainer.Writer;
             Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
