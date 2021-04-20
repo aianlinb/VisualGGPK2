@@ -7,8 +7,7 @@ namespace LibDat2.Types {
 
 		public virtual new T Value { get => (T)base.Value; set => base.Value = value; }
 
-		public ValueType(bool x64, BinaryReader Reader) : base(x64) {
-			Type = typeof(T);
+		public ValueType(bool x64, BinaryReader Reader, bool UTF32 = false) : base(x64) {
 			switch (default(T)) {
 				case bool:
 					base.Value = Reader.ReadBoolean();
@@ -35,20 +34,24 @@ namespace LibDat2.Types {
 					base.Value = Reader.ReadUInt64();
 					break;
 				case null:
-					if (Reader.BaseStream.Position == Reader.BaseStream.Length) break;
-					var sb = new StringBuilder();
-					char ch;
-					while ((ch = Reader.ReadChar()) != 0) { sb.Append(ch); }
-					if (Reader.ReadChar() != 0)    // string should end with \0
-						throw new Exception("Not found \\0 at the end of the string");
-					base.Value = sb.ToString();
+					base.Value = ReadString(Reader, UTF32);
 					break;
 			}
 		}
 
+		public static string ReadString(BinaryReader reader, bool UTF32) {
+			if (reader.BaseStream.Position == reader.BaseStream.Length)
+				return null;
+			var sb = new StringBuilder();
+			char ch;
+			while ((ch = reader.ReadChar()) != 0) { sb.Append(ch); }
+			if (!(UTF32 || reader.ReadChar() == 0))  // string should end with 4 bytes of zero
+				throw new Exception("Not found \\0 at the end of the string");
+			return sb.ToString();
+		}
+
 		protected ValueType(bool x64, object value) : base(x64) {
 			base.Value = value;
-			Type = Value.GetType();
 		}
 
 		public static FieldType FromValue(bool x64, object value) {

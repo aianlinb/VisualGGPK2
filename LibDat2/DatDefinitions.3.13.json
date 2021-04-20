@@ -102,22 +102,7 @@
 		"Flag4": "bool",
 		"AIFile": "ref|string",
 		"Unknown2": "ref|key",
-		"Unknown3": "ref|string",
-		"Flag5": "bool",
-		"Flag6": "bool"
-	},
-	"Acts": {
-		"Act": "ref|string",
-		"Part": "int",
-		"Unknown3": "ref|string",
-		"Unknown4": "int",
-		"Unknown5": "int",
-		"UIImagePath": "ref|string",
-		"UIImagePath2": "ref|string",
-		"Unknown8": "int",
-		"Unknown9": "bool",
-		"Unknown10": "int",
-		"Unknown11": "int"
+		"Unknown3": "ref|key"
 	},
 	"AddBuffToTargetVarieties": {
 		"Key0": "ref|foreignkey",
@@ -295,10 +280,10 @@
 		"Id": "ref|string",
 		"Flag0": "bool",
 		"Flag1": "bool",
+		"IntId": "int",
 		"Flag2": "bool",
 		"Mainhand_AnimationKey": "ref|string",
-		"Offhand_AnimationKey": "ref|string",
-		"Flag3": "bool"
+		"Offhand_AnimationKey": "ref|string"
 	},
 	"ApplyDamageFunctions": {
 		"Id": "ref|string",
@@ -450,8 +435,7 @@
 		"Unknown13": "int",
 		"Unknown14": "int",
 		"Unknown15": "int",
-		"Unknown16": "ref|foreignkey",
-		"Unknown17": "ref|foreignkey"
+		"Unknown16": "ref|foreignkey"
 	},
 	"AtlasFog": {
 		"Unknown0": "int",
@@ -478,6 +462,7 @@
 		"ItemVisualIdentityKey": "ref|foreignkey",
 		"Flag0": "byte",
 		"MapsKey": "ref|foreignkey",
+		"Unknown3": "int",
 		"FlavourTextKey": "ref|foreignkey",
 		"AtlasRegionsKey": "ref|foreignkey",
 		"AtlasNodeKeys0": "ref|list|ref|key",
@@ -538,16 +523,15 @@
 		"Unknown0": "int",
 		"Key1": "ref|key",
 		"Key2": "ref|key",
-		"Unknown1": "float",
-		"Unknown2": "float",
+		"Unknown1": "int",
+		"Unknown2": "int",
 		"Unknown3": "ref|key",
 		"Unknown4": "ref|key",
-		"Citadel": "ref|string",
+		"Unknown5": "ref|key",
 		"Unknown6": "int",
-		"bk2Path": "ref|string",
+		"Unknown7": "ref|key",
 		"Unknown8": "int",
-		"Unknown9": "ref|foreignkey",
-		"Unknown10": "ref|foreignkey"
+		"Unknown9": "ref|foreignkey"
 	},
 	"AtlasRegionUpgradeRegions": {
 		"Unknown1": "ref|foreignkey",
@@ -610,7 +594,7 @@
 		"MagicPurchase_Costs": "ref|list|int",
 		"TagsKeys": "ref|list|ref|foreignkey",
 		"ModDomainsKey": "int",
-		"IsDropDisabled": "bool",
+		"Flag0": "bool",
 		"ItemVisualIdentityKey": "ref|foreignkey",
 		"UnknownUnique": "uint",
 		"VendorRecipe_AchievementItemsKeys": "ref|list|ref|foreignkey",
@@ -626,7 +610,6 @@
 		"IdentifyMagic_AchievementItemsKeys": "ref|list|ref|foreignkey",
 		"FragmentBaseItemTypesKey": "ref|key",
 		"IsBlessing": "bool",
-		"ItemShopTypeKey": "ref|foreignkey",
 		"Key0": "ref|foreignkey",
 		"Key1": "ref|foreignkey"
 	},
@@ -715,8 +698,7 @@
 		"Flag0": "bool",
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
 		"Flag1": "bool",
-		"Unknown1": "int",
-		"Unknown2": "int"
+		"Unknown1": "int"
 	},
 	"BetrayalChoiceActions": {
 		"Id": "ref|string",
@@ -763,11 +745,9 @@
 		"Unknown0": "int",
 		"Unknown1": "int",
 		"Key1": "ref|foreignkey",
-		"Completion_AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"OpenChests_AchievementItemsKey1": "ref|key",
-		"OpenChests_AchievementItemsKey2": "ref|string",
-		"MissionCompletion_AcheivementItemsKey1": "ref|key",
-		"MissionCompletion_AcheivementItemsKey2": "ref|string"
+		"Completion_AchievementItemsKey": "ref|foreignkey",
+		"OpenChests_AchievementItemsKey": "ref|foreignkey",
+		"MissionCompletion_AcheivementItemsKey": "ref|foreignkey"
 	},
 	"BetrayalRanks": {
 		"Id": "ref|string",
@@ -805,8 +785,7 @@
 		"Level3_AchievementItemsKey": "ref|foreignkey",
 		"Unknown1": "int",
 		"Unknown2": "int",
-		"Unknown3": "int",
-		"Unknown4": "ref|foreignkey"
+		"Unknown3": "int"
 	},
 	"BetrayalTraitorRewards": {
 		"BetrayalJobsKey": "ref|foreignkey",
@@ -864,8 +843,7 @@
 	"BlightCraftingItems": {
 		"BaseItemTypesKey": "ref|foreignkey",
 		"Tier": "int",
-		"AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"Unknown": "bool"
+		"AchievementItemsKeys": "ref|list|ref|foreignkey"
 	},
 	"BlightCraftingRecipes": {
 		"Id": "ref|string",
@@ -913,10 +891,9 @@
 		"Unknown5": "int",
 		"Unknown6": "int",
 		"Unknown7": "int",
-		"Unknown9": "bool",
-		"Unknown10": "bool",
-		"Unknown11": "bool",
-		"Unknown12": "bool"
+		"Unknown9": "byte",
+		"Unknown10": "byte",
+		"Unknown11": "byte"
 	},
 	"BlightTopologies": {
 		"Id": "ref|string",
@@ -953,14 +930,11 @@
 		"Name": "ref|string",
 		"Description": "ref|string",
 		"Icon": "ref|string",
-		"Unknown4": "ref|list|ref|key",
-		"Unknown5": "byte",
-		"Unknown6": "byte",
-		"Unknown7": "byte",
-		"Unknown8": "byte",
+		"Unknown4": "ref|list|int",
+		"Unknown5": "int",
 		"Tier": "ref|string",
 		"Radius": "int",
-		"Unknown9": "int",
+		"Unknown8": "int",
 		"SpendResourceAchievementItemsKey": "ref|foreignkey",
 		"StatsKey": "ref|foreignkey",
 		"StatsKeys": "ref|list|ref|foreignkey",
@@ -995,9 +969,7 @@
 		"Key2": "ref|foreignkey",
 		"PETFile7": "ref|string",
 		"PETFile8": "ref|string",
-		"PETFile9": "ref|string",
-		"Key3": "ref|foreignkey",
-		"Key4": "ref|foreignkey"
+		"PETFile9": "ref|string"
 	},
 	"Bloodlines": {
 		"Id": "ref|string",
@@ -1031,8 +1003,7 @@
 		"BaseItemTypesKey0": "ref|foreignkey",
 		"BaseItemTypesKey1": "ref|foreignkey",
 		"BaseItemTypesKey2": "ref|foreignkey",
-		"BaseItemTypesKey3": "ref|foreignkey",
-		"BaseItemTypesKey4": "ref|foreignkey"
+		"BaseItemTypesKey3": "ref|foreignkey"
 	},
 	"BuffCategories": {},
 	"BuffDefinitions": {
@@ -1082,18 +1053,6 @@
 	"BuffGroups": {},
 	"BuffMergeModes": {},
 	"BuffStackUIModes": {},
-	"BuffTemplates": {
-		"Id": "ref|string",
-		"Unknown1": "ref|foreignkey",
-		"Unknown2": "ref|list|int",
-		"Unknown3": "int",
-		"Unknown4": "ref|list|int",
-		"Unknown5": "ref|list|int",
-		"Unknown6": "ref|foreignkey",
-		"Unknown7": "int",
-		"Unknown8": "byte",
-		"Unknown9": "ref|list|ref|foreignkey"
-	},
 	"BuffVisualOrbArt": {
 		"Id": "ref|string",
 		"Key0": "ref|foreignkey",
@@ -1161,8 +1120,7 @@
 		"Scion_CharacterTextAudioKeys": "ref|list|ref|foreignkey",
 		"Goddess_CharacterTextAudioKeys": "ref|list|ref|foreignkey",
 		"JackTheAxe_CharacterTextAudioKeys": "ref|list|ref|foreignkey",
-		"Flag0": "bool",
-		"Flag1": "bool"
+		"Flag0": "bool"
 	},
 	"CharacterPanelDescriptionModes": {
 		"Id": "ref|string",
@@ -1353,11 +1311,6 @@
 	},
 	"CooldownBypassTypes": {},
 	"CooldownGroups": {},
-	"CostTypes": {
-		"Id": "ref|string",
-		"Unknown": "ref|foreignkey",
-		"Text": "ref|string"
-	},
 	"CraftingBenchCustomActions": {},
 	"CraftingBenchOptions": {
 		"HideoutNPCsKey": "ref|foreignkey",
@@ -1391,8 +1344,7 @@
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
 		"Unknown0": "int",
 		"Unknown1": "int",
-		"Flag0": "bool",
-		"Unknown2": "ref|foreignkey"
+		"Flag0": "bool"
 	},
 	"CraftingBenchUnlockCategories": {
 		"Id": "ref|string",
@@ -1428,9 +1380,7 @@
 		"Key0": "ref|foreignkey",
 		"Key": "ref|foreignkey",
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
-		"Key1": "ref|key",
-		"Description2": "ref|string"
+		"Keys1": "ref|list|ref|foreignkey"
 	},
 	"CurrencyStashTabLayout": {
 		"Id": "ref|string",
@@ -1455,31 +1405,15 @@
 		"Key1": "ref|foreignkey",
 		"Unknown2": "int"
 	},
-	"DaemonSpawningData": {
-		"Id": "ref|string",
-		"Unknown1": "ref|list|ref|foreignkey",
-		"Unknown2": "int",
-		"Unknown3": "bool",
-		"Unknown4": "int",
-		"Unknown5": "int",
-		"Unknown6": "bool",
-		"Unknown7": "bool",
-		"Unknown8": "bool"
-	},
 	"DamageHitEffects": {
-		"RowID": "int",
+		"Unknown0": "int",
 		"Unknown1": "int",
 		"Keys0": "ref|list|ref|foreignkey",
 		"Unknown3": "int",
 		"Unknown4": "int",
 		"Unknown5": "ref|list|ref|string",
-		"Unknown6": "ref|list|ref|string",
-		"Key0": "ref|foreignkey",
-		"Key1": "int",
-		"Key2": "ref|key",
-		"Key3": "ref|key"
+		"Unknown6": "ref|list|ref|string"
 	},
-	"DamageHitTypes": {},
 	"DamageParticleEffectTypes": {},
 	"DamageParticleEffects": {
 		"DamageParticleEffectTypes": "int",
@@ -1705,13 +1639,6 @@
 		"AreaLevel": "int",
 		"Sulphite": "int"
 	},
-	"DelveRewardTierConstants": {
-		"Unknown1": "int",
-		"Unknown2": "int",
-		"Unknown3": "int",
-		"Unknown4": "int",
-		"Unknown5": "int"
-	},
 	"DelveRooms": {
 		"DelveBiomesKey": "ref|foreignkey",
 		"DelveFeaturesKey": "ref|foreignkey",
@@ -1811,10 +1738,7 @@
 		"Flag8": "byte",
 		"Unknown16": "int",
 		"Flag9": "byte",
-		"Flag10": "byte",
-		"Unknown17": "int",
-		"Unknown18": "int",
-		"Unknown19": "int"
+		"Flag10": "byte"
 	},
 	"Effectiveness": {},
 	"EffectivenessCostConstants": {
@@ -2101,9 +2025,7 @@
 		"Order": "int",
 		"SizeX": "int",
 		"SizeY": "int",
-		"Unknown0": "byte",
-		"Unknown1": "int",
-		"Unknown2": "int"
+		"Unknown0": "byte"
 	},
 	"GameConstants": {
 		"Id": "ref|string",
@@ -2161,16 +2083,15 @@
 		"Flag8": "bool",
 		"Flag9": "bool",
 		"Key2": "ref|foreignkey",
-		"Flag10": "bool",
-		"Unknown40": "ref|list|int",
-		"Flag15": "bool",
-		"Flag16": "bool",
+		"Flag10": "byte",
+		"Unknown40": "ref|list|ref|foreignkey",
+		"Flag15": "byte",
+		"Flag16": "byte",
 		"Key3": "ref|foreignkey",
-		"Flag17": "bool",
+		"Flag17": "byte",
 		"Unknown41": "ref|key",
 		"Unknown42": "ref|key",
-		"Unknown43": "bool",
-		"Unknown44": "bool"
+		"Unknown43": "byte"
 	},
 	"GeometryChannel": {
 		"Id": "ref|string",
@@ -2236,8 +2157,7 @@
 		"Flag2": "byte",
 		"Unknown20": "int",
 		"Unknown21": "int",
-		"Key2": "ref|key",
-		"Key3": "ref|key",
+		"Keys": "ref|list|ref|foreignkey",
 		"Unknown23": "int",
 		"Flag3": "byte",
 		"Unknown24": "int",
@@ -2246,19 +2166,14 @@
 		"Unknown25": "int",
 		"Flag6": "byte",
 		"Flag7": "byte",
-		"Key4": "ref|foreignkey",
+		"Key2": "ref|foreignkey",
 		"Flag8": "byte",
 		"Unknown26": "int",
 		"Unknown27": "int",
-		"Flag9": "byte",
-		"Flag10": "byte",
-		"Unknown28": "ref|key",
-		"Unknown29": "ref|ref|foreignkey",
-		"Unknown30": "ref|key",
-		"Unknown31": "ref|ref|foreignkey",
-		"Unknown34": "int",
-		"Unknown35": "int",
-		"Unknown36": "int"
+		"Unknown28": "ref|foreignkey",
+		"Unknown30": "ref|foreignkey",
+		"Unknown32": "byte",
+		"Unknown33": "byte"
 	},
 	"GiftWrapArtVariations": {
 		"Unknown1": "int",
@@ -2352,9 +2267,9 @@
 		"DamageEffectiveness": "int",
 		"StoredUses": "int",
 		"Cooldown": "int",
-		//"CooldownBypassType": "int",
+		"CooldownBypassType": "int",
 		"StatsKeys2": "ref|list|ref|foreignkey",
-		"Unknown30": "bool",
+		"Unknown30a": "bool",
 		"VaalSouls": "int",
 		"VaalStoredUses": "int",
 		"CooldownGroup": "int",
@@ -2362,20 +2277,12 @@
 		"Unknown37": "int",
 		"DamageMultiplier": "int",
 		"Unknown45": "int",
-		//"Unknown46": "int",
+		"Unknown46": "int",
 		"StatInterpolationTypesKeys": "ref|list|int",
 		"VaalSoulGainPreventionTime": "int",
 		"Unknown47": "int",
 		"BaseDuration": "int",
-		"AttackSpeedMultiplier": "int",
-		"Unknown48": "int",
-		"Unknown54": "ref|list|int",
-		"Unknown55": "ref|list|int",
-		"Unknown49": "int",
-		"Unknown50": "int",
-		"Unknown51": "int",
-		"Unknown52": "int",
-		"Unknown53": "int"
+		"AttackSpeedMultiplier": "int"
 	},
 	"GroundEffectEffectTypes": {},
 	"GroundEffectTypes": {
@@ -2397,7 +2304,7 @@
 		"Flag3": "byte",
 		"Data0": "ref|list|int",
 		"Flag4": "bool",
-		"AOFiles": "ref|list|ref|string",
+		"AOFile": "ref|list|ref|string",
 		"Unknown4": "ref|list|ref|string",
 		"Unknown5": "ref|string",
 		"Key1": "ref|foreignkey",
@@ -2407,9 +2314,7 @@
 		"Key5": "ref|foreignkey",
 		"Flag5": "bool",
 		"Flag6": "bool",
-		"Flag7": "bool",
-		"Key6": "ref|foreignkey",
-		"Key7": "ref|foreignkey"
+		"Flag7": "bool"
 	},
 	"Harbingers": {
 		"MonsterVarietiesKey": "ref|foreignkey",
@@ -2426,16 +2331,15 @@
 	"HarvestCraftOptions": {
 		"Id": "ref|string",
 		"Text1": "ref|string",
-		"Key1": "ref|foreignkey",
-		"Unknown1": "ref|string",
-		"Unknown2": "ref|string",
+		"HarvestObjectsKey": "ref|foreignkey",
+		"HarvestCraftTiersKey": "ref|foreignkey",
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"Flag1": "bool",
-		"Unknown3": "int",
+		"Flag0": "bool",
+		"Unknown0": "int",
 		"HarvestCraftOptionIconsKeys": "ref|list|ref|foreignkey",
 		"Text2": "ref|string",
-		"ddsFile": "ref|string",
-		"Flag2": "bool"
+		"ddsPath": "ref|string",
+		"Flag1": "bool"
 	},
 	"HarvestCraftTiers": {
 		"Id": "ref|string",
@@ -2481,12 +2385,12 @@
 		"Keys0": "ref|list|ref|foreignkey",
 		"Unknown1": "int",
 		"Unknown2": "ref|list|int",
-		"Keys1": "ref|list|ref|foreignkey",
-		"Unknown3": "int",
-		"AOFile1": "ref|string",
+		"Unknown3": "ref|list|int",
 		"Unknown4": "int",
-		"AOFile2": "ref|string",
-		"Unknown5": "int"
+		"aoPath": "ref|string",
+		"Unknown5": "int",
+		"Key1": "ref|key",
+		"Unknown6": "int"
 	},
 	"HarvestPlantBoosterFamilies": {},
 	"HarvestPlantBoosters": {
@@ -2720,8 +2624,8 @@
 		"Alarm_StatsKey": "ref|foreignkey",
 		"Cost_StatsKey": "ref|foreignkey",
 		"ExperienceGain_StatsKey": "ref|foreignkey",
-		"ArtPath": "ref|string",
-		"Text": "ref|string"
+		"Unknown6": "ref|key",
+		"Unknown7": "ref|key"
 	},
 	"HeistJobsExperiencePerLevel": {
 		"HeistJobsKey": "ref|foreignkey",
@@ -2780,9 +2684,9 @@
 		"AOFile": "ref|string"
 	},
 	"HeistObjectiveValueDescriptions": {
-		"Id": "int",
-		"Value": "float",
-		"Descriptions": "ref|string"
+		"Unknown0": "int",
+		"Unknown1": "float",
+		"Unknown2": "ref|float"
 	},
 	"HeistObjectives": {
 		"Key0": "ref|foreignkey",
@@ -2847,7 +2751,7 @@
 		"Unknown5": "int",
 		"Unknown6": "int",
 		"Unknown7": "int",
-		"Unknown8": "ref|string",
+		"Unknown8": "ref|key",
 		"Unknown9": "float",
 		"Flag0": "byte",
 		"Flag1": "byte"
@@ -2961,8 +2865,8 @@
 		"Unknown8": "int"
 	},
 	"IncursionRoomBossFightEvents": {
-		"Key0": "ref|foreignkey",
-		"Unknown2": "ref|string",
+		"Key0": "ref|key",
+		"Data0": "ref|list|int",
 		"Unknown3": "ref|string",
 		"Unknown4": "ref|string",
 		"Unknown5": "ref|string",
@@ -2975,7 +2879,7 @@
 		"Tier": "int",
 		"MinLevel": "int",
 		"RoomUpgrade_IncursionRoomsKey": "ref|key",
-		"ModsKey": "ref|list|ref|foreignkey",
+		"ModsKey": "ref|foreignkey",
 		"PresentARMFile": "ref|string",
 		"IntId": "int",
 		"IncursionArchitectKey": "ref|foreignkey",
@@ -2987,8 +2891,7 @@
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
 		"Unknown0": "int",
 		"Unknown1": "int",
-		"RoomUpgradeFrom_IncursionRoomsKey": "ref|key",
-		"UnknownKey": "ref|foreignkey"
+		"RoomUpgradeFrom_IncursionRoomsKey": "ref|key"
 	},
 	"IncursionUniqueUpgradeComponents": {
 		"UniqueItemsKey": "ref|foreignkey",
@@ -3007,18 +2910,13 @@
 		"Key0": "ref|foreignkey",
 		"Key1": "ref|foreignkey"
 	},
-	"InfluenceTags": {
-		"Key1": "ref|foreignkey",
-		"Unknown1": "int",
-		"Key2": "ref|foreignkey"
-	},
 	"InfluenceTypes": {},
 	"InvasionMonsterGroups": {},
 	"InvasionMonsterRestrictions": {
 		"Id": "ref|string",
 		"WorldAreasKey": "ref|foreignkey",
 		"MonsterVarietiesKeys": "ref|list|ref|foreignkey",
-		"Unknown1": "ref|list|ref|string"
+		"Data0": "ref|list|int"
 	},
 	"InvasionMonsterRoles": {},
 	"InvasionMonstersPerArea": {
@@ -3050,22 +2948,23 @@
 		"Name": "ref|string",
 		"Category": "ref|string",
 		"Unknown0": "int",
-		"RemovedIfLeavesArea": "bool",
-		"Unknown1": "ref|list|ref|key",
-		"Unknown2": "ref|list|ref|key",
+		"Elder_TagsKey": "ref|foreignkey",
+		"Shaper_TagsKey": "ref|foreignkey",
 		"Flag0": "bool",
+		"AchievementItemsKeys": "ref|list|ref|foreignkey",
+		"Identify_AchievementItemsKeys": "ref|list|ref|foreignkey",
+		"Crusader_TagsKey": "ref|foreignkey",
+		"Eyrie_TagsKey": "ref|foreignkey",
+		"Basilisk_TagsKey": "ref|foreignkey",
+		"Adjudicator_TagsKey": "ref|foreignkey",
 		"Flag1": "bool",
 		"Flag2": "bool",
-		"tmp1": "int",
-		"tmp2": "int",
 		"Flag3": "bool",
+		"Unknown1": "int",
+		"Unknown2": "int",
 		"Flag4": "bool",
-		"Flag5": "bool",
-		"Flag6": "bool",
-		"Flag7": "bool",
-		"Flag8": "bool",
-		"Flag9": "bool",
-		"Unknown3": "ref|foreignkey"
+		"Unknown3": "int",
+		"Flag5": "bool"
 	},
 	"ItemCostPerLevel": {
 		"Contract_BaseItemTypesKey": "ref|foreignkey",
@@ -3096,9 +2995,6 @@
 		"Id": "ref|string",
 		"Name": "ref|string"
 	},
-	"ItemStances": {
-		"Id": "ref|string"
-	},
 	"ItemThemes": {
 		"Id": "ref|string",
 		"Name": "ref|string"
@@ -3117,8 +3013,7 @@
 		"OneHandedAxeEPKFile": "ref|string",
 		"TwoHandedAxeEPKFile": "ref|string",
 		"ClawEPKFile": "ref|string",
-		"PETFile": "ref|string",
-		"ShieldEPKFile": "ref|string"
+		"PETFile": "ref|string"
 	},
 	"ItemVisualHeldBodyModel": {
 		"Key0": "ref|foreignkey",
@@ -3193,10 +3088,10 @@
 		"ItemVisualIdentityKey1": "ref|foreignkey",
 		"ItemVisualIdentityKey2": "ref|foreignkey",
 		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
+		"Data1": "ref|list|uint",
 		"Keys2": "ref|list|ref|foreignkey",
 		"Flag0": "bool",
-		"Data3": "ref|list|int",
+		"Data3": "ref|list|uint",
 		"Data4": "ref|list|int",
 		"Flag1": "bool"
 	},
@@ -3246,8 +3141,8 @@
 	"LabyrinthNodeOverrides": {
 		"Id1": "ref|string",
 		"Id2": "ref|string",
-		"Data1": "ref|list|ref|string",
-		"Data2": "ref|list|ref|string"
+		"Data1": "ref|list|int",
+		"Data2": "ref|list|int"
 	},
 	"LabyrinthRewardTypes": {
 		"Id": "ref|string",
@@ -3264,7 +3159,7 @@
 	"LabyrinthSecrets": {
 		"Id": "ref|string",
 		"Id2": "ref|string",
-		"Data0": "ref|list|ref|key",
+		"Data0": "ref|list|int",
 		"Unknown0": "int",
 		"Unknown1": "int",
 		"LabyrinthSecretEffectsKeys0": "ref|list|ref|foreignkey",
@@ -3333,15 +3228,6 @@
 		"Unknown1": "int",
 		"Unknown2": "int",
 		"Key2": "ref|foreignkey"
-	},
-	"Languages": {
-		"Index": "int",
-		"Id": "string",
-		"Text": "string",
-		"Tag1": "string",
-		"Tag2": "string",
-		"Unknown1": "int",
-		"Unknown2": "int"
 	},
 	"LeagueCategory": {},
 	"LeagueFlag": {
@@ -3515,8 +3401,7 @@
 		"IsLegionMap": "bool",
 		"Flag2": "bool",
 		"Flag3": "bool",
-		"Flag4": "bool",
-		"Keys": "ref|list|ref|foreignkey"
+		"Flag4": "bool"
 	},
 	"MapDevices": {
 		"Id": "ref|string",
@@ -3526,9 +3411,11 @@
 		"Command": "ref|string",
 		"Command_Data": "ref|list|int",
 		"Flag0": "byte",
-		"int": "byte",
 		"Flag1": "byte",
-		"Flag2": "byte"
+		"Flag2": "byte",
+		"Flag3": "byte",
+		"Flag4": "byte",
+		"Flag5": "byte"
 	},
 	"MapFragmentFamilies": {},
 	"MapFragmentMods": {
@@ -3540,8 +3427,7 @@
 		"Flag1": "bool",
 		"Flag2": "bool",
 		"Flag3": "bool",
-		"Flag4": "bool",
-		"Flag5": "bool"
+		"Flag4": "bool"
 	},
 	"MapInhabitants": {
 		"StatsKey": "ref|foreignkey",
@@ -3660,8 +3546,7 @@
 		"Unknown11": "int",
 		"Unknown12": "int",
 		"Unknown13": "ref|list|ref|foreignkey",
-		"Unknown14": "int",
-		"Unknown15": "int"
+		"Unknown14": "int"
 	},
 	"Melee": {
 		"Key0": "ref|foreignkey",
@@ -3725,7 +3610,7 @@
 		"Unknown8": "ref|list|int",
 		"Unknown9": "int",
 		"Key10": "ref|foreignkey",
-		"Keys11": "ref|list|ref|foreignkey",
+		"Keys11": "ref|list|ref|key",
 		"Unknown12": "int",
 		"Key13": "ref|foreignkey",
 		"Unknown14": "ref|string",
@@ -3759,8 +3644,7 @@
 		"StatValueMultiplier": "float",
 		"Scaling_StatsKeys": "ref|list|ref|foreignkey",
 		"Scaling_Values": "ref|list|int",
-		"Unknown4": "int",
-		"Data0": "ref|list|int"
+		"Unknown4": "int"
 	},
 	"MetamorphosisStashTabLayout": {
 		"Id": "ref|string",
@@ -3801,10 +3685,6 @@
 		"AOFile": "ref|string",
 		"Flag0": "bool"
 	},
-	"MicrotransactionGemCategory": {
-		"Key0": "ref|foreignkey",
-		"Id": "ref|string"
-	},
 	"MicrotransactionHudVariations": {
 		"Unknown1": "int",
 		"MainLeftPath": "ref|string",
@@ -3827,17 +3707,14 @@
 	"MicrotransactionPortalVariations": {
 		"BaseItemTypesKey": "ref|foreignkey",
 		"Id": "int",
-		"AOFile1": "ref|string",
+		"AOFile": "ref|string",
 		"MapAOFile": "ref|string",
 		"Unknown4": "float",
 		"Key0": "ref|foreignkey",
-		"AOFile2": "ref|string",
-		"Unknown5": "float",
+		"Unknown5": "int",
+		"Key1": "ref|key",
 		"Unknown6": "ref|string",
-		"LargeMapAOFile": "ref|string",
-		"Unknown7": "ref|string",
-		"Unknown8": "ref|string",
-		"Unknown9": "ref|string"
+		"AOFile2": "ref|string"
 	},
 	"MicrotransactionRarityDisplay": {
 		"Rarity": "ref|string",
@@ -3855,8 +3732,8 @@
 	},
 	"MicrotransactionSlotId": {},
 	"MicrotransactionSocialFrameVariations": {
-		"BaseItemTypesKey": "ref|foreignkey",
 		"Id": "int",
+		"BaseItemTypesKey": "ref|foreignkey",
 		"BK2File": "ref|string"
 	},
 	"MinimapIcons": {
@@ -3869,11 +3746,6 @@
 		"MinimapIconPointerMaxDistance": "int",
 		"Unknown5": "int"
 	},
-	"MiniQuestStates": {
-		"Unknown1": "int",
-		"Unknown2": "ref|list|int",
-		"Unknown3": "ref|list|int"
-	},
 	"MiscAnimated": {
 		"Id": "ref|string",
 		"AOFile": "ref|string",
@@ -3884,7 +3756,7 @@
 	"MiscBeams": {
 		"Id": "ref|string",
 		"Key0": "ref|foreignkey",
-		"Unknown3": "float",
+		"Unknown3": "int",
 		"PreloadGroupsKeys": "ref|list|ref|foreignkey",
 		"Unknown1": "int"
 	},
@@ -3952,7 +3824,8 @@
 	},
 	"ModType": {
 		"Name": "ref|string",
-		"ModSellPriceTypesKeys": "ref|list|ref|foreignkey"
+		"ModSellPriceTypesKeys": "ref|list|ref|foreignkey",
+		"TagsKeys": "ref|list|ref|foreignkey"
 	},
 	"Mods": {
 		"Id": "ref|string",
@@ -4001,6 +3874,7 @@
 		"StatsKey6": "ref|foreignkey",
 		"MaxLevel": "int",
 		"Unknown67": "byte",
+		"Unveil_AchievementItemsKey": "ref|foreignkey",
 		"Keys0": "ref|list|ref|foreignkey",
 		"MonsterOnDeath": "ref|string",
 		"Unknown2": "int",
@@ -4012,8 +3886,7 @@
 		"Heist_StatsKey1": "ref|foreignkey",
 		"Heist_AddStatValue1": "int",
 		"Heist_AddStatValue2": "int",
-		"InfluenceTypes": "int",
-		"Unknown4": "ref|list|ref|foreignkey"
+		"Unknown4": "int"
 	},
 	"MonsterArmours": {
 		"Id": "ref|string",
@@ -4032,8 +3905,8 @@
 		"Id": "ref|string",
 		"Keys0": "ref|list|ref|foreignkey",
 		"Keys1": "ref|list|ref|foreignkey",
-		"Keys2": "ref|list|ref|foreignkey",
-		"Keys3": "ref|list|ref|foreignkey",
+		"Data0": "ref|list|int",
+		"Data1": "ref|list|int",
 		"Unknown0": "int"
 	},
 	"MonsterConditions": {
@@ -4052,14 +3925,14 @@
 		"Id": "ref|string",
 		"MonsterVarietiesKeys": "ref|list|ref|foreignkey",
 		"AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"Flag0": "bool",
+		"Flag0": "byte",
 		"PlayerConditionsKeys": "ref|list|ref|foreignkey",
 		"MonsterDeathConditionsKeys": "ref|list|ref|foreignkey",
 		"Unknown5": "ref|list|ref|foreignkey",
 		"Unknown6": "int",
 		"Unknown7": "int",
-		"Flag1": "bool",
-		"Flag2": "bool",
+		"Flag1": "byte",
+		"Flag2": "byte",
 		"Unknown8": "ref|foreignkey",
 		"Unknown9": "ref|list|ref|foreignkey",
 		"Unknown10": "ref|list|ref|foreignkey",
@@ -4067,10 +3940,9 @@
 		"Unknown12": "ref|foreignkey",
 		"Unknown13": "int",
 		"NearbyMonsterConditionsKeys": "ref|list|ref|foreignkey",
-		"Flag3": "bool",
+		"Flag3": "byte",
 		"MultiPartAchievementConditionsKeys": "ref|list|ref|foreignkey",
-		"Unknown16": "int",
-		"Flag4": "bool"
+		"Unknown16": "int"
 	},
 	"MonsterDeathConditions": {
 		"Unknown0": "ref|string",
@@ -4143,16 +4015,18 @@
 		"Key1": "ref|foreignkey",
 		"Key2": "ref|foreignkey",
 		"Unknown0": "int",
-		"Flag0": "bool",
+		"Flag0": "byte",
 		"Flag1": "bool",
 		"Flag2": "bool",
 		"Flag3": "bool",
-		"Unknown1": "int",
 		"Unknown2": "int",
-		"Unknown3": "int",
 		"Flag4": "bool",
+		"Unknown3": "int",
 		"Unknown4": "int",
-		"Flag5": "bool"
+		"Flag5": "bool",
+		"Flag6": "bool",
+		"Flag7": "bool",
+		"Flag8": "bool"
 	},
 	"MonsterPackCounts": {
 		"Key0": "ref|foreignkey",
@@ -4204,7 +4078,6 @@
 		"Unknown0": "int",
 		"Flag2": "bool"
 	},
-	"MonsterPushTypes": {},
 	"MonsterResistances": {
 		"Id": "ref|string",
 		"FireNormal": "int",
@@ -4337,22 +4210,19 @@
 		"Keys1": "ref|list|ref|foreignkey",
 		"Unknown96": "int",
 		"SinkAnimation_AOFile": "ref|string",
-		"Flag2": "bool",
+		"Flag2": "byte",
 		"Keys2": "ref|list|ref|foreignkey",
-		"Flag3": "bool",
-		"Flag4": "bool",
-		"Flag5": "bool",
+		"Flag3": "byte",
+		"Flag4": "byte",
+		"Flag5": "byte",
 		"Unknown100": "int",
 		"Unknown101": "int",
 		"Unknown102": "int",
 		"Unknown103": "int",
-		"EPKFile": "ref|string",
-		"Unknown104": "int",
-		"ConditionalEffectPackKey": "ref|foreignkey",
-		"Flag6": "bool",
-		"Flag7": "bool",
+		"Unknown104": "ref|string",
 		"Unknown105": "int",
-		"Flag8": "bool"
+		"Key3": "ref|foreignkey",
+		"Flag6": "byte"
 	},
 	"MoveDaemon": {
 		"Unknown0": "int",
@@ -4389,11 +4259,8 @@
 	},
 	"MTXSetBonus": {
 		"Id": "ref|string",
-		"Key0": "ref|foreignkey",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
-		"Keys2": "ref|list|ref|foreignkey",
-		"Keys3": "ref|list|ref|foreignkey"
+		"ArtFile": "ref|key",
+		"Unknown2": "ref|key"
 	},
 	"MultiPartAchievementAreas": {
 		"Key0": "ref|foreignkey",
@@ -4440,7 +4307,7 @@
 	},
 	"NPCAudio": {
 		"Id": "ref|string",
-		"OggFiles": "ref|list|ref|string",
+		"Data0": "ref|list|int",
 		"Data1": "ref|list|int",
 		"VolumePercentage": "int",
 		"Unknown0": "int",
@@ -4465,16 +4332,7 @@
 		"Unknown6": "int",
 		"Unknown7": "int",
 		"Unknown8": "int",
-		"Unknown9": "int",
-		"Unknown10": "ref|list|int",
-		"Unknown11": "ref|list|int",
-		"Unknown12": "ref|list|int",
-		"Unknown13": "ref|list|int",
-		"Unknown14": "int",
-		"Unknown15": "int",
-		"Unknown16": "int",
-		"Unknown17": "ref|string",
-		"Unknown18": "int"
+		"Unknown9": "int"
 	},
 	"NPCFollowerVariations": {
 		"MonsterVarietiesKey": "ref|foreignkey",
@@ -4513,12 +4371,6 @@
 		"Unknown1": "int",
 		"Key4": "ref|foreignkey"
 	},
-	"NPCPortraits": {
-		"Id": "ref|string",
-		"ArtPath": "ref|string",
-		"Unknown0": "int",
-		"Unknown1": "int"
-	},
 	"NPCs": {
 		"Id": "ref|string",
 		"Name": "ref|string",
@@ -4531,9 +4383,9 @@
 		"NPCAudioKeys1": "ref|list|ref|foreignkey",
 		"NPCAudioKeys2": "ref|list|ref|foreignkey",
 		"Unknown2": "int",
-		"Key1": "ref|foreignkey",
-		"Key2": "ref|foreignkey",
-		"Key3": "ref|key"
+		"Key1": "ref|key",
+		"PortraitFile": "ref|string",
+		"Key2": "ref|foreignkey"
 	},
 	"NPCShop": {
 		"Id": "ref|string",
@@ -4557,7 +4409,7 @@
 		"Data2": "ref|list|uint",
 		"Script": "ref|string",
 		"Unknown11": "int",
-		"Unknown12": "ref|foreignkey",
+		"Unknown12": "int",
 		"QuestKey": "ref|foreignkey",
 		"Unknown15": "int",
 		"NPCTextAudioKeys": "ref|list|ref|foreignkey",
@@ -4577,19 +4429,16 @@
 		"DialogueOption2": "ref|string",
 		"Key1": "ref|foreignkey",
 		"Key2": "ref|foreignkey",
-		"Unknown23": "int",
-		"Unknown24": "ref|list|int",
-		"Unknown25": "int"
+		"Unknown23": "ref|key",
+		"Unknown24": "int",
+		"Unknown25": "ref|key",
+		"Unknown26": "int"
 	},
 	"NPCTalkConsoleQuickActions": {
 		"Id": "ref|string",
-		"Controller1": "ref|string",
-		"Controller2": "ref|string"
+		"Controller": "ref|string"
 	},
-	"NPCTalkCategory": {
-		"Id": "ref|string",
-		"Flag0": "bool"
-	},
+	"NPCTalkCategory": {},
 	"NPCTextAudio": {
 		"Id": "ref|string",
 		"CharactersKey": "ref|foreignkey",
@@ -4602,8 +4451,8 @@
 		"Unknown0": "int",
 		"Unknown1": "int",
 		"Unknown2": "int",
-		"Unknown3": "ref|list|ref|foreignkey",
-		"Key4": "ref|foreignkey"
+		"Key2": "ref|key",
+		"Key3": "ref|key"
 	},
 	"NPCTextAudioInterruptRules": {},
 	"NearbyMonsterConditions": {
@@ -4613,7 +4462,7 @@
 		"Unknown3": "int",
 		"IsNegated": "bool",
 		"Unknown4": "int",
-		"Unknown5": "ref|list|ref|string",
+		"Unknown5": "ref|list|int",
 		"IsLessThen": "bool",
 		"MinimumHealthPercentage": "int"
 	},
@@ -4843,9 +4692,8 @@
 		"Id": "ref|string"
 	},
 	"PreloadPriorities": {},
-	"ProjectileCollisionTypes": {},
 	"ProjectileVariations": {
-		"Id": "int",
+		"Id": "ref|string",
 		"ProjectileKey": "ref|foreignkey"
 	},
 	"Projectiles": {
@@ -4877,9 +4725,8 @@
 		"Unknown11": "int",
 		"Unknown12": "int",
 		"Unknown13": "int",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Key5": "ref|foreignkey",
-		"Flag5": "bool"
+		"Key3": "ref|key",
+		"Key4": "ref|key"
 	},
 	"Prophecies": {
 		"Id": "ref|string",
@@ -4997,16 +4844,19 @@
 	},
 	"Races": {
 		"Id": "ref|string",
-		"Unknown1": "ref|list|ref|foreignkey",
-		"Unknown2": "ref|list|ref|foreignkey",
-		"Unknown3": "ref|string",
+		"Unknown1": "ref|key",
+		"Unknown2": "ref|string",
+		"Unknown3": "ref|key",
+		"Unknown4": "ref|string",
+		"Unknown5": "ref|string",
 		"Url": "ref|string",
-		"Unknown4": "int",
-		"Unknown5": "int",
-		"Unknown6": "ref|list|ref|foreignkey",
-		"Flag0": "bool",
+		"Unknown6": "int",
 		"Unknown7": "int",
-		"Unknown8": "int"
+		"Unknown8": "ref|key",
+		"Unknown9": "ref|string",
+		"Flag0": "byte",
+		"Unknown10": "int",
+		"Unknown11": "int"
 	},
 	"RandomUniqueMonsters": {
 		"Unknown0": "ref|foreignkey",
@@ -5020,15 +4870,15 @@
 	"Realms": {
 		"Id": "ref|string",
 		"Name": "ref|string",
-		"LoginServer": "ref|list|ref|string",
+		"Server": "ref|list|ref|string",
 		"IsEnabled": "bool",
-		"ShortNames": "ref|list|ref|string",
+		"Server2": "ref|list|ref|string",
 		"ShortName": "ref|string",
-		"Data0": "ref|list|ref|key",
+		"Data0": "ref|list|int",
 		"Key0": "ref|key",
 		"Unknown1": "int",
 		"IsGammaRealm": "bool",
-		"SpeedTestServer": "ref|list|ref|string"
+		"Unknown2": "ref|list|int"
 	},
 	"RecipeUnlockDisplay": {
 		"RecipeId": "int",
@@ -5036,7 +4886,7 @@
 		"CraftingItemClassCategoriesKeys": "ref|list|ref|foreignkey",
 		"UnlockDescription": "ref|string",
 		"Rank": "int",
-		"Key0": "ref|foreignkey"
+		"Id": "ref|string"
 	},
 	"RecipeUnlockObjects": {
 		"WorldAreasKey": "ref|foreignkey",
@@ -5077,24 +4927,23 @@
 	},
 	"RitualRuneTypes": {
 		"Id": "ref|string",
-		"Key0": "ref|foreignkey",
-		"Unknown0": "int",
-		"Unknown1": "int",
-		"Unknown2": "int",
 		"Key1": "ref|foreignkey",
-		"Data0": "ref|list|int",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|key",
-		"Data1": "ref|list|int",
-		"Data2": "ref|list|int",
-		"Key2": "ref|foreignkey",
-		"Key3": "ref|foreignkey",
+		"Unknown2": "int",
 		"Unknown3": "int",
-		"Keys3": "ref|list|ref|foreignkey",
-		"Unknown4": "ref|string",
-		"Description": "ref|string",
+		"Unknown4": "int",
+		"Key2": "ref|foreignkey",
+		"Unknown6": "ref|list|int",
+		"Keys1": "ref|list|ref|foreignkey",
+		"Keys2": "ref|list|ref|foreignkey",
+		"Unknown9": "ref|list|int",
+		"Unknown10": "ref|list|int",
+		"Key3": "ref|foreignkey",
 		"Key4": "ref|foreignkey",
-		"Flag0": "bool"
+		"Key5": "ref|foreignkey",
+		"Unknown14": "int",
+		"Keys3": "ref|list|ref|foreignkey",
+		"Text": "ref|string",
+		"Description": "ref|string"
 	},
 	"RitualSetKillAchievements": {
 		"Key1": "ref|foreignkey",
@@ -5121,19 +4970,19 @@
 	},
 	"SafehouseBYOCrafting": {
 		"BetrayalJobsKey": "ref|foreignkey",
+		"BetrayalTargetsKey": "ref|foreignkey",
 		"BetrayalRanksKey": "ref|foreignkey",
-		"Level": "int",
 		"Description": "ref|string",
 		"ServerCommand": "ref|string",
 		"Keys0": "ref|list|ref|foreignkey"
 	},
 	"SafehouseCraftingSpree": {
 		"BetrayalJobsKey": "ref|foreignkey",
-		"Level": "int",
+		"BetrayalRanksKey": "ref|foreignkey",
 		"Currency_Values": "ref|list|int",
 		"Chance": "int",
 		"Currency_SafehouseCraftingSpreeCurrenciesKeys": "ref|list|ref|foreignkey",
-		"Keys0": "ref|list|ref|foreignkey"
+		"Data0": "ref|list|int"
 	},
 	"SafehouseCraftingSpreeCurrencies": {
 		"Id": "ref|string",
@@ -5307,14 +5156,12 @@
 		"MiscAnimated": "ref|foreignkey",
 		"Flag3": "bool",
 		"Flag4": "bool",
+		"Unknown0": "int",
 		"Flag5": "bool",
+		"Data0": "ref|list|float",
+		"Keys": "ref|list|ref|foreignkey",
 		"Flag6": "bool",
-		"Flag7": "bool",
-		"Flag8": "bool",
-		"Flag9": "bool",
-		"Flag10": "bool",
-		"Flag11": "bool",
-		"Flag12": "bool"
+		"Data1": "ref|list|int"
 	},
 	"SkillTotemVariations": {
 		"SkillTotemsKey": "int",
@@ -5339,9 +5186,11 @@
 		"ChestClustersKey": "ref|foreignkey"
 	},
 	"SpawnObject": {
-		"Id": "int",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
+		"Unknown0": "int",
+		"Key1": "ref|key",
+		"Symbol": "ref|string",
+		"Key2": "ref|key",
+		"Unknown4": "ref|string",
 		"Unknown5": "int",
 		"Unknown6": "int",
 		"Unknown7": "int",
@@ -5350,10 +5199,10 @@
 		"Unknown10": "int",
 		"Unknown11": "int",
 		"Unknown12": "int",
-		"Flag0": "bool",
+		"Flag1": "byte",
 		"Unknown13": "ref|string",
 		"Unknown14": "int",
-		"Flag1": "bool",
+		"Flag2": "byte",
 		"Unknown15": "int",
 		"Unknown16": "int"
 	},
@@ -5408,15 +5257,16 @@
 		"OffHandAlias_StatsKey": "ref|key",
 		"Flag7": "bool",
 		"Unknown1": "byte",
-		"Unknown2": "byte",
-		"Unknown3": "byte",
-		"Unknown4": "byte",
+		"Unknown1": "byte",
+		"Unknown1": "byte",
+		"Unknown1": "byte",
 		"BelongsActiveSkillsKey": "ref|list|ref|string",
 		"Key0": "ref|foreignkey",
 		"Flag8": "bool",
 		"Flag9": "bool",
 		"Flag10": "bool",
-		"Id2": "ref|list|ref|foreignkey"
+		"Key1": "ref|key",
+		"Id2": "ref|string"
 	},
 	"StrDexIntMissionExtraRequirement": {
 		"Id": "ref|string",
@@ -5491,15 +5341,14 @@
 		"Flag1": "bool",
 		"Unknown1": "int",
 		"Unknown2": "int",
-		"Flag2": "bool",
+		"Flag2": "byte",
 		"Key1": "ref|foreignkey",
 		"Key2": "ref|foreignkey",
 		"Unknown3": "int",
 		"Flag3": "bool",
 		"Unknown4": "int",
 		"Unknown5": "ref|string",
-		"Flag4": "bool",
-		"Flag5": "bool"
+		"Flag4": "byte"
 	},
 	"SummonedSpecificMonstersOnDeath": {
 		"Id": "ref|string",
@@ -5519,13 +5368,6 @@
 		"Unknown0": "ref|string"
 	},
 	"SurgeCategory": {},
-	"SurgeEffects": {
-		"Id": "ref|string",
-		"Key0": "ref|foreignkey",
-		"Unknown0": "ref|list|float",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Unknown1": "ref|list|ref|string"
-	},
 	"SurgeTypes": {
 		"Id": "ref|string",
 		"Keys0": "ref|list|ref|foreignkey",
@@ -5626,9 +5468,7 @@
 		"Script2": "ref|string",
 		"Data0": "ref|list|int",
 		"Unknown19": "int",
-		"Unknown20": "int",
-		"Unknown21": "int",
-		"Unknown22": "int"
+		"Unknown20": "int"
 	},
 	"Tags": {
 		"Id": "ref|string",
@@ -5670,19 +5510,23 @@
 		"Id": "ref|string",
 		"Unknown1": "int",
 		"Unknown2": "int",
-		"Unknown3": "int",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
-		"Unknown4": "int"
+		"Unknown3": "ref|key",
+		"Unknown4": "int",
+		"Unknown5": "ref|string",
+		"Unknown6": "ref|key",
+		"Unknown7": "ref|string",
+		"Unknown8": "int"
 	},
 	"TalkingPetNPCAudio": {
-		"Key0": "ref|foreignkey",
 		"Key1": "ref|foreignkey",
-		"Keys0": "ref|list|ref|foreignkey"
+		"Key2": "ref|foreignkey",
+		"Key3": "ref|key",
+		"Text": "ref|string"
 	},
 	"TalkingPets": {
-		"Key0": "ref|foreignkey",
-		"Keys0": "ref|list|ref|foreignkey"
+		"Key1": "ref|foreignkey",
+		"Key2": "ref|key",
+		"Text": "ref|string"
 	},
 	"TencentAutoLootPetCurrencies": {
 		"BaseItemTypesKey": "ref|foreignkey",
@@ -5694,8 +5538,7 @@
 	"TerrainPlugins": {
 		"Id": "ref|string",
 		"UnknownUnique": "int",
-		"Flag1": "bool",
-		"Flag2": "bool"
+		"Flag1": "byte"
 	},
 	"Tips": {
 		"Id": "ref|string",
@@ -5783,76 +5626,6 @@
 		"Flag0": "byte",
 		"Key0": "ref|foreignkey"
 	},
-	"UltimatumEncounters": {
-		"Id": "ref|string",
-		"Category": "ref|string",
-		"Keys0": "ref|list|ref|foreignkey",
-		"ARMFile": "ref|string",
-		"Key0": "ref|foreignkey",
-		"IconPath": "ref|string",
-		"Unknown0": "int",
-		"Flag0": "bool",
-		"Unknown1": "int"
-	},
-	"UltimatumEncounterTypes": {
-		"Id": "ref|string",
-		"Category": "ref|string",
-		"Description": "ref|string",
-		"Flag0": "bool",
-		"Flag1": "bool",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Key0": "ref|foreignkey"
-	},
-	"UltimatumItemisedRewards": {
-		"Id": "ref|string",
-		"Unknown0": "int",
-		"Description": "ref|string",
-		"Key0": "ref|foreignkey",
-		"Unknown1": "int",
-		"Key1": "ref|foreignkey",
-		"Unknown2": "int",
-		"Condition": "ref|string",
-		"Flag0": "bool",
-		"Keys0": "ref|list|ref|foreignkey"
-	},
-	"UltimatumModifiers": {
-		"Id": "ref|string",
-		"Keys0": "ref|list|ref|foreignkey",
-		"Keys1": "ref|list|ref|foreignkey",
-		"Keys2": "ref|list|ref|foreignkey",
-		"Key0": "ref|foreignkey",
-		"Key1": "ref|list|ref|key",
-		"Flag0": "bool",
-		"Keys3": "ref|list|ref|foreignkey",
-		"Unknown0": "int",
-		"Text": "ref|string",
-		"ARTPath": "ref|string",
-		"Unknown1": "int",
-		"Keys4": "ref|list|ref|foreignkey",
-		"Unknown2": "int",
-		"Key2": "ref|foreignkey",
-		"Keys5": "ref|list|ref|foreignkey",
-		"Unknown3": "int",
-		"Unknown4": "int",
-		"Description": "ref|string",
-		"Paths": "ref|list|ref|string",
-		"Flag1": "bool",
-		"Keys6": "ref|list|ref|foreignkey",
-		"Key3": "ref|foreignkey"
-	},
-	"UltimatumModifierTypes": {
-		"Id": "ref|string",
-		"Flag0": "bool"
-	},
-	"UltimatumTrialMasterAudio": {
-		"Id": "ref|string",
-		"Unknown0": "int",
-		"Unknown1": "int",
-		"Unknown2": "int",
-		"Key0": "ref|foreignkey",
-		"Unknown3": "int",
-		"Unknown4": "int"
-	},
 	"UniqueChests": {
 		"Id": "ref|string",
 		"WordsKey": "ref|foreignkey",
@@ -5932,11 +5705,11 @@
 	},
 	"WarbandsGraph": {
 		"WorldAreasKey": "ref|foreignkey",
-		"Connections": "ref|list|ref|key"
+		"Connections": "ref|list|int"
 	},
 	"WarbandsMapGraph": {
 		"WorldAreasKey": "ref|foreignkey",
-		"Connections": "ref|list|ref|key"
+		"Connections": "ref|list|int"
 	},
 	"WarbandsPackMonsters": {
 		"Id": "ref|string",
@@ -5996,19 +5769,20 @@
 	"WindowCursors": {
 		"Id": "ref|string",
 		"Path": "ref|string",
-		"Key0": "ref|key",
-		"Unknown0": "int",
-		"Unknown1": "int",
-		"Data0": "ref|list|int"
+		"Unknown1": "ref|string",
+		"Unknown2": "int",
+		"Unknown3": "int",
+		"Unknown4": "ref|key",
+		"Unknown5": "ref|string"
 	},
 	"Wordlists": {},
 	"Words": {
 		"WordlistsKey": "int",
 		"Text": "ref|string",
 		"SpawnWeight_TagsKeys": "ref|list|ref|foreignkey",
-		"SpawnWeight_Values": "ref|list|int",
-		"Unknown0": "int",
-		"TextTranslated": "ref|string",
+		"SpawnWeight_Values": "ref|list|uint",
+		"Unknown6": "int",
+		"Text2": "ref|string",
 		"Inflection": "ref|string"
 	},
 	"WorldAreas": {
@@ -6121,8 +5895,7 @@
 		"HeistChance": "int",
 		"Key97": "ref|key",
 		"Unknown110": "int",
-		"Next": "ref|string",
-		"Unknown111": "int"
+		"Next": "ref|string"
 	},
 	"WorldPopupIconTypes": {
 		"Id": "ref|string",

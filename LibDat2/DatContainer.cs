@@ -18,21 +18,25 @@ namespace LibDat2 {
         protected static JsonElement DatDefinitions = JsonDocument.Parse(File.ReadAllText(Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName + @"\DatDefinitions.json"), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip }).RootElement;
 
         /// <summary>
-        /// Whether the file extension is .dat64
+        /// Whether the pointer in the file is 64-bit
         /// </summary>
         public readonly bool x64;
         /// <summary>
-        /// Name of the dat file without extension
+        /// Whether the strings in the file is encoded as UTF-32
         /// </summary>
-        public readonly string DatName;
+        public readonly bool UTF32;
+        /// <summary>
+        /// Name of the dat file
+        /// </summary>
+        public readonly string Name;
         /// <summary>
         /// Length of the dat file
         /// </summary>
-        public long Length { get; private set; }
+        public virtual long Length { get; protected set; }
         /// <summary>
         /// Number of entries, got from first 4 bytes of dat file
         /// </summary>
-        public int Count { get; private set; }
+        public virtual int Count { get; protected set; }
         /// <summary>
         /// Definition of fields in dat file.
         /// Key: Name of field, Value: Type of field data.
@@ -45,11 +49,11 @@ namespace LibDat2 {
         /// <summary>
         /// Set of pointed value of the dat file
         /// </summary>
-        public SortedDictionary<long, PointedValue> PointedDatas;
+        public SortedDictionary<long, PointedValue> PointedDatas = new();
         /// <summary>
         /// Offset of the data section in the dat file (Starts with 0xBBBBBBBBBBBBBBBB)
         /// </summary>
-        public long DataSectionOffset { get; protected set; }
+        public virtual long DataSectionOffset { get; protected set; }
 
         public struct ErrorStruct {
             public Exception Exception;
@@ -67,58 +71,73 @@ namespace LibDat2 {
         /// Parses the dat file contents from a file
         /// </summary>
         /// <param name="filePath">Path of a dat file</param>
-        public DatContainer(string filePath) : this(tmp = File.OpenRead(filePath), tmp.Length, filePath) => tmp.Close();
+        public DatContainer(string filePath) : this(tmp = File.OpenRead(filePath), filePath) => tmp.Close();
 
         /// <summary>
         /// Parses the dat file contents from a binary data
         /// </summary>
         /// <param name="data">Binary data of a dat file</param>
-        public DatContainer(byte[] data, string fileName) : this(new MemoryStream(data), data.Length, fileName) { }
+        public DatContainer(byte[] data, string fileName) : this(new MemoryStream(data), fileName) { }
 
         /// <summary>
         /// Parses the dat file contents from a stream.
         /// </summary>
         /// <param name="stream">Contents of a dat file</param>
         /// <param name="fileName">Name of the dat file</param>
-        public DatContainer(Stream stream, long length, string fileName) : this(new BinaryReader(stream, Encoding.Unicode), length, fileName) { }
-        
-        /// <summary>
-        /// Parses the dat file contents.
-        /// </summary>
-        /// <param name="reader">BinaryReader in Unicode to read the contents of a dat file</param>
-        /// <param name="fileName">Name of the dat file</param>
-        public DatContainer(BinaryReader reader, long length, string fileName) {
-            x64 = Path.GetExtension(fileName) == ".dat64";
-            DatName = Path.GetFileNameWithoutExtension(fileName);
-            Length = length;
-            
+        public DatContainer(Stream stream, string fileName) {
+            switch (Path.GetExtension(fileName)) {
+                case ".dat":
+                    break;
+                case ".dat64":
+                    x64 = true;
+                    break;
+                case ".datl":
+                    UTF32 = true;
+                    break;
+                case ".datl64":
+                    x64 = true;
+                    UTF32 = true;
+                    break;
+                default:
+                    throw new ArgumentException("The provided file must be a dat file");
+            }
+
+            Name = fileName;
+            Length = stream.Length;
+
+            var reader = new BinaryReader(stream, UTF32 ? Encoding.UTF32 : Encoding.Unicode);
+
             Count = reader.ReadInt32();
-            var actualRecordLength = GetActualRecordLength(reader, Count, Length);
-            if (actualRecordLength < 0)
-                throw new($"{DatName} : Missing magic number after records");
-            DataSectionOffset = Count * actualRecordLength + 4;
-            // DataSectionDataLength = Length - DataSectionOffset - 8;
 
             try {
                 var fields = new Dictionary<string, string>();
-                foreach (var field in DatDefinitions.GetProperty(DatName).EnumerateObject())
+                foreach (var field in DatDefinitions.GetProperty(Path.GetFileNameWithoutExtension(fileName)).EnumerateObject())
                     fields.Add(field.Name, field.Value.GetString());
                 FieldDefinitions = new(fields);
             } catch (KeyNotFoundException) {
-                throw new Exception(DatName + " was not defined");
-			}
+                throw new Exception(Path.GetFileNameWithoutExtension(fileName) + " was not defined");
+            }
 
-            var recordLength = CalculateRecordLength(FieldDefinitions.Values, x64);
-			if (recordLength != actualRecordLength)
-				throw new($"{Path.GetFileName(fileName)} : Actual record length: {actualRecordLength} is not equal to that defined in DatDefinitions: {recordLength}");
+            if (Path.GetFileNameWithoutExtension(fileName) == "Languages")
+                UTF32 = true;
+            else {
+                var actualRecordLength = GetActualRecordLength(reader, Count, Length);
+                if (actualRecordLength < 0)
+                    throw new($"{fileName} : Missing magic number after records");
+                DataSectionOffset = Count * actualRecordLength + 4;
+                // DataSectionDataLength = Length - DataSectionOffset - 8;
 
-			// Read Data
-			reader.BaseStream.Seek(4, SeekOrigin.Begin);
+                var recordLength = CalculateRecordLength(FieldDefinitions.Values, x64);
+                if (recordLength != actualRecordLength)
+                    throw new($"{Path.GetFileName(fileName)} : Actual record length: {actualRecordLength} is not equal to that defined in DatDefinitions: {recordLength}");
+
+                reader.BaseStream.Seek(4, SeekOrigin.Begin);
+            }
+
             FieldDatas = new(Count);
-            PointedDatas = new();
             var error = false;
             var lastPos = reader.BaseStream.Position;
-            for (var i = 0; i < Count; i++) {
+            for (var i = 0; i < Count; ++i) {
                 var list = new List<FieldType>(FieldDefinitions.Count);
                 foreach (var type in FieldDefinitions.Values) {
                     if (error) {
@@ -182,7 +201,7 @@ namespace LibDat2 {
         /// <summary>
         /// Get the length of records in the dat file
         /// </summary>
-        private static long GetActualRecordLength(BinaryReader reader, int numberOfEntries, long datLength) {
+        protected static long GetActualRecordLength(BinaryReader reader, int numberOfEntries, long datLength) {
             if (numberOfEntries == 0) return 0;
             for (long i = 0, offset = reader.BaseStream.Position; reader.BaseStream.Position - offset <= datLength - 8; i++) {
                 var ul = reader.ReadUInt64();
@@ -195,7 +214,7 @@ namespace LibDat2 {
         /// <summary>
         /// Calculate the expected length of records in the dat file
         /// </summary>
-        private static long CalculateRecordLength(IEnumerable<string> Fields, bool x64) {
+        protected static long CalculateRecordLength(IEnumerable<string> Fields, bool x64) {
             long result = 0;
             foreach (var type in Fields)
                 result += FieldType.TypeLength(type, x64).Value;

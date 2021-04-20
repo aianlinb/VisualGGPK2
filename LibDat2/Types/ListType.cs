@@ -22,10 +22,12 @@ namespace LibDat2.Types {
 
 		public ListType(BinaryReader Reader, DatContainer dat, string ListDataType, long Count) : base(dat?.x64 ?? false) {
 			Values = new((int)Count);
-			for (var i = 0L; i < Count; i++)
-				Values.Add(Create(ListDataType, Reader, dat));
-			if (Count > 0)
-				Type = Values[0].Type;
+			for (var i = 0L; i < Count; i++) {
+				var t = Create(ListDataType, Reader, dat);
+				if (t is KeyType k && (k.EOF1 || k.EOF2))
+					throw new EndOfStreamException();
+				Values.Add(t);
+			}
 		}
 	}
 }

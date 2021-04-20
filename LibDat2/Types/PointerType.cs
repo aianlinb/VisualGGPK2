@@ -16,7 +16,7 @@ namespace LibDat2.Types {
 				if (Count > 0 && !dat.PointedDatas.TryGetValue(Pointer, out PointTo)) {
 					var tmp = Reader.BaseStream.Position;
 					Reader.BaseStream.Seek(dat.DataSectionOffset + Pointer, SeekOrigin.Begin);
-					PointTo = new(Pointer, new ListType(Reader, dat, PointToType[5..], Count));
+					PointTo = new(Pointer, new ListType(Reader, dat, PointToType[5..], Count), dat.UTF32);
 					Reader.BaseStream.Seek(tmp, SeekOrigin.Begin);
 					dat.PointedDatas.Add(Pointer, PointTo);
 				} else if (Count <= 0)
@@ -26,12 +26,11 @@ namespace LibDat2.Types {
 				if (!dat.PointedDatas.TryGetValue(Pointer, out PointTo)) {
 					var tmp = Reader.BaseStream.Position;
 					Reader.BaseStream.Seek(dat.DataSectionOffset + Pointer, SeekOrigin.Begin);
-					PointTo = new(Pointer, Create(PointToType, Reader, dat));
+					PointTo = new(Pointer, Create(PointToType, Reader, dat), dat.UTF32);
 					Reader.BaseStream.Seek(tmp, SeekOrigin.Begin);
 					dat.PointedDatas.Add(Pointer, PointTo);
 				}
 			}
-			Type = PointTo.FieldValue.Type;
 		}
 
 		public static readonly PointedValue NullList = new(0, new ListType(null, null, null, 0));

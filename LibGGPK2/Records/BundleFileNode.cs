@@ -91,15 +91,14 @@ namespace LibGGPK2.Records
             if (ggpkContainer.Reader == null) {
                 BundleToSave.SaveWithRecompression();
                 ggpkContainer.Index.Save("_.index.bin");
-                UpdateCache(BundleToSave);
             } else {
                 var NewBundleData = BundleToSave.SaveWithRecompression(ggpkContainer.Reader, ggpkContainer.RecordOfBundle(BundleToSave).DataBegin);
                 var fr = ggpkContainer.RecordOfBundle(BundleToSave);
                 fr.ReplaceContent(NewBundleData);
                 BundleToSave.Bundle.offset = fr.DataBegin;
-                UpdateCache(BundleToSave);
                 ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
             }
+            UpdateCache(BundleToSave);
         }
 
         /// <summary>
@@ -136,13 +135,12 @@ namespace LibGGPK2.Records
             Offset = BundleFileRecord.Offset;
             Length = BundleFileRecord.Size;
             var node = CachedBundleData.First;
-            while (node != null) {
+            while (node != null)
                 if (node.Value.Key == br) {
                     CachedBundleData.Remove(node);
                     break;
                 } else
                     node = node.Next;
-            }
         }
 
         protected DataFormats? _DataFormat = null;

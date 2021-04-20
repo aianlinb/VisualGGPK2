@@ -8,8 +8,6 @@ namespace LibDat2.Types {
 
 		public virtual object Value { get; set; }
 
-		internal Type Type;
-
 		protected FieldType(bool x64) {
 			this.x64 = x64;
 		}
@@ -30,7 +28,7 @@ namespace LibDat2.Types {
 				"float" => new ValueType<float>(dat.x64, reader),
 				"long" => new ValueType<long>(dat.x64, reader),
 				"ulong" => new ValueType<ulong>(dat.x64, reader),
-				"string" => new ValueType<string>(dat.x64, reader),
+				"string" => new ValueType<string>(dat.x64, reader, dat.UTF32),
 				_ => throw new InvalidCastException($"Unknown Type: {type}"),
 			};
 		}

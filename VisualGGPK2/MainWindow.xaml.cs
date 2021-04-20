@@ -69,6 +69,7 @@ namespace VisualGGPK2
             InitializeComponent();
         }
 
+        private readonly List<int> toMark = new();
         private async void OnLoaded(object sender, RoutedEventArgs e) {
             if (FilePath == null) {
                 var ofd = new OpenFileDialog {
@@ -119,6 +120,19 @@ namespace VisualGGPK2
 
             RegexCheckBox.IsEnabled = true;
             FilterButton.IsEnabled = true;
+
+            DatPointedTable.CellStyle = new Style(typeof(DataGridCell));
+            DatPointedTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler((s, e) => {
+                var dc = (DataGridCell)s;
+                var border = (Border)VisualTreeHelper.GetChild(dc, 0);
+                var row = DataGridRow.GetRowContainingElement(dc).GetIndex();
+                var col = dc.Column.DisplayIndex;
+                if (col == 0 && toMark.Contains(row) || col == 2 && toMark.Contains(row + 1)) {
+                    border.Background = Brushes.Red;
+                    border.BorderThickness = new Thickness(0);
+                }
+            })));
+
             TextView.AppendText("\r\n\r\nDone!\r\n");
         }
 
@@ -269,6 +283,7 @@ namespace VisualGGPK2
 
         DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
         private void ShowDatFile(DatContainer dat) {
+            toMark.Clear();
             DatTable.Tag = dat;
             DatTable.Columns.Clear();
             var eos = new List<ExpandoObject>(dat.FieldDefinitions.Count);
@@ -294,10 +309,18 @@ namespace VisualGGPK2
 
             DatTable.ItemsSource = eos;
 
+            var lastEndOffset = 8L;
+            var row = 0;
+            foreach (var p in dat.PointedDatas.Values) {
+                if (p.Offset != lastEndOffset)
+                    toMark.Add(row);
+                lastEndOffset = p.EndOffset;
+                ++row;
+            }
             DatPointedTable.ItemsSource = dat.PointedDatas.Values;
 
             if (dat.FirstError.HasValue)
-                MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.DatName, MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.Name, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         /// <summary>
@@ -581,14 +604,18 @@ namespace VisualGGPK2
         }
 
 		private void ReloadClick(object sender, RoutedEventArgs e) {
-            DatContainer.ReloadDefinitions();
+            try {
+                DatContainer.ReloadDefinitions();
                 OnTreeSelectedChanged(null, null);
+            } catch (Exception ex) {
+                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
 		private void CSVClick(object sender, RoutedEventArgs e) {
             var dat = DatTable.Tag as DatContainer;
             var sfd = new SaveFileDialog() {
-                FileName = dat.DatName + ".csv",
+                FileName = dat.Name + ".csv",
                 DefaultExt = "csv"
             };
             if (sfd.ShowDialog() != true) return;
