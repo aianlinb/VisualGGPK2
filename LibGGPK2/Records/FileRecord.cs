@@ -256,6 +256,8 @@ namespace LibGGPK2.Records
                     return DataFormats.Ascii;
                 case ".dat":
                 case ".dat64":
+                case ".datl":
+                case ".datl64":
                     return DataFormats.Dat;
                 case ".dds":
                 case ".header":
