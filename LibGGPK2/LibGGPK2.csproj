@@ -4,7 +4,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
-    <AssemblyVersion>0.11.1.0</AssemblyVersion>
+    <AssemblyVersion>0.11.2.0</AssemblyVersion>
 	<Platforms>x64</Platforms>
   </PropertyGroup>
 

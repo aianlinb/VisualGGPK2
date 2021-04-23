@@ -127,7 +127,7 @@ namespace LibBundle.Records
                 f.Offset = (int)data.Position;
                 data.Write(b, 0, f.Size);
             }
-            UncompressedSize = (int)data.Length;
+            UncompressedSize = validSize = (int)data.Length;
             var result = Bundle.Save(data);
             FileToAdd.Clear();
             data.Close();

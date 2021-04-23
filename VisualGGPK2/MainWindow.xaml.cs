@@ -504,7 +504,7 @@ namespace VisualGGPK2
                     case IFileRecord.DataFormats.Unicode:
                         if (((RecordTreeNode)fr).GetPath().EndsWith(".amd"))
                             fr.ReplaceContent(Unicode.GetBytes(TextView.Text));
-                        else if (((RecordTreeNode)fr).Parent.Name == "Bundles")
+                        else if (((RecordTreeNode)fr).Parent.Name == "Bundles" || ((RecordTreeNode)fr).Name == "minimap_colours.txt")
                             goto case IFileRecord.DataFormats.Ascii;
                         else
                             fr.ReplaceContent(Unicode.GetBytes("\xFEFF" + TextView.Text));

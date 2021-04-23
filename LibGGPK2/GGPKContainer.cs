@@ -237,7 +237,7 @@ namespace LibGGPK2
                     } else {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
-                        BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                        BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                     }
                     BundleToSave = Index.GetSmallestBundle();
                     fr = RecordOfBundle(BundleToSave);
@@ -256,7 +256,7 @@ namespace LibGGPK2
                 } else {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
-                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                    BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                 }
             }
 
@@ -287,7 +287,7 @@ namespace LibGGPK2
                     } else {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
-                        BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                        BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                     }
                     BundleToSave = Index.GetSmallestBundle();
                     fr = RecordOfBundle(BundleToSave);
@@ -310,7 +310,7 @@ namespace LibGGPK2
                 } else {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
-                    BundleFileNode.LastFileToUpdate.UpdateCache(BundleToSave);
+                    BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                 }
             }
 
