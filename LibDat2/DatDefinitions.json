@@ -1244,7 +1244,7 @@
 		"CharacterSize": "int",
 		"IntroSoundFile": "ref|string",
 		"StartWeapon_BaseItemTypesKey": "ref|foreignkey",
-		"Unknown27": "ref|int",
+		"Gender": "ref|string",
 		"TraitDescription": "ref|string",
 		"Key0": "ref|foreignkey",
 		"Key1": "ref|foreignkey",
@@ -2370,7 +2370,7 @@
 		"AttackSpeedMultiplier": "int",
 		"Unknown48": "int",
 		"Unknown54": "ref|list|int",
-		"Unknown55": "ref|list|int",
+		"Unknown55": "ref|list|ref|foreignkey",
 		"Unknown49": "int",
 		"Unknown50": "int",
 		"Unknown51": "int",
@@ -3065,7 +3065,8 @@
 		"Flag7": "bool",
 		"Flag8": "bool",
 		"Flag9": "bool",
-		"Unknown3": "ref|foreignkey"
+		"Unknown3": "ref|foreignkey",
+		"Flag10": "bool"
 	},
 	"ItemCostPerLevel": {
 		"Contract_BaseItemTypesKey": "ref|foreignkey",
@@ -4308,7 +4309,6 @@
 		"MainHand_ItemClassesKey": "ref|foreignkey",
 		"OffHand_ItemClassesKey": "ref|foreignkey",
 		"Key1": "ref|foreignkey",
-		"Helmet_ItemVisualIdentityKey": "ref|foreignkey",
 		"Unknown59": "int",
 		"KillSpecificMonsterCount_AchievementItemsKeys": "ref|list|ref|foreignkey",
 		"Special_ModsKeys": "ref|list|ref|foreignkey",

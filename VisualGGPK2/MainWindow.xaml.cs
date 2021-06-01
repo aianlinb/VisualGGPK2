@@ -109,7 +109,7 @@ namespace VisualGGPK2
             TreeMenu.Items.Add(mi);
 
             var imageMenu = new ContextMenu();
-            mi = new MenuItem { Header = "SaveAsPng" };
+            mi = new MenuItem { Header = "Save as png" };
             mi.Click += OnSavePngClicked;
             imageMenu.Items.Add(mi);
             ImageView.ContextMenu = imageMenu;
