@@ -20,6 +20,8 @@
     <OutputPath>..\Release\Release</OutputPath>
     <PlatformTarget>x64</PlatformTarget>
     <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
 </Project>

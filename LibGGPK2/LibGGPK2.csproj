@@ -6,6 +6,7 @@
     <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
     <AssemblyVersion>0.11.2.0</AssemblyVersion>
 	<Platforms>x64</Platforms>
+	<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -21,6 +22,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
     <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>

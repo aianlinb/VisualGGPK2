@@ -208,7 +208,11 @@ namespace VisualGGPK2
                         switch (f.DataFormat)
                         {
                             case IFileRecord.DataFormats.Image:
-                                ImageView.Source = BitmapFrame.Create(new MemoryStream(f.ReadFileContent(ggpkContainer.fileStream)));
+                                Image.Source = BitmapFrame.Create(new MemoryStream(f.ReadFileContent(ggpkContainer.fileStream)));
+                                Image.Width = ImageView.ActualWidth;
+                                Image.Height = ImageView.ActualHeight;
+                                Canvas.SetLeft(Image, 0);
+                                Canvas.SetTop(Image, 0);
                                 ImageView.Visibility = Visibility.Visible;
                                 break;
                             case IFileRecord.DataFormats.Ascii:
@@ -257,9 +261,13 @@ namespace VisualGGPK2
                                         buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4);
                                     image = Pfim.Pfim.FromStream(new MemoryStream(buffer));
                                     image.Decompress();
-                                    ImageView.Tag = rtn.Name;
-                                    ImageView.Source = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
+                                    Image.Tag = rtn.Name;
+                                    Image.Source = BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
                                     PixelFormat(image), null, image.Data, image.Stride);
+                                    Image.Width = ImageView.ActualWidth;
+                                    Image.Height = ImageView.ActualHeight;
+                                    Canvas.SetLeft(Image, 0);
+                                    Canvas.SetTop(Image, 0);
                                     ImageView.Visibility = Visibility.Visible;
                                 } catch (Exception ex) {
                                     TextView.Text = ex.ToString();
@@ -591,10 +599,10 @@ namespace VisualGGPK2
         }
 
         private void OnSavePngClicked(object sender, RoutedEventArgs e) {
-            var sfd = new SaveFileDialog { FileName = ((string)ImageView.Tag).Replace("dds", "png") };
+            var sfd = new SaveFileDialog { FileName = Path.GetFileNameWithoutExtension((string)Image.Tag) + ".png" };
             if (sfd.ShowDialog() == true) {
                 var pbe = new PngBitmapEncoder();
-                pbe.Frames.Add(BitmapFrame.Create((BitmapSource)ImageView.Source));
+                pbe.Frames.Add(BitmapFrame.Create((BitmapSource)Image.Source));
                 var f = File.OpenWrite(sfd.FileName);
                 pbe.Save(f);
                 f.Flush();
@@ -637,6 +645,23 @@ namespace VisualGGPK2
             if (e.Key != Key.Enter) return;
             FilterButton_Click(null, null);
             e.Handled = true;
+        }
+
+		private void ImageView_MouseWheel(object sender, MouseWheelEventArgs e) {
+            var p = e.GetPosition(ImageView);
+            var x = Canvas.GetLeft(Image);
+            var y = Canvas.GetTop(Image);
+            if (e.Delta > 0) {
+                Canvas.SetLeft(Image, x - (p.X - x) * 0.2);
+                Canvas.SetTop(Image, y - (p.Y - y) * 0.2);
+                Image.Width *= 1.2;
+                Image.Height *= 1.2;
+            } else {
+                Canvas.SetLeft(Image, x + (p.X - x) / 6);
+                Canvas.SetTop(Image, y + (p.Y - y) / 6);
+                Image.Width /= 1.2;
+                Image.Height /= 1.2;
+            }
         }
 	}
 
