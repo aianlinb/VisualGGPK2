@@ -17,11 +17,14 @@ namespace LibBundle.Records
         public readonly List<FileRecord> Files = new List<FileRecord>();
         internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new Dictionary<FileRecord, byte[]>();
         protected BundleContainer _bundle;
+        private bool bundleNull;
 
         public BundleContainer Bundle
         {
             get
             {
+                if (bundleNull)
+                    return null;
                 Read();
                 return _bundle;
             }
@@ -35,22 +38,22 @@ namespace LibBundle.Records
             UncompressedSize = br.ReadInt32();
         }
 
-        public virtual void Read(BinaryReader br = null, long? Offset = null)
-        {
+        public virtual void Read(BinaryReader br = null, long? Offset = null) {
             if (_bundle != null) return;
-            if (Offset.HasValue)
-            {
+            if (Offset.HasValue) {
                 br.BaseStream.Seek(Offset.Value, SeekOrigin.Begin);
                 _bundle = new BundleContainer(br);
-            }
-            else if (br == null)
-            {
+            } else if (br == null)
                 _bundle = new BundleContainer(Name);
-            }
+
+            // This will result in reading from the wrong place when bundle.bin is not found
+            /* 
             else
-            {
                 _bundle = new BundleContainer(br);
-            }
+            */
+
+            else
+                bundleNull = true;
         }
 
         public virtual void Save(string newPath = null, string originalPath = null)

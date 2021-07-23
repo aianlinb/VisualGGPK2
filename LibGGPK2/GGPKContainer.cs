@@ -34,6 +34,8 @@ namespace LibGGPK2
             if (_RecordOfBundle == null) return null;
             if (!_RecordOfBundle.TryGetValue(bundleRecord, out var fr))
                 _RecordOfBundle.Add(bundleRecord, fr = (FileRecord)FindRecord(bundleRecord.Name, OriginalBundles2));
+            //if (fr == null)
+            //    throw new FileNotFoundException("Missing file: " + bundleRecord.Name + " in GGPK");
             return fr;
         }
 
@@ -201,6 +203,8 @@ namespace LibGGPK2
         {
             LibBundle.Records.BundleRecord br = null;
             MemoryStream ms = null;
+            var failBundles = 0;
+            var failFiles = 0;
             foreach (var (record, path) in list) {
                 Directory.CreateDirectory(Directory.GetParent(path).FullName);
                 if (record is BundleFileNode bfn) {
@@ -208,12 +212,27 @@ namespace LibGGPK2
                         ms?.Close();
                         br = bfn.BundleFileRecord.bundleRecord;
                         br.Read(bfn.ggpkContainer.Reader, bfn.ggpkContainer.RecordOfBundle(br)?.DataBegin);
-                        ms = br.Bundle.Read(bfn.ggpkContainer.Reader);
+                        ms = br.Bundle?.Read(bfn.ggpkContainer.Reader);
+                        if (ms == null)
+                            ++failBundles;
                     }
-                    File.WriteAllBytes(path, bfn.BatchReadFileContent(ms));
+                    if (ms == null)
+                        ++failFiles;
+                    else
+                        File.WriteAllBytes(path, bfn.BatchReadFileContent(ms));
                 } else
                     File.WriteAllBytes(path, record.ReadFileContent());
                 ProgressStep?.Invoke();
+            }
+            if (failBundles != 0 || failFiles != 0)
+                throw new BundleMissingException(failBundles, failFiles);
+        }
+
+        public class BundleMissingException : Exception {
+            public int failBundles, failFiles;
+            public BundleMissingException(int failBundles, int failFiles) : base($"{failBundles} bundles are missing\n{failFiles} files were not exported!") {
+                this.failBundles = failBundles;
+                this.failFiles = failFiles;
             }
         }
 
@@ -224,15 +243,21 @@ namespace LibGGPK2
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
         public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null)
         {
+            var bundles = new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
-            var BundleToSave = Index?.GetSmallestBundle();
+            var BundleToSave = Index?.GetSmallestBundle(bundles);
             var fr = RecordOfBundle(BundleToSave);
+            while (fr == null) {
+                bundles.Remove(BundleToSave);
+                BundleToSave = Index?.GetSmallestBundle(bundles);
+                fr = RecordOfBundle(BundleToSave);
+            }
             var SavedSize = 0;
             foreach (var (record, path) in list) {
                 if (SavedSize > 50000000) // 50MB per bundle
                 {
                     changed = true;
-                    if (fr == null) {
+                    if (fileStream == null) {
                         BundleToSave.Save();
                     } else {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
@@ -241,6 +266,11 @@ namespace LibGGPK2
                     }
                     BundleToSave = Index.GetSmallestBundle();
                     fr = RecordOfBundle(BundleToSave);
+                    while (fr == null) {
+                        bundles.Remove(BundleToSave);
+                        BundleToSave = Index?.GetSmallestBundle(bundles);
+                        fr = RecordOfBundle(BundleToSave);
+                    }
                     SavedSize = 0;
                 }
                 if (record is BundleFileNode bfn) // In Bundle
@@ -251,7 +281,7 @@ namespace LibGGPK2
             }
             if (BundleToSave != null && SavedSize > 0) {
                 changed = true;
-                if (fr == null) {
+                if (fileStream == null) {
                     BundleToSave.Save();
                 } else {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
@@ -274,9 +304,15 @@ namespace LibGGPK2
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
         public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, Action ProgressStep = null) {
+            var bundles = new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
             var BundleToSave = Index?.GetSmallestBundle();
             var fr = RecordOfBundle(BundleToSave);
+            while (fr == null) {
+                bundles.Remove(BundleToSave);
+                BundleToSave = Index?.GetSmallestBundle(bundles);
+                fr = RecordOfBundle(BundleToSave);
+            }
             var SavedSize = 0;
             foreach (var (record, zipped) in list) {
                 if (SavedSize > 50000000) // 50MB per bundle
@@ -291,6 +327,11 @@ namespace LibGGPK2
                     }
                     BundleToSave = Index.GetSmallestBundle();
                     fr = RecordOfBundle(BundleToSave);
+                    while (fr == null) {
+                        bundles.Remove(BundleToSave);
+                        BundleToSave = Index?.GetSmallestBundle(bundles);
+                        fr = RecordOfBundle(BundleToSave);
+                    }
                     SavedSize = 0;
                 }
                 var s = zipped.Open();

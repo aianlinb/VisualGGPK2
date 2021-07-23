@@ -447,9 +447,15 @@ namespace VisualGGPK2
                                 var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
                                 GGPKContainer.RecursiveFileList(rtn, path, list, true);
                                 bkg.ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . .";
-                                GGPKContainer.Export(list, bkg.NextProgress);
+                                var failFileCount = 0;
+								try {
+                                    GGPKContainer.Export(list, bkg.NextProgress);
+                                } catch (GGPKContainer.BundleMissingException bex) {
+                                    failFileCount = bex.failFiles;
+                                    MessageBox.Show(bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                }
                                 Dispatcher.Invoke(() => {
-                                    MessageBox.Show("Exported " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    MessageBox.Show("Exported " + (list.Count - failFileCount).ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {

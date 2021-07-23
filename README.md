@@ -23,6 +23,3 @@ A visual program to view/edit ggpk file.
 - Custom exception window instead of crashing.
 - Port from .NET Framework to .NET Core.
 - Remove unnecessary code.
-## Working on . . .
-- Viewer of .ogg .bank .bk2 etc..
-- .dat Editing
