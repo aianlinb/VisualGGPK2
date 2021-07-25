@@ -61,6 +61,10 @@ namespace LibDat2 {
 		/// Set of pointed value of the dat file last read/save
 		/// </summary>
 		public SortedDictionary<long, PointedValue> PointedDatas = new();
+		/// <summary>
+		/// Used to find PointedValue with the actual data
+		/// </summary>
+		protected Dictionary<object, PointedValue> PointedDatas2 = new();
 
 		/// <summary>
 		/// See <see cref="FirstError"/>
@@ -331,21 +335,31 @@ namespace LibDat2 {
 
 		protected object ReadType(BinaryReader reader, string type) {
 			if (type.StartsWith('i'))
-				return type[1..] switch {
-					"32" => reader.ReadInt32(),
-					"8" => reader.ReadSByte(),
-					"64" => reader.ReadInt64(),
-					"16" => reader.ReadInt16(),
-					_ => throw new InvalidCastException("Unknown Type: " + type)
-				};
+				switch (type[1..]) {
+					case "32":
+						return reader.ReadInt32();
+					case "8":
+						return reader.ReadSByte();
+					case "64":
+						return reader.ReadInt64();
+					case "16":
+						return reader.ReadInt16();
+					default:
+						throw new InvalidCastException("Unknown Type: " + type);
+				}
 			else if (type.StartsWith('u'))
-				return type[1..] switch {
-					"32" => reader.ReadUInt32(),
-					"64" => reader.ReadUInt64(),
-					"8" => reader.ReadByte(),
-					"16" => reader.ReadUInt16(),
-					_ => throw new InvalidCastException("Unknown Type: " + type)
-				};
+				switch (type[1..]) {
+					case "32":
+						return reader.ReadUInt32();
+					case "64":
+						return reader.ReadUInt64();
+					case "8":
+						return reader.ReadByte();
+					case "16":
+						return reader.ReadUInt16();
+					default:
+						throw new InvalidCastException("Unknown Type: " + type);
+				}
 			else if (type == "bool") {
 				return reader.ReadBoolean();
 			} else if (type.StartsWith("array|")) {
@@ -371,7 +385,9 @@ namespace LibDat2 {
 				for (var i = 0L; i < length; ++i)
 					array[i] = ReadType(reader, type2);
 				reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
+				var pv = new PointedValue(pos, array, type, Args.x64, Args.UTF32);
 				PointedDatas.Add(pos, new PointedValue(pos, array, type, Args.x64, Args.UTF32));
+				PointedDatas2.Add(array, pv);
 				return array;
 			} else if (type == "string") {
 				var pos = Args.x64 ? reader.ReadInt64() : reader.ReadInt32();
@@ -384,14 +400,24 @@ namespace LibDat2 {
 				var previousPos = reader.BaseStream.Position;
 				reader.BaseStream.Seek(pos + Args.DataSectionOffset, SeekOrigin.Begin);
 				var sb = new StringBuilder();
-				char ch;
-				while ((ch = reader.ReadChar()) != 0)
-					sb.Append(ch);
-				if (!Args.UTF32 && reader.ReadChar() != 0)  // string should end with 4 bytes of zero
-					throw new("Not found \\0 at the end of the string");
+
+				if (Args.UTF32) {
+					int ch;
+					while ((ch = reader.ReadInt32()) != 0)
+						sb.Append(ch);
+				} else {
+					char ch;
+					while ((ch = reader.ReadChar()) != 0)
+						sb.Append(ch);
+					if (reader.ReadChar() != 0)  // string should end with 4 bytes of zero
+						throw new("Not found \\0 at the end of the string");
+				}
+
 				reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
 				var s = sb.ToString();
-				PointedDatas.Add(pos, new PointedValue(pos, s, type, Args.x64, Args.UTF32));
+				var pv = new PointedValue(pos, s, type, Args.x64, Args.UTF32);
+				PointedDatas.Add(pos, pv);
+				PointedDatas2.Add(s, pv);
 				return sb.ToString();
 			} else if (type == "foreignrow") {
 				ulong? key1, key2;
@@ -424,11 +450,14 @@ namespace LibDat2 {
 				}
 				return new KeyType(false, key, 0UL);
 			} else if (type.StartsWith('f'))
-				return type[1..] switch {
-					"32" => reader.ReadSingle(),
-					"64" => reader.ReadDouble(),
-					_ => throw new InvalidCastException("Unknown Type: " + type)
-				};
+				switch (type[1..]) {
+					case "32":
+						return reader.ReadSingle();
+					case "64":
+						return reader.ReadDouble();
+					default:
+						throw new InvalidCastException("Unknown Type: " + type);
+				}
 			else if (type == "valueString") {
 				if (reader.BaseStream.Position == reader.BaseStream.Length)
 					return null;
@@ -484,61 +513,123 @@ namespace LibDat2 {
 			Args.x64 = x64;
 			Args.UTF32 = UTF32;
 			var pointer = (Args.DataSectionOffset = FieldDatas.Count * CalculateRecordLength(FieldDefinitions.Select(t => t.Item2), x64) + 4) + 8;
-			foreach (var os in FieldDatas)
-				foreach (var o in os)
-					WriteType(bw, o, ref pointer);
+			PointedDatas.Clear();
+			PointedDatas2.Clear();
+			var def = FieldDefinitions.GetEnumerator();
+			foreach (var os in FieldDatas) {
+				foreach (var o in os) {
+					def.MoveNext();
+					WriteType(bw, o, ref pointer, def.Current.Item2);
+				}
+				def.Reset();
+			}
 			bw.Write(0xBBBBBBBBBBBBBBBB); // Magic number
 			bw.Seek((int)(pointer - bw.BaseStream.Position), SeekOrigin.Current); // Move to end of dat file
 		}
 
-		protected unsafe void WriteType(BinaryWriter writer, object o, ref long pointer) {
-			if (o is int i)
-				writer.Write(i);
-			else if (o is byte by)
-				writer.Write(by);
-			else if (o is bool bl)
-				writer.Write(bl);
-			else if (o is KeyType k)
-				k.Write(writer, Args.x64);
-			else if (o is long l)
-				writer.Write(l);
-			else if (o is float f)
-				writer.Write(f);
-			else if (o is short sh)
-				writer.Write(sh);
-			else if (o is double d)
-				writer.Write(d);
-			else if (o is sbyte sby)
-				writer.Write(sby);
-			else if (o is object[] os2) {
-				if (Args.x64) {
-					writer.Write((long)os2.Length);
-					writer.Write(pointer - Args.DataSectionOffset);
+		protected unsafe void WriteType(BinaryWriter writer, object o, ref long pointer, string type) {
+			if (type == "i32")
+				writer.Write((int)o);
+			else if (type == "u8")
+				writer.Write((byte)o);
+			else if (type == "bool")
+				writer.Write((bool)o);
+			else if (type == "foreignrow" || type == "row")
+				((KeyType)o).Write(writer, Args.x64);
+			else if (type == "u32")
+				writer.Write((uint)o);
+			else if (type == "u64")
+				writer.Write((ulong)o);
+			else if (type == "i64")
+				writer.Write((long)o);
+			else if (type == "f32")
+				writer.Write((float)o);
+			else if (type == "i16")
+				writer.Write((short)o);
+			else if (type == "f64")
+				writer.Write((double)o);
+			else if (type == "i8")
+				writer.Write((sbyte)o);
+			else if (type == "u16")
+				writer.Write((ushort)o);
+			else if (type.StartsWith("array|")) {
+				var os = o as object[];
+				if (PointedDatas2.TryGetValue(o, out PointedValue pv)) {
+					if (Args.x64) {
+						writer.Write((long)os.Length);
+						writer.Write(pv.Offset);
+					} else {
+						writer.Write(os.Length);
+						writer.Write((uint)pv.Offset);
+					}
 				} else {
-					writer.Write(os2.Length);
-					writer.Write((uint)(pointer - Args.DataSectionOffset));
+					var offset = pointer - Args.DataSectionOffset;
+					if (Args.x64) {
+						writer.Write((long)os.Length);
+						writer.Write(offset);
+					} else {
+						writer.Write(os.Length);
+						writer.Write((uint)offset);
+					}
+					if (os.Length == 0)
+						return;
+
+					var pv2 = new PointedValue(offset, o, type, Args.x64, Args.UTF32);
+					PointedDatas.Add(offset, pv2);
+					PointedDatas2.Add(o, pv2);
+
+					var previousPointer = writer.BaseStream.Position;
+					writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
+					pointer += pv2.Length;
+					foreach (var o2 in os)
+						WriteType(writer, o2, ref pointer, type[6..]);
+					if (pointer < writer.BaseStream.Position)
+						pointer = writer.BaseStream.Position;
+					writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
 				}
-				var previousPointer = writer.BaseStream.Position;
-				writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
-				foreach (var o2 in os2)
-					WriteType(writer, o2, ref pointer);
-				pointer = writer.BaseStream.Position;
-				writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
-			} else if (o is string s) {
-				if (Args.x64)
-					writer.Write(pointer - Args.DataSectionOffset);
-				else
-					writer.Write((uint)(pointer - Args.DataSectionOffset));
-				var previousPointer = writer.BaseStream.Position;
-				writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
+			} else if (type == "string") {
+				var s = o as string;
+				if (PointedDatas2.TryGetValue(o, out PointedValue pv)) {
+					if (Args.x64)
+						writer.Write(pv.Offset);
+					else
+						writer.Write((uint)pv.Offset);
+				} else {
+					var offset = pointer - Args.DataSectionOffset;
+					if (Args.x64)
+						writer.Write(offset);
+					else
+						writer.Write((uint)offset);
+
+					var pv2 = new PointedValue(offset, o, type, Args.x64, Args.UTF32);
+					PointedDatas.Add(offset, pv2);
+					PointedDatas2.Add(o, pv2);
+
+					var previousPointer = writer.BaseStream.Position;
+					writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
+					pointer += pv2.Length;
+					if (Args.UTF32)
+						writer.Write(Encoding.UTF32.GetBytes(s));
+					else
+						fixed (char* c = s) {
+							var p = (byte*)c;
+							writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Encoding.Unicode.GetByteCount(s)));
+						}
+					writer.Write(0); // \0 at the end of string
+					if (pointer < writer.BaseStream.Position)
+						pointer = writer.BaseStream.Position;
+					writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
+				}
+			} else if (type == "valueString") {
+				var s = o as string;
 				fixed (char* c = s) {
 					var p = (byte*)c;
 					writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Args.UTF32 ? Encoding.UTF32.GetByteCount(s) : Encoding.Unicode.GetByteCount(s)));
 				}
-				writer.Write(0); // \0 at the end of string
-				pointer = writer.BaseStream.Position;
-				writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
-			}
+			} else if (type == "array") {
+				return;
+			} else
+				throw new InvalidCastException($"Unknown Type: {type}");
 		}
 
 		/// <summary>
