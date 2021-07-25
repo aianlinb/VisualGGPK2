@@ -37,7 +37,7 @@ namespace VisualGGPK2
         /// Icon of file on TreeView
         /// </summary>
         public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file")));
-        public static readonly ContextMenu TreeMenu = new ContextMenu();
+        public static readonly ContextMenu TreeMenu = new();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
         public WebClient Web;
@@ -236,8 +236,12 @@ namespace VisualGGPK2
                             case IFileRecord.DataFormats.Dat:
                                 try {
                                     var dat = new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name);
-                                    ShowDatFile(dat);
+                                    if (dat.FromOldDefinition)
+                                        OldDatDefTextBlock.Text = "Using DatDefinitions_extra.json :   True";
+                                    else
+                                        OldDatDefTextBlock.Text = "Using DatDefinitions_extra.json :   False";
                                     DatView.Visibility = Visibility.Visible;
+                                    ShowDatFile(dat);
                                 } catch (Exception ex) {
                                     MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 }
@@ -289,7 +293,7 @@ namespace VisualGGPK2
             }
         }
 
-        DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
+		private DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
         private void ShowDatFile(DatContainer dat) {
             toMark.Clear();
             DatTable.Tag = dat;
@@ -298,8 +302,11 @@ namespace VisualGGPK2
             for (var i = 0; i < dat.FieldDatas.Count; i++) {
                 var eo = new ExpandoObject() as IDictionary<string, object>;
                 eo.Add("Row", i + 1);
-                foreach (var (name, value) in (dat.FieldDefinitions.Keys, dat.FieldDatas[i]))
-                    eo.Add((string)name, value);
+                foreach (var (name, value) in (dat.FieldDefinitions.Select(t => t.Item1), dat.FieldDatas[i]))
+                    if (value is object[] arr)
+                        eo.Add((string)name, ArrayToString(arr));
+                    else
+                        eo.Add((string)name, value);
                 eos.Add((ExpandoObject)eo);
             }
 
@@ -308,10 +315,10 @@ namespace VisualGGPK2
                 Binding = new Binding("Row"),
                 Width = dataGridLength
             });
-            foreach (var col in dat.FieldDefinitions.Keys)
+            foreach (var col in dat.FieldDefinitions.Select(t => t.Item1))
                 DatTable.Columns.Add(new DataGridTextColumn {
                     Header = col,
-                    Binding = new Binding(col + ".Value") { TargetNullValue = "{null}" },
+                    Binding = new Binding(col) { TargetNullValue = "{null}" },
                     Width = dataGridLength
                 });
 
@@ -319,22 +326,38 @@ namespace VisualGGPK2
 
             var lastEndOffset = 8L;
             var row = 0;
-            foreach (var p in dat.PointedDatas.Values) {
-                if (p.Offset != lastEndOffset)
+            var pointedList = new List<PointedValue>(dat.PointedDatas.Values);
+            for (var i = 0; i < pointedList.Count; ++i) {
+                if (pointedList[i].Offset != lastEndOffset)
                     toMark.Add(row);
-                lastEndOffset = p.EndOffset;
+                lastEndOffset = pointedList[i].EndOffset;
                 ++row;
+
+                if (pointedList[i].Value is object[] arr)
+                    pointedList[i] = new(pointedList[i].Offset, pointedList[i].Length, ArrayToString(arr));
             }
-            DatPointedTable.ItemsSource = dat.PointedDatas.Values;
+            DatPointedTable.ItemsSource = pointedList;
 
             if (dat.FirstError.HasValue)
                 MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.Name, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        /// <summary>
-        /// Get the PixelFormat of the dds image
-        /// </summary>
-        public static PixelFormat PixelFormat(Pfim.IImage image) => image.Format switch {
+		public static string ArrayToString(object[] value) {
+            var s = new StringBuilder("[");
+            foreach (var f in value) {
+                s.Append(f ?? "{null}");
+                s.Append(", ");
+            }
+            if (s.Length > 2)
+                s.Remove(s.Length - 2, 2);
+            s.Append(']');
+            return s.ToString();
+        }
+
+		/// <summary>
+		/// Get the PixelFormat of the dds image
+		/// </summary>
+		public static PixelFormat PixelFormat(Pfim.IImage image) => image.Format switch {
             Pfim.ImageFormat.Rgb24 => PixelFormats.Bgr24,
             Pfim.ImageFormat.Rgba32 => PixelFormats.Bgr32,
             Pfim.ImageFormat.Rgb8 => PixelFormats.Gray8,
@@ -541,7 +564,7 @@ namespace VisualGGPK2
                     var indexUrl = SelectedVersion switch {
                         1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
                         2 => (PatchServer = GetPatchServer(true)) + "Bundles2/_.index.bin",
-                        3 => "http://poesmoother.eu/owncloud/index.php/s/GKuEGtTyAsRueqC/download",
+                        3 => "http://poesmoother.eu/owncloud/index.php/s/1VsY1uYOBmfDcMy/download",
                         _ => null
                     };
                     var l = new List<IFileRecord>();
@@ -681,11 +704,11 @@ namespace VisualGGPK2
             public IEnumerator Item2;
 
             public TupleEnumerator((IEnumerable, IEnumerable) TupleEnumerable) {
-                Item1 = TupleEnumerable.Item1.GetEnumerator();
-                Item2 = TupleEnumerable.Item2.GetEnumerator();
+                Item1 = TupleEnumerable.Item1?.GetEnumerator();
+                Item2 = TupleEnumerable.Item2?.GetEnumerator();
             }
 
-            public (object, object) Current => (Item1.Current, Item2.Current);
+            public (object, object) Current => (Item1?.Current, Item2?.Current);
 
             object IEnumerator.Current => Current;
 
@@ -698,12 +721,12 @@ namespace VisualGGPK2
             };
 
             public bool MoveNext() {
-                return Item1.MoveNext() | Item2.MoveNext();
+                return Item1?.MoveNext() == true | Item2?.MoveNext() == true;
             }
 
             public void Reset() {
-                Item1.Reset();
-                Item2.Reset();
+                Item1?.Reset();
+                Item2?.Reset();
             }
 
 #pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
