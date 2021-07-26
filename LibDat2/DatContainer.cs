@@ -333,6 +333,9 @@ namespace LibDat2 {
 		/// </summary>
 		protected Arguments Args = new();
 
+		// If using switch-expression, all result will be convert to the same type
+		// for below three switch: long, ulong, double
+#pragma warning disable IDE0066 // 將 switch 陳述式轉換為運算式
 		protected object ReadType(BinaryReader reader, string type) {
 			if (type.StartsWith('i'))
 				switch (type[1..]) {
@@ -387,7 +390,7 @@ namespace LibDat2 {
 				reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
 				var pv = new PointedValue(pos, array, type, Args.x64, Args.UTF32);
 				PointedDatas.Add(pos, new PointedValue(pos, array, type, Args.x64, Args.UTF32));
-				PointedDatas2.Add(array, pv);
+				PointedDatas2.TryAdd(array, pv);
 				return array;
 			} else if (type == "string") {
 				var pos = Args.x64 ? reader.ReadInt64() : reader.ReadInt32();
@@ -404,7 +407,7 @@ namespace LibDat2 {
 				if (Args.UTF32) {
 					int ch;
 					while ((ch = reader.ReadInt32()) != 0)
-						sb.Append(ch);
+						sb.Append(char.ConvertFromUtf32(ch));
 				} else {
 					char ch;
 					while ((ch = reader.ReadChar()) != 0)
@@ -417,7 +420,7 @@ namespace LibDat2 {
 				var s = sb.ToString();
 				var pv = new PointedValue(pos, s, type, Args.x64, Args.UTF32);
 				PointedDatas.Add(pos, pv);
-				PointedDatas2.Add(s, pv);
+				PointedDatas2.TryAdd(s, pv);
 				return sb.ToString();
 			} else if (type == "foreignrow") {
 				ulong? key1, key2;
@@ -473,6 +476,7 @@ namespace LibDat2 {
 			else
 				throw new InvalidCastException("Unknown Type: " + type);
 		}
+#pragma warning restore IDE0066 // 將 switch 陳述式轉換為運算式
 
 		/// <summary>
 		/// Create a DatContainer with Datas
@@ -720,8 +724,7 @@ namespace LibDat2 {
 		/// </summary>
 		public static void ReloadDefinitions() {
 			var h = new HttpClient();
-			h.DefaultRequestHeaders.Remove("UserAgent");
-			h.DefaultRequestHeaders.Add("UserAgent", "LibDat2");
+			h.DefaultRequestHeaders.Add("User-Agent", "LibDat2");
 			string s;
 			try {
 				s = h.GetStringAsync("http://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json").Result;

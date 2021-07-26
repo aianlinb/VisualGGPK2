@@ -4,11 +4,10 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
-    <Version>0.12.0</Version>
+    <Version>0.12.2</Version>
     <Platforms>x64</Platforms>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

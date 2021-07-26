@@ -7,12 +7,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -71,6 +74,23 @@ namespace VisualGGPK2
 
         private readonly List<int> toMark = new();
         private async void OnLoaded(object sender, RoutedEventArgs e) {
+            // Version Check
+            var http = new HttpClient {
+                Timeout = TimeSpan.FromSeconds(2)
+            };
+            http.DefaultRequestHeaders.Add("User-Agent", "VisualGGPK2");
+            var json = await http.GetStringAsync("https://api.github.com/repos/aianlinb/LibGGPK2/releases");
+            var match = Regex.Match(json, "(?<=\"tag_name\":\"v).*?(?=\")");
+            var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+            var versionText = $"{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}";
+            if (match.Success && match.Value != versionText && MessageBox.Show($"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
+                Process.Start(new ProcessStartInfo("https://github.com/aianlinb/LibGGPK2/releases") { UseShellExecute = true });
+                Close();
+                return;
+            }
+            http.Dispose();
+
+            // GGPK Selection
             if (FilePath == null) {
                 var ofd = new OpenFileDialog {
                     DefaultExt = "ggpk",
@@ -121,6 +141,7 @@ namespace VisualGGPK2
             RegexCheckBox.IsEnabled = true;
             FilterButton.IsEnabled = true;
 
+            // Mark the free spaces in data section of dat files
             DatPointedTable.CellStyle = new Style(typeof(DataGridCell));
             DatPointedTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler((s, e) => {
                 var dc = (DataGridCell)s;
@@ -294,6 +315,10 @@ namespace VisualGGPK2
         }
 
 		private DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
+
+        /// <summary>
+        /// Show dat file on <see cref="DatView"/>
+        /// </summary>
         private void ShowDatFile(DatContainer dat) {
             toMark.Clear();
             DatTable.Tag = dat;
@@ -342,6 +367,9 @@ namespace VisualGGPK2
                 MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.Name, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
+        /// <summary>
+        /// Convert contents of array to a string
+        /// </summary>
 		public static string ArrayToString(object[] value) {
             var s = new StringBuilder("[");
             foreach (var f in value) {
@@ -694,27 +722,35 @@ namespace VisualGGPK2
         }
 	}
 
-	public static class GetTupleEnumerator {
-        public static IEnumerator<(object, object)> GetEnumerator(this (IEnumerable, IEnumerable) TupleEnumerable) => new TupleEnumerator(TupleEnumerable);
+    /// <summary>
+    /// For using foreach in tuple
+    /// </summary>
+    public static class GetTupleEnumerator {
+        /// <summary>
+        /// For using foreach in tuple
+        /// </summary>
+        public static IEnumerator<(T, T)> GetEnumerator<T>(this (IEnumerable<T>, IEnumerable<T>) TupleEnumerable) => new TupleEnumerator<T>(TupleEnumerable);
 
-        public class TupleEnumerator : ITuple, IEnumerator<(object, object)> {
+        public class TupleEnumerator<T> : ITuple, IEnumerator<(T, T)> {
 
-            public IEnumerator Item1;
+            public IEnumerator<T> Item1;
 
-            public IEnumerator Item2;
+            public IEnumerator<T> Item2;
 
-            public TupleEnumerator((IEnumerable, IEnumerable) TupleEnumerable) {
+            public TupleEnumerator((IEnumerable<T>, IEnumerable<T>) TupleEnumerable) {
                 Item1 = TupleEnumerable.Item1?.GetEnumerator();
                 Item2 = TupleEnumerable.Item2?.GetEnumerator();
             }
 
-            public (object, object) Current => (Item1?.Current, Item2?.Current);
+            public (T, T) Current => (Item1 == null ? default : Item1.Current, Item2 == null ? default : Item2.Current);
 
             object IEnumerator.Current => Current;
 
+            (T, T) IEnumerator<(T, T)>.Current => Current;
+
             public int Length => 2;
 
-            public object this[int index] => index switch {
+			public object this[int index] => index switch {
                 1 => Item1,
                 2 => Item2,
                 _ => throw new IndexOutOfRangeException()
