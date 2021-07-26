@@ -130,8 +130,7 @@ namespace LibDat2 {
 					throw new ArgumentException("The provided file must be a dat file", nameof(fileName));
 			}
 
-			Name = fileName;
-			var name = Path.GetFileNameWithoutExtension(fileName);
+			Name = Path.GetFileNameWithoutExtension(fileName);
 			var Length = stream.Length;
 
 			var reader = new BinaryReader(stream, Args.UTF32 ? Encoding.UTF32 : Encoding.Unicode);
@@ -139,23 +138,23 @@ namespace LibDat2 {
 			var Count = reader.ReadInt32();
 
 			var fields = new List<(string, string)>();
-			var forceOld = ForceUseOldDatDefinitionsList.Contains(name);
+			var forceOld = ForceUseOldDatDefinitionsList.Contains(Name);
 			if (forceOld) {
 				// --- Begin  Old DatDefinitions ---
 				if (!HasOldDatDefinitions)
-					throw new KeyNotFoundException(name + " was not defined in Old DatDefinition");
+					throw new KeyNotFoundException(Name + " was not defined in Old DatDefinition");
 				fields = new();
 				try {
-					foreach (var field in OldDatDefinitions.GetProperty(name).EnumerateObject())
+					foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 						fields.Add((field.Name, ToNewType(field.Value.GetString())));
 					FieldDefinitions = new(fields);
 				} catch (Exception ex) {
-					throw new("Unable to read Old DatDefinition for " + Name, ex);
+					throw new("Unable to read Old DatDefinition for " + fileName, ex);
 				}
 				// --- End  Old DatDefinitions ---
 			} else
 				try {
-					var definition = DatDefinitions.GetProperty("tables").EnumerateArray().First(o => o.GetProperty("name").GetString() == name);
+					var definition = DatDefinitions.GetProperty("tables").EnumerateArray().First(o => o.GetProperty("name").GetString() == Name);
 					var unknownCount = 0;
 					foreach (var field in definition.GetProperty("columns").EnumerateArray()) {
 						var s = field.GetProperty("name").ToString();
@@ -166,16 +165,16 @@ namespace LibDat2 {
 				} catch (InvalidOperationException) {
 					// --- Begin  Old DatDefinitions ---
 					if (!HasOldDatDefinitions)
-						throw new KeyNotFoundException(name + " was not defined");
+						throw new KeyNotFoundException(Name + " was not defined");
 					fields = new();
 					try {
-						foreach (var field in OldDatDefinitions.GetProperty(name).EnumerateObject())
+						foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 							fields.Add((field.Name, ToNewType(field.Value.GetString())));
 						FieldDefinitions = new(fields);
 						forceOld = true;
 					// --- End  Old DatDefinitions ---
 					} catch (KeyNotFoundException) { // Unable to find definition with both two files
-						throw new KeyNotFoundException(name + " was not defined");
+						throw new KeyNotFoundException(Name + " was not defined");
 					}
 				}
 			FieldDefinitions = new(fields);
@@ -196,7 +195,7 @@ namespace LibDat2 {
 						throw new($"{fileName} : Actual record length: {actualRecordLength} is not equal to that defined in DatDefinitions: {recordLength}");
 					fields = new();
 					try {
-						foreach (var field in OldDatDefinitions.GetProperty(name).EnumerateObject())
+						foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 							fields.Add((field.Name, ToNewType(field.Value.GetString())));
 
 						var tmpRecordLength = CalculateRecordLength(fields.Select(t => t.Item2), Args.x64);
@@ -247,7 +246,7 @@ namespace LibDat2 {
 						if (!forceOld && !FromOldDefinition && (FromOldDefinition = HasOldDatDefinitions)) {
 							fields = new();
 							try {
-								foreach (var field in OldDatDefinitions.GetProperty(name).EnumerateObject())
+								foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 									fields.Add((field.Name, ToNewType(field.Value.GetString())));
 								tmpFieldDefinitions = fields;
 								FieldDatas.Add(list);
@@ -485,7 +484,7 @@ namespace LibDat2 {
 		/// <param name="fileName">Name of the dat file</param>
 		public DatContainer(List<object[]> fieldDatas, string fileName) {
 			FieldDatas = fieldDatas;
-			Name = fileName;
+			Name = Path.GetFileNameWithoutExtension(fileName);
 		}
 
 		/// <summary>
@@ -510,8 +509,9 @@ namespace LibDat2 {
 
 		/// <summary>
 		/// Save the dat file with the modified <see cref="FieldDatas"/>
+		/// The position of the stream must be 0
 		/// </summary>
-		public virtual void Save(Stream stream, bool x64, bool UTF32) {
+		protected virtual void Save(Stream stream, bool x64, bool UTF32) {
 			var bw = new BinaryWriter(stream);
 			bw.Write(FieldDatas.Count);
 			Args.x64 = x64;
@@ -630,9 +630,9 @@ namespace LibDat2 {
 					var p = (byte*)c;
 					writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Args.UTF32 ? Encoding.UTF32.GetByteCount(s) : Encoding.Unicode.GetByteCount(s)));
 				}
-			} else if (type == "array") {
+			} else if (type == "array")
 				return;
-			} else
+			else
 				throw new InvalidCastException($"Unknown Type: {type}");
 		}
 

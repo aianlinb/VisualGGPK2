@@ -2,11 +2,13 @@
 using LibDat2;
 using LibGGPK2;
 using LibGGPK2.Records;
+using Microsoft.CSharp.RuntimeBinder;
 using Microsoft.Win32;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
@@ -73,7 +75,6 @@ namespace VisualGGPK2
             InitializeComponent();
         }
 
-        private readonly List<int> toMark = new();
         private async void OnLoaded(object sender, RoutedEventArgs e) {
             // Version Check
             try {
@@ -119,9 +120,11 @@ namespace VisualGGPK2
                 }
             }
 
-            await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode)); // Initial GGPK
-
-            var mi = new MenuItem { Header = "Export" }; // Initial ContextMenu
+            // Initial GGPK
+            await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode)); 
+            
+            // Initial ContextMenu
+            var mi = new MenuItem { Header = "Export" };
             mi.Click += OnExportClicked;
             TreeMenu.Items.Add(mi);
             mi = new MenuItem { Header = "Replace" };
@@ -146,16 +149,10 @@ namespace VisualGGPK2
 
             // Mark the free spaces in data section of dat files
             DatPointedTable.CellStyle = new Style(typeof(DataGridCell));
-            DatPointedTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler((s, e) => {
-                var dc = (DataGridCell)s;
-                var border = (Border)VisualTreeHelper.GetChild(dc, 0);
-                var row = DataGridRow.GetRowContainingElement(dc).GetIndex();
-                var col = dc.Column.DisplayIndex;
-                if (col == 0 && toMark.Contains(row) || col == 2 && toMark.Contains(row + 1)) {
-                    border.Background = Brushes.Red;
-                    border.BorderThickness = new Thickness(0);
-                }
-            })));
+            DatPointedTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler(OnCellLoaded)));
+
+            // Make changes to DatContainer after editing <see cref="DatTable"/>
+            DatTable.CellEditEnding += OnCellEdit;
 
             TextView.AppendText("\r\n\r\nDone!\r\n");
         }
@@ -317,74 +314,6 @@ namespace VisualGGPK2
             }
         }
 
-		private DataGridLength dataGridLength = new(1.0, DataGridLengthUnitType.Auto);
-
-        /// <summary>
-        /// Show dat file on <see cref="DatView"/>
-        /// </summary>
-        private void ShowDatFile(DatContainer dat) {
-            toMark.Clear();
-            DatTable.Tag = dat;
-            DatTable.Columns.Clear();
-            var eos = new List<ExpandoObject>(dat.FieldDefinitions.Count);
-            for (var i = 0; i < dat.FieldDatas.Count; i++) {
-                var eo = new ExpandoObject() as IDictionary<string, object>;
-                eo.Add("Row", i + 1);
-                foreach (var (name, value) in (dat.FieldDefinitions.Select(t => t.Item1), dat.FieldDatas[i]))
-                    if (value is object[] arr)
-                        eo.Add((string)name, ArrayToString(arr));
-                    else
-                        eo.Add((string)name, value);
-                eos.Add((ExpandoObject)eo);
-            }
-
-            DatTable.Columns.Add(new DataGridTextColumn {
-                Header = "Row",
-                Binding = new Binding("Row"),
-                Width = dataGridLength
-            });
-            foreach (var col in dat.FieldDefinitions.Select(t => t.Item1))
-                DatTable.Columns.Add(new DataGridTextColumn {
-                    Header = col,
-                    Binding = new Binding(col) { TargetNullValue = "{null}" },
-                    Width = dataGridLength
-                });
-
-            DatTable.ItemsSource = eos;
-
-            var lastEndOffset = 8L;
-            var row = 0;
-            var pointedList = new List<PointedValue>(dat.PointedDatas.Values);
-            for (var i = 0; i < pointedList.Count; ++i) {
-                if (pointedList[i].Offset != lastEndOffset)
-                    toMark.Add(row);
-                lastEndOffset = pointedList[i].EndOffset;
-                ++row;
-
-                if (pointedList[i].Value is object[] arr)
-                    pointedList[i] = new(pointedList[i].Offset, pointedList[i].Length, ArrayToString(arr));
-            }
-            DatPointedTable.ItemsSource = pointedList;
-
-            if (dat.FirstError.HasValue)
-                MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.Name, MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-
-        /// <summary>
-        /// Convert contents of array to a string
-        /// </summary>
-		public static string ArrayToString(object[] value) {
-            var s = new StringBuilder("[");
-            foreach (var f in value) {
-                s.Append(f ?? "{null}");
-                s.Append(", ");
-            }
-            if (s.Length > 2)
-                s.Remove(s.Length - 2, 2);
-            s.Append(']');
-            return s.ToString();
-        }
-
 		/// <summary>
 		/// Get the PixelFormat of the dds image
 		/// </summary>
@@ -486,7 +415,7 @@ namespace VisualGGPK2
                     if (sfd.ShowDialog() == true)
                     {
                         File.WriteAllBytes(sfd.FileName, fr.ReadFileContent(ggpkContainer.fileStream));
-                        MessageBox.Show("Exported " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Exported " + rtn.GetPath() + "\nto " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 else
@@ -532,7 +461,7 @@ namespace VisualGGPK2
                     if (ofd.ShowDialog() == true)
                     {
                         fr.ReplaceContent(File.ReadAllBytes(ofd.FileName));
-                        MessageBox.Show("Replaced " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show("Replaced " + rtn.GetPath() + "\nwith " + ofd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 else
@@ -561,7 +490,7 @@ namespace VisualGGPK2
             }
         }
 
-        private void OnSaveClicked(object sender, RoutedEventArgs e)
+        private void OnSaveTextClicked(object sender, RoutedEventArgs e)
         {
             if (Tree.SelectedItem is TreeViewItem tvi && tvi.Tag is IFileRecord fr)
             {
@@ -693,26 +622,6 @@ namespace VisualGGPK2
             }
         }
 
-		private void ReloadClick(object sender, RoutedEventArgs e) {
-            try {
-                DatContainer.ReloadDefinitions();
-                OnTreeSelectedChanged(null, null);
-            } catch (Exception ex) {
-                MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-		private void CSVClick(object sender, RoutedEventArgs e) {
-            var dat = DatTable.Tag as DatContainer;
-            var sfd = new SaveFileDialog() {
-                FileName = dat.Name + ".csv",
-                DefaultExt = "csv"
-            };
-            if (sfd.ShowDialog() != true) return;
-            File.WriteAllText(sfd.FileName, dat.ToCsv());
-            MessageBox.Show($"Exported " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
 		private void FilterButton_Click(object sender, RoutedEventArgs e) {
             Tree.Items.Clear();
             ggpkContainer.FakeBundles2.Children.Clear();
@@ -746,52 +655,4 @@ namespace VisualGGPK2
             }
         }
 	}
-
-    /// <summary>
-    /// For using foreach in tuple
-    /// </summary>
-    public static class GetTupleEnumerator {
-        /// <summary>
-        /// For using foreach in tuple
-        /// </summary>
-        public static IEnumerator<(T, T)> GetEnumerator<T>(this (IEnumerable<T>, IEnumerable<T>) TupleEnumerable) => new TupleEnumerator<T>(TupleEnumerable);
-
-        public class TupleEnumerator<T> : ITuple, IEnumerator<(T, T)> {
-
-            public IEnumerator<T> Item1;
-
-            public IEnumerator<T> Item2;
-
-            public TupleEnumerator((IEnumerable<T>, IEnumerable<T>) TupleEnumerable) {
-                Item1 = TupleEnumerable.Item1?.GetEnumerator();
-                Item2 = TupleEnumerable.Item2?.GetEnumerator();
-            }
-
-            public (T, T) Current => (Item1 == null ? default : Item1.Current, Item2 == null ? default : Item2.Current);
-
-            object IEnumerator.Current => Current;
-
-            (T, T) IEnumerator<(T, T)>.Current => Current;
-
-            public int Length => 2;
-
-			public object this[int index] => index switch {
-                1 => Item1,
-                2 => Item2,
-                _ => throw new IndexOutOfRangeException()
-            };
-
-            public bool MoveNext() {
-                return Item1?.MoveNext() == true | Item2?.MoveNext() == true;
-            }
-
-            public void Reset() {
-                Item1?.Reset();
-                Item2?.Reset();
-            }
-
-#pragma warning disable CA1816 // Dispose 方法應該呼叫 SuppressFinalize
-            public void Dispose() { }
-        }
-    }
 }
