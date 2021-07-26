@@ -12,8 +12,8 @@ namespace LibBundle
         public readonly BundleRecord[] Bundles;
         public readonly FileRecord[] Files;
         public readonly DirectoryRecord[] Directorys;
-        public readonly Dictionary<ulong, FileRecord> FindFiles = new Dictionary<ulong, FileRecord>();
-        public readonly HashSet<string> Paths = new HashSet<string>();
+        public readonly Dictionary<ulong, FileRecord> FindFiles = new();
+        public readonly HashSet<string> Paths = new();
         public readonly byte[] directoryBundleData;
 
         protected static BinaryReader tmp;

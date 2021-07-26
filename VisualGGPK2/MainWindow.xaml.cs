@@ -19,6 +19,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -43,7 +44,7 @@ namespace VisualGGPK2
         public static readonly ContextMenu TreeMenu = new();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
-        public WebClient Web;
+        public HttpClient http;
         public readonly bool BundleMode = false;
         public readonly bool SteamMode = false;
         protected string FilePath;
@@ -75,20 +76,22 @@ namespace VisualGGPK2
         private readonly List<int> toMark = new();
         private async void OnLoaded(object sender, RoutedEventArgs e) {
             // Version Check
-            var http = new HttpClient {
-                Timeout = TimeSpan.FromSeconds(2)
-            };
-            http.DefaultRequestHeaders.Add("User-Agent", "VisualGGPK2");
-            var json = await http.GetStringAsync("https://api.github.com/repos/aianlinb/LibGGPK2/releases");
-            var match = Regex.Match(json, "(?<=\"tag_name\":\"v).*?(?=\")");
-            var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
-            var versionText = $"{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}";
-            if (match.Success && match.Value != versionText && MessageBox.Show($"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
-                Process.Start(new ProcessStartInfo("https://github.com/aianlinb/LibGGPK2/releases") { UseShellExecute = true });
-                Close();
-                return;
-            }
-            http.Dispose();
+            try {
+                var http = new HttpClient {
+                    Timeout = TimeSpan.FromSeconds(2)
+                };
+                http.DefaultRequestHeaders.Add("User-Agent", "VisualGGPK2");
+                var json = await http.GetStringAsync("https://api.github.com/repos/aianlinb/LibGGPK2/releases");
+                var match = Regex.Match(json, "(?<=\"tag_name\":\"v).*?(?=\")");
+                var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
+                var versionText = $"{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}";
+                if (match.Success && match.Value != versionText && MessageBox.Show($"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
+                    Process.Start(new ProcessStartInfo("https://github.com/aianlinb/LibGGPK2/releases") { UseShellExecute = true });
+                    Close();
+                    return;
+                }
+                http.Dispose();
+            } catch { }
 
             // GGPK Selection
             if (FilePath == null) {
@@ -585,9 +588,9 @@ namespace VisualGGPK2
             if (new VersionSelector().ShowDialog() != true) return;
 
             var bkg = new BackgroundDialog();
+            var rtn = (RecordTreeNode)((TreeViewItem)Tree.SelectedItem).Tag;
             Task.Run(() => {
                 try {
-                    Web ??= new WebClient();
                     string PatchServer = null;
                     var indexUrl = SelectedVersion switch {
                         1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
@@ -595,20 +598,38 @@ namespace VisualGGPK2
                         3 => "http://poesmoother.eu/owncloud/index.php/s/1VsY1uYOBmfDcMy/download",
                         _ => null
                     };
-                    var l = new List<IFileRecord>();
-                    GGPKContainer.RecursiveFileList((RecordTreeNode)((TreeViewItem)Tree.SelectedItem).Tag, l);
-                    bkg.ProgressText = "Recovering {0}/" + l.Count.ToString() + " Files . . .";
 
-                    BinaryReader br = null;
-                    IndexContainer i = null;
-                    if (l.Any((ifr) => ifr is BundleFileNode)) {
-                        if (SelectedVersion == 3) {
-                            MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory !", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
+                    if (SelectedVersion == 3) {
+                        var outsideBundles2 = true;
+                        var tmp = rtn;
+                        do {
+                            if (tmp == ggpkContainer.FakeBundles2)
+                                outsideBundles2 = false;
+                            tmp = tmp.Parent;
+                        } while (tmp != null);
+                        if (outsideBundles2) {
+                            MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory!", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
                             Dispatcher.Invoke(bkg.Close);
                             return;
                         }
-                        br = new BinaryReader(new MemoryStream(Web.DownloadData(indexUrl)));
+                    }
+
+                    var l = new List<IFileRecord>();
+                    GGPKContainer.RecursiveFileList(rtn, l);
+                    bkg.ProgressText = "Recovering {0}/" + l.Count.ToString() + " Files . . .";
+
+                    if (http == null) {
+                        http = new() {
+                            Timeout = Timeout.InfiniteTimeSpan
+                        };
+                        http.DefaultRequestHeaders.Add("User-Agent", "VisualGGPK2");
+                    }
+
+                    IndexContainer i = null;
+                    if (l.Any((ifr) => ifr is BundleFileNode)) {
+                        var br = new BinaryReader(new MemoryStream(http.GetByteArrayAsync(indexUrl).Result));
                         i = new IndexContainer(br);
+                        br.Close();
                     }
 
                     foreach (var f in l) {
@@ -617,15 +638,19 @@ namespace VisualGGPK2
                             var newbfr = i.FindFiles[bfr.NameHash];
                             bfr.Offset = newbfr.Offset;
                             bfr.Size = newbfr.Size;
-                            bfr.BundleIndex = newbfr.BundleIndex;
+                            if (bfr.BundleIndex != newbfr.BundleIndex) {
+                                bfr.BundleIndex = newbfr.BundleIndex;
+                                bfr.bundleRecord.Files.Remove(bfr);
+                                bfr.bundleRecord = ggpkContainer.Index.Bundles[bfr.BundleIndex];
+                                bfr.bundleRecord.Files.Add(bfr);
+                            }
                         } else {
                             var fr = f as FileRecord;
                             var path = Regex.Replace(fr.GetPath(), "^ROOT/", "");
-                            fr.ReplaceContent(Web.DownloadData(PatchServer + path));
+                            fr.ReplaceContent(http.GetByteArrayAsync(PatchServer + path).Result);
                         }
                         bkg.NextProgress();
                     }
-                    br?.Close();
 
                     if (i != null)
                         if (SteamMode)

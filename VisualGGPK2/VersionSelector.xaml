@@ -1,17 +1,17 @@
 ﻿<Window x:Class="VisualGGPK2.VersionSelector"
 		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		Title="GameVersion"
+		Title="Game Version"
 		Width="170"
-		Height="230"
+		Height="210"
 		ResizeMode="NoResize"
 		WindowStyle="ToolWindow"
 		WindowStartupLocation="CenterScreen">
 	<StackPanel>
-		<Button Content="International&#xa;      Steam"
+		<Button Content="Official"
 				FontSize="16"
 				Width="120"
-				Height="50"
+				Height="30"
 				Margin="0, 20, 0, 0"
 				Click="International_Click"/>
 		<Button Content="Garena"

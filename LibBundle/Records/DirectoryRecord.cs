@@ -5,8 +5,7 @@ namespace LibBundle.Records
 {
     public class DirectoryRecord
     {
-        public long indexOffset;
-        public List<FileRecord> children = new List<FileRecord>(); // Files only
+        public List<FileRecord> children = new(); // Files only
 
         public ulong NameHash;
         public int Offset;
@@ -15,7 +14,6 @@ namespace LibBundle.Records
 
         public DirectoryRecord(BinaryReader br)
         {
-            indexOffset = br.BaseStream.Position;
             NameHash = br.ReadUInt64();
             Offset = br.ReadInt32();
             Size = br.ReadInt32();

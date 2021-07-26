@@ -7,15 +7,14 @@ namespace LibBundle.Records
 {
     public class BundleRecord
     {
-        public long IndexOffset;
         public int NameLength;
         public string Name;
         public int UncompressedSize;
 
         public int bundleIndex;
         public int validSize;
-        public readonly List<FileRecord> Files = new List<FileRecord>();
-        internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new Dictionary<FileRecord, byte[]>();
+        public readonly List<FileRecord> Files = new();
+        internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new();
         protected BundleContainer _bundle;
         private bool bundleNull;
 
@@ -32,7 +31,6 @@ namespace LibBundle.Records
 
         public BundleRecord(BinaryReader br)
         {
-            IndexOffset = br.BaseStream.Position;
             NameLength = br.ReadInt32();
             Name = Encoding.UTF8.GetString(br.ReadBytes(NameLength)) + ".bundle.bin";
             UncompressedSize = br.ReadInt32();

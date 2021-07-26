@@ -4,7 +4,6 @@ namespace LibBundle.Records
 {
     public class FileRecord
     {
-        public long indexOffset;
         public BundleRecord bundleRecord;
         public DirectoryRecord parent;
         public string path;
@@ -16,7 +15,6 @@ namespace LibBundle.Records
 
         public FileRecord(BinaryReader br)
         {
-            indexOffset = br.BaseStream.Position;
             NameHash = br.ReadUInt64();
             BundleIndex = br.ReadInt32();
             Offset = br.ReadInt32();
@@ -37,7 +35,8 @@ namespace LibBundle.Records
         {
             if (bundleRecord.FileToAdd.TryGetValue(this, out var data))
                 bundleRecord.FileToAdd.Remove(this);
-            else data = Read();
+            else
+                data = Read();
             bundleRecord.Files.Remove(this);
             target.Files.Add(this);
             target.FileToAdd[this] = data;
