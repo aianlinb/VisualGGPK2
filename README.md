@@ -23,3 +23,4 @@ A visual program to view/edit ggpk file.
 - Custom exception window instead of crashing.
 - Port from .NET Framework to .NET Core.
 - Remove unnecessary code.
+- Allow editing the whole dat file.

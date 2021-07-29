@@ -16,6 +16,7 @@ HarvestEncounterScaling
 HeistNPCAuras
 HeistRooms
 IncursionRoomBossFightEvents
+InvasionMonsterRestrictions
 ItemisedVisualEffect
 LabyrinthNodeOverrides
 LabyrinthSecrets
@@ -29,8 +30,11 @@ NearbyMonsterConditions
 NPCAudio
 NPCs
 PerandusDaemons
+QuestAchievements
 Races
 TreasureHunterMissions
 TriggerSpawners
+WarbandsGraph
+WarbandsMapGraph
 WorldAreas
 WorldPopupIconTypes

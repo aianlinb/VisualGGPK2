@@ -2058,7 +2058,7 @@
 		"Data0": "ref|list|int",
 		"Key0": "ref|key",
 		"Key1": "ref|foreignkey",
-		"Flag0": "bool",
+		"Flag1": "bool",
 		"Unknown1": "int"
 	},
 	"Flasks": {
@@ -5604,13 +5604,14 @@
 		"Flag1": "bool",
 		"Flag2": "bool",
 		"Flag3": "bool",
-		"Unknown1": "int"
+		"Unknown1": "int",
+		"Flag4": "bool"
 	},
 	"SummonedSpecificBarrels": {
 		"Id": "ref|string",
 		"ChestsKey": "ref|foreignkey",
+		"Key0": "ref|foreignkey",
 		"Key1": "ref|foreignkey",
-		"Unknown0": "int",
 		"Key2": "ref|foreignkey"
 	},
 	"SummonedSpecificMonsters": {
@@ -5747,7 +5748,7 @@
 		"Unknown14": "int",
 		"Unknown15": "int",
 		"Unknown16": "int",
-		"Unknown17": "int",
+		"Unknown17": "ref|foreignkey",
 		"Flag3": "byte",
 		"Flag4": "byte",
 		"Unknown18": "int",
@@ -6126,11 +6127,14 @@
 	},
 	"WindowCursors": {
 		"Id": "ref|string",
-		"Path": "ref|string",
-		"Key0": "ref|key",
-		"Unknown0": "int",
+		"BMPFile": "ref|string",
+		"Click_BMPFile": "ref|string",
 		"Unknown1": "int",
-		"Data0": "ref|list|int"
+		"Unknown2": "int",
+		"Hover_BMPFile": "ref|string",
+		"Text": "ref|string",
+		"Flag0": "byte",
+		"Unknown3": "int"
 	},
 	"Wordlists": {},
 	"Words": {
