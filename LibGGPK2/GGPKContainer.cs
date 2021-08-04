@@ -83,8 +83,8 @@ namespace LibGGPK2
 
             if (BundleMode) return;
             // Read Bundles
-            OriginalBundles2 = rootDirectory.Children.First(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
-            if (OriginalBundles2.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
+            OriginalBundles2 = rootDirectory.Children.FirstOrDefault(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
+            if (OriginalBundles2?.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
             {
                 IndexRecord = _index;
                 fileStream.Seek(_index.DataBegin, SeekOrigin.Begin);
@@ -96,8 +96,8 @@ namespace LibGGPK2
                     foreach (var f in Index.Files)
                         BuildBundleTree(f, FakeBundles2);
                 }
-            }
-            _RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>(Index.Bundles.Length);
+                _RecordOfBundle = new Dictionary<LibBundle.Records.BundleRecord, FileRecord>(Index.Bundles.Length);
+            } // else BundleMode = true;
         }
 
         public virtual void BuildBundleTree(LibBundle.Records.FileRecord fr, RecordTreeNode parent)

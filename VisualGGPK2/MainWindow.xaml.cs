@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -32,18 +33,18 @@ namespace VisualGGPK2
         /// <summary>
         /// Icon of directory on TreeView
         /// </summary>
-        public static readonly BitmapFrame IconDir = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("dir")));
+        public static readonly BitmapFrame IconDir = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("dir", CultureInfo.InvariantCulture)));
         /// <summary>
         /// Icon of file on TreeView
         /// </summary>
-        public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file")));
+        public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file", CultureInfo.InvariantCulture)));
         public static readonly ContextMenu TreeMenu = new();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);
         public HttpClient http;
-        public readonly bool BundleMode = false;
-        public readonly bool SteamMode = false;
-        protected string FilePath;
+        public readonly bool BundleMode;
+		public readonly bool SteamMode;
+		protected string FilePath;
         internal static byte SelectedVersion;
 
         public MainWindow() {
@@ -142,11 +143,13 @@ namespace VisualGGPK2
             FilterButton.IsEnabled = true;
 
             // Mark the free spaces in data section of dat files
-            DatPointedTable.CellStyle = new Style(typeof(DataGridCell));
-            DatPointedTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler(OnCellLoaded)));
+            DatReferenceDataTable.CellStyle = new Style(typeof(DataGridCell));
+            DatReferenceDataTable.CellStyle.Setters.Add(new EventSetter(LoadedEvent, new RoutedEventHandler(OnCellLoaded)));
 
-            // Make changes to DatContainer after editing <see cref="DatTable"/>
-            DatTable.CellEditEnding += OnCellEdit;
+            // Make changes to DatContainer after editing DatTable
+            DatTable.CellEditEnding += OnDatTableCellEdit;
+            // Make changes to DatContainer after editing DatReferenceDataTable
+            DatReferenceDataTable.CellEditEnding += OnDatReferenceDataTableCellEdit;
 
             TextView.AppendText("\r\n\r\nDone!\r\n");
         }

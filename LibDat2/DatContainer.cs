@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using LibDat2.Types;
 
 namespace LibDat2 {
 	public class DatContainer {
@@ -56,15 +57,7 @@ namespace LibDat2 {
 		/// <summary>
 		/// List of record content of the dat file
 		/// </summary>
-		public List<object[]> FieldDatas;
-		/// <summary>
-		/// Set of pointed value of the dat file last read/save
-		/// </summary>
-		public SortedDictionary<long, PointedValue> PointedDatas = new();
-		/// <summary>
-		/// Used to find PointedValue with the actual data
-		/// </summary>
-		protected Dictionary<object, PointedValue> PointedDatas2 = new();
+		public List<IFieldData[]> FieldDatas;
 
 		/// <summary>
 		/// See <see cref="FirstError"/>
@@ -111,20 +104,20 @@ namespace LibDat2 {
 		public DatContainer(Stream stream, string fileName) {
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
-					Args.x64 = false;
-					Args.UTF32 = false;
+					x64 = false;
+					UTF32 = false;
 					break;
 				case ".dat64":
-					Args.x64 = true;
-					Args.UTF32 = false;
+					x64 = true;
+					UTF32 = false;
 					break;
 				case ".datl":
-					Args.x64 = false;
-					Args.UTF32 = true;
+					x64 = false;
+					UTF32 = true;
 					break;
 				case ".datl64":
-					Args.x64 = true;
-					Args.UTF32 = true;
+					x64 = true;
+					UTF32 = true;
 					break;
 				default:
 					throw new ArgumentException("The provided file must be a dat file", nameof(fileName));
@@ -133,7 +126,7 @@ namespace LibDat2 {
 			Name = Path.GetFileNameWithoutExtension(fileName);
 			var Length = stream.Length;
 
-			var reader = new BinaryReader(stream, Args.UTF32 ? Encoding.UTF32 : Encoding.Unicode);
+			var reader = new BinaryReader(stream, UTF32 ? Encoding.UTF32 : Encoding.Unicode);
 
 			var Count = reader.ReadInt32();
 
@@ -180,15 +173,15 @@ namespace LibDat2 {
 			FieldDefinitions = new(fields);
 
 			if (Path.GetFileNameWithoutExtension(fileName) == "Languages")
-				Args.UTF32 = true;
+				UTF32 = true;
 			else {
 				var actualRecordLength = GetActualRecordLength(reader, Count, Length);
 				if (actualRecordLength < 0)
 					throw new($"{fileName} : Missing magic number after records");
-				Args.DataSectionOffset = Count * actualRecordLength + 4;
+				DataSectionOffset = Count * actualRecordLength + 4;
 				// DataSectionDataLength = Length - DataSectionOffset - 8;
 
-				var recordLength = CalculateRecordLength(FieldDefinitions.Select(t => t.Item2), Args.x64);
+				var recordLength = CalculateRecordLength(FieldDefinitions.Select(t => t.Item2), x64);
 				if (recordLength != actualRecordLength) {
 					// --- Begin  Old DatDefinitions ---
 					if (!HasOldDatDefinitions)
@@ -198,7 +191,7 @@ namespace LibDat2 {
 						foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 							fields.Add((field.Name, ToNewType(field.Value.GetString())));
 
-						var tmpRecordLength = CalculateRecordLength(fields.Select(t => t.Item2), Args.x64);
+						var tmpRecordLength = CalculateRecordLength(fields.Select(t => t.Item2), x64);
 
 						if (tmpRecordLength != actualRecordLength) // Old DatDefinitions can't also match
 							throw new($"{fileName} : Actual record length: {actualRecordLength} is not equal to that defined in DatDefinitions: {recordLength}\n\n(Record length from DatDefinitions_extra.json: {tmpRecordLength})");
@@ -214,8 +207,8 @@ namespace LibDat2 {
 				reader.BaseStream.Seek(4, SeekOrigin.Begin);
 			}
 
-			List<object[]> tmpFieldDatas = null;
-			var tmpPointedDatas = PointedDatas;
+			List<IFieldData[]> tmpFieldDatas = null;
+			var tmpPointedDatas = ReferenceDatas;
 			IEnumerable<(string, string)> tmpFieldDefinitions = FieldDefinitions;
 		ReadingType:
 			FieldDatas = new(Count);
@@ -226,18 +219,21 @@ namespace LibDat2 {
 					FieldDatas.Add(null);
 					continue;
 				}
-				var list = new object[FieldDefinitions.Count];
+				var array = new IFieldData[FieldDefinitions.Count];
 				var index = 0;
 				foreach (var type in FieldDefinitions.Select(t => t.Item2)) {
 					try {
-						list[index++] = ReadType(reader, type);
+						if (type.StartsWith("array|"))
+							array[index++] = IArrayData.Read(reader, IFieldData.TypeFromString[type[6..]], this);
+						else
+							array[index++] = IFieldData.Read(reader, IFieldData.TypeFromString[type], this);
 						lastPos = reader.BaseStream.Position;
 					} catch (Exception ex) {
 						if (!FromOldDefinition)
 							FirstError = new ErrorStruct {
 								Exception = ex,
-								Row = i + 1,
-								Column = index,
+								Row = i,
+								Column = index - 1,
 								FieldName = FieldDefinitions[index - 1].Item1,
 								StreamPosition = reader.BaseStream.Position,
 								LastSucceededPosition = lastPos
@@ -249,17 +245,17 @@ namespace LibDat2 {
 								foreach (var field in OldDatDefinitions.GetProperty(Name).EnumerateObject())
 									fields.Add((field.Name, ToNewType(field.Value.GetString())));
 								tmpFieldDefinitions = fields;
-								FieldDatas.Add(list);
+								FieldDatas.Add(array);
 								tmpFieldDatas = FieldDatas; // Save current datas
-								PointedDatas = new();
+								ReferenceDatas = new();
 								goto ReadingType;
 							} catch {
 								FromOldDefinition = false;
 							}
 						}
-						if (FromOldDefinition) { // Recovery to original datas before loading OldDefinition
+						if (FromOldDefinition) { // Recovery to the original datas loaded before loading OldDefinition
 							FieldDatas = tmpFieldDatas;
-							PointedDatas = tmpPointedDatas;
+							ReferenceDatas = tmpPointedDatas;
 						}
 						// --- End  Old DatDefinitions ---
 						error = true;
@@ -267,9 +263,9 @@ namespace LibDat2 {
 						break;
 					}
 				}
-				FieldDatas.Add(list);
+				if (!error)
+					FieldDatas.Add(array);
 			}
-			reader = null;
 			if (!error) {
 				FirstError = null;
 				if (FromOldDefinition)
@@ -277,6 +273,9 @@ namespace LibDat2 {
 			}
 			if (forceOld)
 				FromOldDefinition = true;
+
+			CurrentOffset = ReferenceDatas.Values.ElementAt(ReferenceDatas.Count - 1).EndOffset;
+			reader.BaseStream.Seek(DataSectionOffset + CurrentOffset, SeekOrigin.Begin);
 		}
 
 		/// <summary>
@@ -305,184 +304,44 @@ namespace LibDat2 {
 				"float" => "f32",
 				"double" => "f64",
 				"string" => "valueString",
-				_ => throw new InvalidCastException($"Unknown Type: {type}")
+				_ => type
 			};
 		}
 
+		// Dependents on the last read/saved dat file
+		#region FileDependent
 		/// <summary>
-		/// See <see cref="Args"/>
+		/// Set of IReferenceData of the dat file last read/save
 		/// </summary>
-		protected struct Arguments {
-			/// <summary>
-			/// Whether the pointer length is 64 bits, otherwise is 32 bits
-			/// </summary>
-			public bool x64;
-			/// <summary>
-			/// Whether the string is save as UTF-32, otherwise is UTF-16
-			/// </summary>
-			public bool UTF32;
-			/// <summary>
-			/// The begin offset of pointed values
-			/// </summary>
-			public long DataSectionOffset;
-		}
-
+		public SortedDictionary<long, IReferenceData> ReferenceDatas = new();
 		/// <summary>
-		/// Contains information of last read/save dat file
+		/// Used to find IReferenceData with the actual data in string representation
 		/// </summary>
-		protected Arguments Args = new();
-
-		// If using switch-expression, all result will be convert to the same type
-		// for below three switch: long, ulong, double
-#pragma warning disable IDE0066 // 將 switch 陳述式轉換為運算式
-		protected object ReadType(BinaryReader reader, string type) {
-			if (type.StartsWith('i'))
-				switch (type[1..]) {
-					case "32":
-						return reader.ReadInt32();
-					case "8":
-						return reader.ReadSByte();
-					case "64":
-						return reader.ReadInt64();
-					case "16":
-						return reader.ReadInt16();
-					default:
-						throw new InvalidCastException("Unknown Type: " + type);
-				}
-			else if (type.StartsWith('u'))
-				switch (type[1..]) {
-					case "32":
-						return reader.ReadUInt32();
-					case "64":
-						return reader.ReadUInt64();
-					case "8":
-						return reader.ReadByte();
-					case "16":
-						return reader.ReadUInt16();
-					default:
-						throw new InvalidCastException("Unknown Type: " + type);
-				}
-			else if (type == "bool") {
-				return reader.ReadBoolean();
-			} else if (type.StartsWith("array|")) {
-				long length;
-				long pos;
-				if (Args.x64) {
-					length = reader.ReadInt64();
-					pos = reader.ReadInt64();
-				} else {
-					length = reader.ReadInt32();
-					pos = reader.ReadInt32();
-				}
-
-				if (length == 0)
-					return PointedValue.NullArray;
-				if (PointedDatas.TryGetValue(pos, out PointedValue p))
-					return p.Value;
-
-				var array = new object[length];
-				var previousPos = reader.BaseStream.Position;
-				reader.BaseStream.Seek(pos + Args.DataSectionOffset, SeekOrigin.Begin);
-				var type2 = type[6..];
-				for (var i = 0L; i < length; ++i)
-					array[i] = ReadType(reader, type2);
-				reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
-				var pv = new PointedValue(pos, array, type, Args.x64, Args.UTF32);
-				PointedDatas.Add(pos, new PointedValue(pos, array, type, Args.x64, Args.UTF32));
-				PointedDatas2.TryAdd(array, pv);
-				return array;
-			} else if (type == "string") {
-				var pos = Args.x64 ? reader.ReadInt64() : reader.ReadInt32();
-
-				if (PointedDatas.TryGetValue(pos, out PointedValue p))
-					return p.Value;
-
-				if (pos + Args.DataSectionOffset == reader.BaseStream.Length)
-					return null;
-				var previousPos = reader.BaseStream.Position;
-				reader.BaseStream.Seek(pos + Args.DataSectionOffset, SeekOrigin.Begin);
-				var sb = new StringBuilder();
-
-				if (Args.UTF32) {
-					int ch;
-					while ((ch = reader.ReadInt32()) != 0)
-						sb.Append(char.ConvertFromUtf32(ch));
-				} else {
-					char ch;
-					while ((ch = reader.ReadChar()) != 0)
-						sb.Append(ch);
-					if (reader.ReadChar() != 0)  // string should end with 4 bytes of zero
-						throw new("Not found \\0 at the end of the string");
-				}
-
-				reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
-				var s = sb.ToString();
-				var pv = new PointedValue(pos, s, type, Args.x64, Args.UTF32);
-				PointedDatas.Add(pos, pv);
-				PointedDatas2.TryAdd(s, pv);
-				return sb.ToString();
-			} else if (type == "foreignrow") {
-				ulong? key1, key2;
-				if (Args.x64) {
-					key1 = reader.ReadUInt64();
-					if (key1 == KeyType.Nullx64Key)
-						key1 = null;
-					key2 = reader.ReadUInt64();
-					if (key2 == KeyType.Nullx64Key)
-						key2 = null;
-				} else {
-					key1 = reader.ReadUInt32();
-					if (key1 == KeyType.Nullx32Key)
-						key1 = null;
-					key2 = reader.ReadUInt32();
-					if (key2 == KeyType.Nullx32Key)
-						key2 = null;
-				}
-				return new KeyType(true, key1, key2);
-			} else if (type == "row") {
-				ulong? key;
-				if (Args.x64) {
-					key = reader.ReadUInt64();
-					if (key == KeyType.Nullx64Key)
-						key = null;
-				} else {
-					key = reader.ReadUInt32();
-					if (key == KeyType.Nullx32Key)
-						key = null;
-				}
-				return new KeyType(false, key, 0UL);
-			} else if (type.StartsWith('f'))
-				switch (type[1..]) {
-					case "32":
-						return reader.ReadSingle();
-					case "64":
-						return reader.ReadDouble();
-					default:
-						throw new InvalidCastException("Unknown Type: " + type);
-				}
-			else if (type == "valueString") {
-				if (reader.BaseStream.Position == reader.BaseStream.Length)
-					return null;
-				var sb = new StringBuilder();
-				char ch;
-				while ((ch = reader.ReadChar()) != 0)
-					sb.Append(ch);
-				if (!Args.UTF32 && reader.ReadChar() != 0)  // string should end with 4 bytes of zero
-					throw new("Not found \\0 at the end of the string");
-				return sb.ToString();
-			} else if (type == "array")
-				return "error";
-			else
-				throw new InvalidCastException("Unknown Type: " + type);
-		}
-#pragma warning restore IDE0066 // 將 switch 陳述式轉換為運算式
+		protected internal Dictionary<string, long> ReferenceDataOffsets = new();
+		/// <summary>
+		/// Whether the pointer length is 64 bits, otherwise is 32 bits
+		/// </summary>
+		public bool x64;
+		/// <summary>
+		/// Whether the string is save as UTF-32, otherwise is UTF-16
+		/// </summary>
+		public bool UTF32;
+		/// <summary>
+		/// The begin offset of DataSection(Which contains pointed values and starts with 0xBBBBBBBBBBBBBBBB)
+		/// </summary>
+		public long DataSectionOffset;
+		/// <summary>
+		/// Temporary record the offset in DataSection while writing to a dat file
+		/// </summary>
+		protected internal long CurrentOffset = 8;
+		#endregion
 
 		/// <summary>
 		/// Create a DatContainer with Datas
 		/// </summary>
 		/// <param name="stream">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
-		public DatContainer(List<object[]> fieldDatas, string fileName) {
+		public DatContainer(List<IFieldData[]> fieldDatas, string fileName) {
 			FieldDatas = fieldDatas;
 			Name = Path.GetFileNameWithoutExtension(fileName);
 		}
@@ -514,126 +373,17 @@ namespace LibDat2 {
 		protected virtual void Save(Stream stream, bool x64, bool UTF32) {
 			var bw = new BinaryWriter(stream);
 			bw.Write(FieldDatas.Count);
-			Args.x64 = x64;
-			Args.UTF32 = UTF32;
-			var pointer = (Args.DataSectionOffset = FieldDatas.Count * CalculateRecordLength(FieldDefinitions.Select(t => t.Item2), x64) + 4) + 8;
-			PointedDatas.Clear();
-			PointedDatas2.Clear();
-			var def = FieldDefinitions.GetEnumerator();
-			foreach (var os in FieldDatas) {
-				foreach (var o in os) {
-					def.MoveNext();
-					WriteType(bw, o, ref pointer, def.Current.Item2);
-				}
-				def.Reset();
-			}
+			this.x64 = x64;
+			this.UTF32 = UTF32;
+			CurrentOffset = 8;
+			DataSectionOffset = FieldDatas.Count * CalculateRecordLength(FieldDefinitions.Select(t => t.Item2), x64) + 4;
+			ReferenceDatas.Clear();
+			ReferenceDataOffsets.Clear();
+			foreach (var fds in FieldDatas)
+				foreach (var fd in fds)
+					fd.Write(bw);
 			bw.Write(0xBBBBBBBBBBBBBBBB); // Magic number
-			bw.Seek((int)(pointer - bw.BaseStream.Position), SeekOrigin.Current); // Move to end of dat file
-		}
-
-		protected unsafe void WriteType(BinaryWriter writer, object o, ref long pointer, string type) {
-			if (type == "i32")
-				writer.Write((int)o);
-			else if (type == "u8")
-				writer.Write((byte)o);
-			else if (type == "bool")
-				writer.Write((bool)o);
-			else if (type == "foreignrow" || type == "row")
-				((KeyType)o).Write(writer, Args.x64);
-			else if (type == "u32")
-				writer.Write((uint)o);
-			else if (type == "u64")
-				writer.Write((ulong)o);
-			else if (type == "i64")
-				writer.Write((long)o);
-			else if (type == "f32")
-				writer.Write((float)o);
-			else if (type == "i16")
-				writer.Write((short)o);
-			else if (type == "f64")
-				writer.Write((double)o);
-			else if (type == "i8")
-				writer.Write((sbyte)o);
-			else if (type == "u16")
-				writer.Write((ushort)o);
-			else if (type.StartsWith("array|")) {
-				var os = o as object[];
-				if (PointedDatas2.TryGetValue(o, out PointedValue pv)) {
-					if (Args.x64) {
-						writer.Write((long)os.Length);
-						writer.Write(pv.Offset);
-					} else {
-						writer.Write(os.Length);
-						writer.Write((uint)pv.Offset);
-					}
-				} else {
-					var offset = pointer - Args.DataSectionOffset;
-					if (Args.x64) {
-						writer.Write((long)os.Length);
-						writer.Write(offset);
-					} else {
-						writer.Write(os.Length);
-						writer.Write((uint)offset);
-					}
-					if (os.Length == 0)
-						return;
-
-					var pv2 = new PointedValue(offset, o, type, Args.x64, Args.UTF32);
-					PointedDatas.Add(offset, pv2);
-					PointedDatas2.Add(o, pv2);
-
-					var previousPointer = writer.BaseStream.Position;
-					writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
-					pointer += pv2.Length;
-					foreach (var o2 in os)
-						WriteType(writer, o2, ref pointer, type[6..]);
-					if (pointer < writer.BaseStream.Position)
-						pointer = writer.BaseStream.Position;
-					writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
-				}
-			} else if (type == "string") {
-				var s = o as string;
-				if (PointedDatas2.TryGetValue(o, out PointedValue pv)) {
-					if (Args.x64)
-						writer.Write(pv.Offset);
-					else
-						writer.Write((uint)pv.Offset);
-				} else {
-					var offset = pointer - Args.DataSectionOffset;
-					if (Args.x64)
-						writer.Write(offset);
-					else
-						writer.Write((uint)offset);
-
-					var pv2 = new PointedValue(offset, o, type, Args.x64, Args.UTF32);
-					PointedDatas.Add(offset, pv2);
-					PointedDatas2.Add(o, pv2);
-
-					var previousPointer = writer.BaseStream.Position;
-					writer.BaseStream.Seek(pointer, SeekOrigin.Begin);
-					pointer += pv2.Length;
-					if (Args.UTF32)
-						writer.Write(Encoding.UTF32.GetBytes(s));
-					else
-						fixed (char* c = s) {
-							var p = (byte*)c;
-							writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Encoding.Unicode.GetByteCount(s)));
-						}
-					writer.Write(0); // \0 at the end of string
-					if (pointer < writer.BaseStream.Position)
-						pointer = writer.BaseStream.Position;
-					writer.BaseStream.Seek(previousPointer, SeekOrigin.Begin);
-				}
-			} else if (type == "valueString") {
-				var s = o as string;
-				fixed (char* c = s) {
-					var p = (byte*)c;
-					writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Args.UTF32 ? Encoding.UTF32.GetByteCount(s) : Encoding.Unicode.GetByteCount(s)));
-				}
-			} else if (type == "array")
-				return;
-			else
-				throw new InvalidCastException($"Unknown Type: {type}");
+			bw.Seek((int)CurrentOffset, SeekOrigin.Begin); // Move to end of dat file
 		}
 
 		/// <summary>
@@ -642,13 +392,18 @@ namespace LibDat2 {
 		/// <returns>Content of the csv file</returns>
 		public virtual string ToCsv() {
 			var f = new StringBuilder();
-			var reg = new Regex("\n|\r|,", RegexOptions.Compiled);
+			var reg = new Regex("\n|\r|,|\"", RegexOptions.Compiled);
 			foreach (var field in FieldDefinitions.Select(t => t.Item1))
 				if (reg.IsMatch(field))
-					f.Append("\"" + field + "\",");
+					f.Append("\"" + field.Replace("\"", "\"\"") + "\",");
 				else
 					f.Append(field + ",");
-			f.Remove(f.Length - 1, 1);
+			if (f.Length == 0) {
+				for (var i=0; i< FieldDatas.Count; ++i)
+					f.AppendLine();
+				return f.ToString();
+			} else
+				f.Length -= 1;
 			f.AppendLine();
 			foreach (var row in FieldDatas) {
 				foreach (var col in row) {
@@ -658,10 +413,10 @@ namespace LibDat2 {
 					else
 						f.Append(s + ",");
 				}
-				f.Remove(f.Length - 1, 1);
+				f.Length -= 1;
 				f.AppendLine();
 			}
-			f.Remove(f.Length - 2, 2);
+			f.Length -= 1;
 			return f.ToString();
 		}
 
