@@ -28,8 +28,8 @@ namespace LibDat2.Types {
 				FieldType.Row => ArrayData<RowData>.Read(reader, dat, typeOfValueInArray),
 				FieldType.ForeignRow => ArrayData<ForeignRowData>.Read(reader, dat, typeOfValueInArray),
 				FieldType.Array => throw new ArgumentException("Reading array of array is not implemented", nameof(typeOfValueInArray)),
-				FieldType.String => ArrayData<string>.Read(reader, dat, typeOfValueInArray),
-				FieldType.ValueString => ArrayData<string>.Read(reader, dat, typeOfValueInArray),
+				FieldType.String => ArrayData<StringData>.Read(reader, dat, typeOfValueInArray),
+				FieldType.ValueString => ArrayData<ValueStringData>.Read(reader, dat, typeOfValueInArray),
 				FieldType.Unknown => ArrayData<object>.Read(reader, dat, typeOfValueInArray),
 				_ => throw new InvalidCastException("Unknown Type: " + typeOfValueInArray)
 			};
@@ -54,8 +54,8 @@ namespace LibDat2.Types {
 				FieldType.Row => ArrayData<RowData>.FromString(value, dat, typeOfValueInArray),
 				FieldType.ForeignRow => ArrayData<ForeignRowData>.FromString(value, dat, typeOfValueInArray),
 				FieldType.Array => throw new InvalidOperationException("Modifying array of array is not implemented"),
-				FieldType.String => ArrayData<string>.FromString(value, dat, typeOfValueInArray),
-				FieldType.ValueString => ArrayData<string>.FromString(value, dat, typeOfValueInArray),
+				FieldType.String => ArrayData<StringData>.FromString(value, dat, typeOfValueInArray),
+				FieldType.ValueString => ArrayData<ValueStringData>.FromString(value, dat, typeOfValueInArray),
 				FieldType.Unknown => ArrayData<object>.FromString(value, dat, typeOfValueInArray),
 				_ => throw new InvalidCastException("Unknown Type: " + typeOfValueInArray)
 			};

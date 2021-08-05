@@ -40,13 +40,14 @@ namespace LibDat2.Types {
 		/// </summary>
 		public override void Read(BinaryReader reader) {
 			Offset = Dat.x64 ? reader.ReadInt64() : reader.ReadInt32();
+			Dat.ReferenceDatas[Offset] = this;
+
 			var previousPos = reader.BaseStream.Position;
 			var begin = reader.BaseStream.Seek(Offset + Dat.DataSectionOffset, SeekOrigin.Begin);
 			ReadInDataSection(reader);
 			Length = (int)(reader.BaseStream.Position - begin);
 			reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
 
-			Dat.ReferenceDatas[Offset] = this;
 			Dat.ReferenceDataOffsets[ToString()] = Offset;
 		}
 
@@ -78,9 +79,9 @@ namespace LibDat2.Types {
 				writer.Write((uint)Offset);
 			var previousPos = writer.BaseStream.Position;
 			var begin = writer.BaseStream.Seek(Offset + Dat.DataSectionOffset, SeekOrigin.Begin);
+			Dat.CurrentOffset += CalculateLength(); // For array
 			WriteInDataSection(writer);
 			Length = (int)(writer.BaseStream.Position - begin);
-			Dat.CurrentOffset += Length;
 			writer.BaseStream.Seek(previousPos, SeekOrigin.Begin);
 		}
 
@@ -88,5 +89,10 @@ namespace LibDat2.Types {
 		/// Write the value to the DataSection
 		/// </summary>
 		protected abstract void WriteInDataSection(BinaryWriter writer);
+
+		/// <summary>
+		/// Calculate the length of data in DataSection with current <see cref="FieldDataBase{TypeOfValue}.Value"/>
+		/// </summary>
+		public abstract int CalculateLength();
 	}
 }

@@ -17,7 +17,15 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override void Read(BinaryReader reader) {
-			Key = Dat.x64 ? reader.ReadUInt64() : reader.ReadUInt32();
+			if (Dat.x64) {
+				Key = reader.ReadUInt64();
+				if (Key == Nullx64Key)
+					Key = null;
+			} else {
+				Key = reader.ReadUInt32();
+				if (Key == Nullx32Key)
+					Key = null;
+			}
 		}
 
 		/// <inheritdoc/>

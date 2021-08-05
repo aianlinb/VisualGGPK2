@@ -37,5 +37,10 @@ namespace LibDat2.Types {
 		/// This won't check the <see cref="DatContainer.ReferenceDatas"/>, use <see cref="StringData.FromString(string, DatContainer)"/> or <see cref="ArrayData{TypeOfValueInArray}.FromString(string, DatContainer, FieldType)"/> instead.
 		/// </summary>
 		public new void FromString(string value);
+
+		/// <summary>
+		/// Calculate the length of data in DataSection with current <see cref="IFieldData.Value"/>
+		/// </summary>
+		public int CalculateLength();
 	}
 }

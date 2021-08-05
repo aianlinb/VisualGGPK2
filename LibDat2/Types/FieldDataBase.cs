@@ -59,7 +59,7 @@ namespace LibDat2.Types {
 		/// Get the string representation of the <see cref="Value"/>
 		/// </summary>
 		public override string ToString() {
-			return Value.ToString();
+			return Value?.ToString();
 		}
 	}
 }

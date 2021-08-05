@@ -274,8 +274,9 @@ namespace LibDat2 {
 			if (forceOld)
 				FromOldDefinition = true;
 
-			CurrentOffset = ReferenceDatas.Values.ElementAt(ReferenceDatas.Count - 1).EndOffset;
-			reader.BaseStream.Seek(DataSectionOffset + CurrentOffset, SeekOrigin.Begin);
+			if (ReferenceDatas.Count != 0)
+				CurrentOffset = ReferenceDatas.Values.ElementAt(ReferenceDatas.Count - 1).EndOffset;
+			reader.BaseStream.Seek(DataSectionOffset + CurrentOffset, SeekOrigin.Begin); // Move to end of dat file
 		}
 
 		/// <summary>
@@ -383,7 +384,7 @@ namespace LibDat2 {
 				foreach (var fd in fds)
 					fd.Write(bw);
 			bw.Write(0xBBBBBBBBBBBBBBBB); // Magic number
-			bw.Seek((int)CurrentOffset, SeekOrigin.Begin); // Move to end of dat file
+			bw.Seek((int)(DataSectionOffset + CurrentOffset), SeekOrigin.Begin); // Move to end of dat file
 		}
 
 		/// <summary>

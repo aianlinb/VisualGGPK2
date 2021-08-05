@@ -108,13 +108,10 @@ namespace LibDat2.Types {
 				case FieldType.Row:
 				case FieldType.ForeignRow:
 				case FieldType.Array:
-					for (var i = 0L; i < Value.Length; ++i)
-						Value[i] = (TypeOfValueInArray)IFieldData.Read(reader, TypeOfValue, Dat);
-					break;
 				case FieldType.String:
 				case FieldType.ValueString:
 					for (var i = 0L; i < Value.Length; ++i)
-						Value[i] = (TypeOfValueInArray)IFieldData.Read(reader, TypeOfValue, Dat).Value;
+						Value[i] = (TypeOfValueInArray)IFieldData.Read(reader, TypeOfValue, Dat);
 					break;
 				default:
 					throw new InvalidCastException("Unknown Type: " + TypeOfValue);
@@ -198,16 +195,16 @@ namespace LibDat2.Types {
 						fr.Write(writer);
 					break;
 				case FieldType.Array:
-					foreach (IFieldData a in Value)
+					foreach (IArrayData a in Value)
 						a.Write(writer);
 					break;
 				case FieldType.String:
-					foreach (var s in Value as string[])
-						new StringData(Dat) { Value = s }.Write(writer);
+					foreach (var s in Value as StringData[])
+						s.Write(writer);
 					break;
 				case FieldType.ValueString:
-					foreach (var s in Value as string[])
-						new ValueStringData(Dat) { Value = s }.Write(writer);
+					foreach (var s in Value as ValueStringData[])
+						s.Write(writer);
 					break;
 				default:
 					throw new InvalidCastException("Unknown Type: " + TypeOfValue);
@@ -251,19 +248,15 @@ namespace LibDat2.Types {
 			} else {
 				var sarray = value2[1..^1].Split(','); // Trim '[' ']'
 				Value = new TypeOfValueInArray[sarray.Length];
-				for (var n = 0; n < sarray.Length; ++n)
-					Value[n] = (TypeOfValueInArray)IFieldData.FromString("<" + sarray[n] + ">", TypeOfValue, Dat);
+				if (TypeOfValue == FieldType.String || TypeOfValue == FieldType.ValueString)
+					for (var n = 0; n < sarray.Length; ++n)
+						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat);
+				else
+					for (var n = 0; n < sarray.Length; ++n)
+						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat).Value;
 			}
 
-			int typeSize;
-			if (TypeOfValue == FieldType.ValueString) {
-				var charSize = Dat.UTF32 ? 4 : 2;
-				typeSize = Value.Sum((s) => (s as string).Length * charSize + 4);
-			} else {
-				typeSize = IFieldData.SizeOfType(TypeOfValue, Dat.x64);
-			}
-
-			Length = Value.Length * typeSize;
+			Length = CalculateLength();
 			if (Offset == default) {
 				Offset = Dat.CurrentOffset;
 				Dat.CurrentOffset += Length;
@@ -283,6 +276,15 @@ namespace LibDat2.Types {
 				s.Remove(s.Length - 2, 2);
 			s.Append(']');
 			return s.ToString();
+		}
+
+		/// <inheritdoc/>
+		public override int CalculateLength() {
+			if (TypeOfValue == FieldType.ValueString)
+				return Dat.UTF32
+					? Value.Sum((s) => Encoding.UTF32.GetByteCount((s as ValueStringData).Value)) + Value.Length * 4
+					: Value.Sum((s) => (s as ValueStringData).Value.Length) * 2;
+			return Value.Length * IFieldData.SizeOfType(TypeOfValue, Dat.x64);
 		}
 	}
 }

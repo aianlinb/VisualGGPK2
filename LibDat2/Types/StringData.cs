@@ -70,13 +70,18 @@ namespace LibDat2.Types {
 				Dat.ReferenceDataOffsets.Remove(ToString());
 
 			Value = value;
-			Length = value.Length * (Dat.UTF32 ? 4 : 2) + 4;
+			Length = CalculateLength();
 			if (Offset == default) {
 				Offset = Dat.CurrentOffset;
 				Dat.CurrentOffset += Length;
 				Dat.ReferenceDatas[Offset] = this;
 			}
 			Dat.ReferenceDataOffsets[value] = Offset;
+		}
+
+		/// <inheritdoc/>
+		public override int CalculateLength() {
+			return (Dat.UTF32 ? Encoding.UTF32.GetByteCount(Value) : (Value.Length * 2)) + 4;
 		}
 	}
 }
