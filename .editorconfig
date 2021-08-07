@@ -13,3 +13,5 @@ dotnet_diagnostic.CA1051.severity = none
 dotnet_diagnostic.CS0809.severity = none
 # CA1720: 識別項包含類型名稱
 dotnet_diagnostic.CA1720.severity = none
+# CA1000: 請勿在泛型型別上宣告靜態成員
+dotnet_diagnostic.CA1000.severity = none

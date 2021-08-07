@@ -15,9 +15,9 @@ namespace LibGGPK2
     /// </summary>
     public class GGPKContainer : IDisposable
     {
-        public readonly FileStream fileStream;
-        public readonly BinaryReader Reader;
-        public readonly BinaryWriter Writer;
+        public FileStream fileStream;
+        public BinaryReader Reader;
+        public BinaryWriter Writer;
         public readonly GGPKRecord ggpkRecord;
         public readonly RecordTreeNode rootDirectory;
         public readonly DirectoryRecord OriginalBundles2;

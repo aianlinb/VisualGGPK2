@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using static LibDat2.Types.IFieldData;
 
 namespace LibDat2.Types {
@@ -61,17 +62,27 @@ namespace LibDat2.Types {
 		/// </summary>
 		public override void Write(BinaryWriter writer) {
 			var s = ToString();
+			var contains = false;
 			if (Dat.ReferenceDataOffsets.TryGetValue(s, out long offset)) {
-				if (Dat.x64)
-					writer.Write(Offset = offset);
-				else
-					writer.Write((uint)(Offset = offset));
-				return;
+				var fd = Dat.ReferenceDatas[offset];
+				if (fd == this)
+					contains = true;
+				// Prevent confusion between array|int and array|long etc...
+				// array|string is a special case that will cause the game to crash if two fields point to the same position even if their data are completely equal
+				if (fd is not IArrayData || fd is IArrayData ad and not ArrayData<StringData> && ad.Value is TypeOfValue t && (t as Array).Length == (Value as Array).Length) {
+					if (Dat.x64)
+						writer.Write(this.Offset = offset);
+					else
+						writer.Write((uint)(this.Offset = offset));
+					return;
+				}
 			}
 
-			Offset = Dat.CurrentOffset;
+			var Offset = Dat.CurrentOffset;
+			if (!contains)
+				this.Offset = Offset;
 			Dat.ReferenceDatas.Add(Offset, this);
-			Dat.ReferenceDataOffsets.Add(s, Offset);
+			Dat.ReferenceDataOffsets.TryAdd(s, Offset);
 
 			if (Dat.x64)
 				writer.Write(Offset);

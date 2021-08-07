@@ -122,13 +122,13 @@ namespace LibDat2.Types {
 		public override void Write(BinaryWriter writer) {
 			if (TypeOfValue == FieldType.Unknown || Value.Length == 0) {
 				Length = 0;
-				Offset = 8;
+				Offset = Dat.CurrentOffset;
 				if (Dat.x64) {
 					writer.Write(0L);
-					writer.Write(8L);
+					writer.Write(Offset);
 				} else {
 					writer.Write(0);
-					writer.Write(8);
+					writer.Write((int)Offset);
 				}
 				return;
 			}
@@ -215,12 +215,12 @@ namespace LibDat2.Types {
 		/// Read a <see cref="ArrayData{TypeOfValueInArray}"/> from its value in string representation
 		/// </summary>
 		public static ArrayData<TypeOfValueInArray> FromString(string value, DatContainer dat, FieldType typeOfarrayInArray) {
-			var value2 = Regex.Replace(value, @"\s", "");
-			if (dat.ReferenceDataOffsets.TryGetValue(value2, out long offset) && dat.ReferenceDatas.TryGetValue(offset, out IReferenceData rd) && rd is ArrayData<TypeOfValueInArray> a)
+			value = typeOfarrayInArray == FieldType.String || typeOfarrayInArray == FieldType.ValueString ? value.Trim(' ') : Regex.Replace(value, @"\s", "").Replace(",", ", ");
+			if (dat.ReferenceDataOffsets.TryGetValue(value, out long offset) && dat.ReferenceDatas.TryGetValue(offset, out IReferenceData rd) && rd is ArrayData<TypeOfValueInArray> a)
 				return a;
 
 			var ad = new ArrayData<TypeOfValueInArray>(dat, typeOfarrayInArray);
-			ad.FromString(value2);
+			ad.FromString(value);
 			return ad;
 		}
 
@@ -229,7 +229,7 @@ namespace LibDat2.Types {
 			if (Value != default)
 				Dat.ReferenceDataOffsets.Remove(ToString());
 
-			var value2 = Regex.Replace(value, @"\s", "");
+			var value2 = TypeOfValue == FieldType.String || TypeOfValue == FieldType.ValueString ? value.Trim(' ') : Regex.Replace(value, @"\s", "");
 			if (!value2.StartsWith('[') || !value2.EndsWith(']'))
 				throw new InvalidCastException("\"" + value + "\" cannot be converted to an array");
 			if (TypeOfValue == FieldType.Unknown)

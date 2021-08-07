@@ -95,6 +95,7 @@ namespace VisualGGPK2 {
 			toMark.Clear();
 			DatTable.Tag = dat;
 			DatTable.Columns.Clear();
+			DatTable.ItemsSource = null;
 			var eos = new List<ExpandoObject>(dat.FieldDefinitions.Count);
 			for (var i = 0; i < dat.FieldDatas.Count; i++) {
 				var eo = new ExpandoObject() as IDictionary<string, object>;
@@ -137,6 +138,7 @@ namespace VisualGGPK2 {
 			}
 			
 			DatReferenceDataTable.Columns.Clear();
+			DatReferenceDataTable.ItemsSource = null;
 			DatReferenceDataTable.Columns.Add(new DataGridTextColumn {
 				Header = "Offset",
 				Binding = new Binding("Offset") { Mode = BindingMode.OneWay },

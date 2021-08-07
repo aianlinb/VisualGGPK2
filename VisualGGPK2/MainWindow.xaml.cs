@@ -116,7 +116,7 @@ namespace VisualGGPK2
             }
 
             // Initial GGPK
-            await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode)); 
+            await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode));
             
             // Initial ContextMenu
             var mi = new MenuItem { Header = "Export" };
@@ -139,8 +139,9 @@ namespace VisualGGPK2
             Tree.Items.Add(root); // Initial TreeView
             root.IsExpanded = true;
 
-            RegexCheckBox.IsEnabled = true;
             FilterButton.IsEnabled = true;
+            if (!SteamMode)
+                AllowGameOpen.IsEnabled = true;
 
             // Mark the free spaces in data section of dat files
             DatReferenceDataTable.CellStyle = new Style(typeof(DataGridCell));
@@ -586,6 +587,7 @@ namespace VisualGGPK2
                     Dispatcher.Invoke(() => {
                         MessageBox.Show("Recoveried " + l.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                         bkg.Close();
+                        OnTreeSelectedChanged(null, null);
                     });
                 } catch (Exception ex) {
                     App.HandledException(ex);
@@ -626,16 +628,60 @@ namespace VisualGGPK2
                 if (RegexCheckBox.IsChecked.Value && Regex.IsMatch(f.path, FilterBox.Text) || !RegexCheckBox.IsChecked.Value && f.path.Contains(FilterBox.Text)) ggpkContainer.BuildBundleTree(f, ggpkContainer.FakeBundles2);
             var root = CreateNode(ggpkContainer.rootDirectory);
             Tree.Items.Add(root);
+            root.IsSelected = true; // Clear view
             root.IsExpanded = true;
         }
 
 		private void FilterBox_KeyDown(object sender, KeyEventArgs e) {
-            if (e.Key != Key.Enter) return;
+            if (e.Key != Key.Enter || !FilterButton.IsEnabled) return;
+            FocusManager.SetFocusedElement(FocusManager.GetFocusScope(FilterBox), null);
+            Keyboard.ClearFocus();
             FilterButton_Click(null, null);
             e.Handled = true;
         }
 
-		private void ImageView_MouseWheel(object sender, MouseWheelEventArgs e) {
+        private async void AllowGameOpen_Click(object sender, RoutedEventArgs e) {
+            ggpkContainer.fileStream.Close();
+            var fi = new FileInfo(FilePath);
+            var t = fi.LastWriteTimeUtc;
+            var l = fi.Length;
+        loop:
+			try {
+                MessageBox.Show(this, "Now you can open the game!\nClick OK to return to VisualGGPK2", "Released File Handle", MessageBoxButton.OK, MessageBoxImage.Information);
+                fi = new FileInfo(FilePath);
+                if (fi.LastWriteTimeUtc != t || fi.Length != l) {
+                    MessageBox.Show(this, "The game file has been modified, Now it's going to be reloaded", "GGPK Changed", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+                    Tree.Items.Clear();
+                    TextView.Text = "Loading . . .";
+                    TextView.Visibility = Visibility.Visible;
+                    FilterButton.IsEnabled = false;
+                    AllowGameOpen.IsEnabled = false;
+
+                    // Initial GGPK
+                    await Task.Run(() => ggpkContainer = new GGPKContainer(FilePath, BundleMode, SteamMode));
+
+                    var root = CreateNode(ggpkContainer.rootDirectory);
+                    Tree.Items.Add(root); // Initial TreeView
+                    root.IsExpanded = true;
+
+                    FilterButton.IsEnabled = true;
+                    if (!SteamMode)
+                        AllowGameOpen.IsEnabled = true;
+
+                    TextView.AppendText("\r\n\r\nDone!\r\n");
+                } else {
+                    ggpkContainer.fileStream = File.Open(FilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+                    ggpkContainer.Reader = new(ggpkContainer.fileStream);
+                    ggpkContainer.Writer = new(ggpkContainer.fileStream);
+                }
+            } catch (IOException) {
+                MessageBox.Show(this, "Cannot access the file, make sure you have closed the game!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                goto loop;
+            }
+        }
+
+        private void ImageView_MouseWheel(object sender, MouseWheelEventArgs e) {
             var p = e.GetPosition(ImageView);
             var x = Canvas.GetLeft(Image);
             var y = Canvas.GetTop(Image);
