@@ -647,7 +647,7 @@ namespace VisualGGPK2
             var l = fi.Length;
         loop:
 			try {
-                MessageBox.Show(this, "Now you can open the game!\nClick OK to return to VisualGGPK2", "Released File Handle", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, "GGPK file is now closed, you can open the game!\nClick OK to reopen the GGPK file and return to VisualGGPK2", "Released File Handle", MessageBoxButton.OK, MessageBoxImage.Information);
                 fi = new FileInfo(FilePath);
                 if (fi.LastWriteTimeUtc != t || fi.Length != l) {
                     MessageBox.Show(this, "The game file has been modified, Now it's going to be reloaded", "GGPK Changed", MessageBoxButton.OK, MessageBoxImage.Warning);
