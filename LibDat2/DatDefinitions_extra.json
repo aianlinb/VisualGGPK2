@@ -105,7 +105,8 @@
 		"AIFile": "ref|string",
 		"Keys1": "ref|list|ref|foreignkey",
 		"Flag5": "bool",
-		"Flag6": "bool"
+		"Flag6": "bool",
+		"Flag7": "byte"
 	},
 	"Acts": {
 		"Act": "ref|string",
@@ -769,10 +770,8 @@
 		"Unknown1": "int",
 		"Key1": "ref|foreignkey",
 		"Completion_AchievementItemsKeys": "ref|list|ref|foreignkey",
-		"OpenChests_AchievementItemsKey1": "ref|key",
-		"OpenChests_AchievementItemsKey2": "ref|string",
-		"MissionCompletion_AcheivementItemsKey1": "ref|key",
-		"MissionCompletion_AcheivementItemsKey2": "ref|string"
+		"OpenChests_AchievementItemsKeys": "ref|list|ref|foreignkey",
+		"MissionCompletion_AcheivementItemsKeys": "ref|list|ref|foreignkey"
 	},
 	"BetrayalRanks": {
 		"Id": "ref|string",
@@ -2150,8 +2149,7 @@
 		"Unknown12": "int",
 		"Flag2": "bool",
 		"Flag3": "bool",
-		"Unknown13": "ref|key",
-		"Unknown14": "ref|key",
+		"Unknown13": "ref|list|ref|foreignkey",
 		"Unknown15": "int",
 		"Unknown16": "int",
 		"Unknown17": "int",
@@ -2177,10 +2175,10 @@
 		"Flag16": "bool",
 		"Key3": "ref|foreignkey",
 		"Flag17": "bool",
-		"Unknown41": "ref|key",
-		"Unknown42": "ref|key",
-		"Unknown43": "bool",
-		"Unknown44": "bool"
+		"Unknown41": "ref|foreignkey",
+		"Flag18": "bool",
+		"Flag19": "bool",
+		"Flag20": "bool"
 	},
 	"GeometryChannel": {
 		"Id": "ref|string",
@@ -3365,7 +3363,7 @@
 		"Tag1": "string",
 		"Tag2": "string",
 		"Unknown": "int",
-		"Enable": "int"
+		"IsEnabled": "int"
 	},
 	"LeagueCategory": {},
 	"LeagueFlag": {
@@ -3524,8 +3522,7 @@
 		"Unknown3": "int",
 		"Unknown4": "int",
 		"Unknown5": "int",
-		"Key0": "ref|key",
-		"RestrictedAreaMessage": "ref|string"
+		"Unknown6": "ref|list|ref|foreignkey"
 	},
 	"MapCreationInformation": {
 		"MapsKey": "ref|foreignkey",
@@ -5038,9 +5035,8 @@
 		"Unknown2": "int",
 		"Unknown3": "int",
 		"Unknown4": "int",
-		"Unknown5": "ref|key",
 		"Unknown6": "int",
-		"Unknown7": "ref|key",
+		"Unknown5": "ref|list|ref|foreignkey",
 		"Unknown8": "byte",
 		"Unknown9": "byte",
 		"Unknown10": "ref|foreignkey"
@@ -6133,7 +6129,7 @@
 		"Unknown2": "int",
 		"Hover_BMPFile": "ref|string",
 		"Text": "ref|string",
-		"Flag0": "byte",
+		"IsEnabled": "bool",
 		"Unknown3": "int"
 	},
 	"Wordlists": {},

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using static LibDat2.Types.IFieldData;
 
@@ -24,8 +23,8 @@ namespace LibDat2.Types {
 			} else {
 				short ch;
 				while ((ch = reader.ReadInt16()) != 0)
-					sb.Append((char)ch);
-				if (reader.ReadInt16() != 0) // string should end with 4 bytes of zero
+				sb.Append((char)ch);
+				if (Dat.Name != "Languages" && reader.ReadInt16() != 0) // string should end with 4 bytes of zero
 					throw new("Not found \\0 at the end of the string");
 			}
 			Value = sb.ToString();

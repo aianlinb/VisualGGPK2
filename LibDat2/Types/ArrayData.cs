@@ -248,12 +248,17 @@ namespace LibDat2.Types {
 			} else {
 				var sarray = value2[1..^1].Split(','); // Trim '[' ']'
 				Value = new TypeOfValueInArray[sarray.Length];
-				if (TypeOfValue == FieldType.String || TypeOfValue == FieldType.ValueString)
-					for (var n = 0; n < sarray.Length; ++n)
-						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat);
-				else
-					for (var n = 0; n < sarray.Length; ++n)
-						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat).Value;
+				switch (TypeOfValue) {
+					case FieldType.String:
+					case FieldType.ValueString:
+						for (var n = 0; n < sarray.Length; ++n)
+							Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat);
+						break;
+					default:
+						for (var n = 0; n < sarray.Length; ++n)
+							Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat).Value;
+						break;
+				}
 			}
 
 			Length = CalculateLength();
@@ -267,9 +272,19 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override string ToString() {
+			if (Value == null)
+				return "{null}";
 			var s = new StringBuilder("[");
 			foreach (var f in Value) {
 				s.Append(f?.ToString() ?? "{null}");
+				if (Value is uint or ulong)
+					s.Append('U');
+				if (Value is long or ulong)
+					s.Append('L');
+				else if (Value is float)
+					s.Append('F');
+				else if (Value is double)
+					s.Append('D');
 				s.Append(", ");
 			}
 			if (s.Length > 2)

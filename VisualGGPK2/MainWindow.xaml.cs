@@ -63,7 +63,7 @@ namespace VisualGGPK2
                         break;
                 }
             if (BundleMode && SteamMode) {
-                MessageBox.Show("BundleMode and SteamMode cannot be both true", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(this, "BundleMode and SteamMode cannot be both true", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
                 return;
             }
@@ -81,7 +81,7 @@ namespace VisualGGPK2
                 var match = Regex.Match(json, "(?<=\"tag_name\":\"v).*?(?=\")");
                 var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
                 var versionText = $"{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}";
-                if (match.Success && match.Value != versionText && MessageBox.Show($"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
+                if (match.Success && match.Value != versionText && MessageBox.Show(this, $"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
                     Process.Start(new ProcessStartInfo("https://github.com/aianlinb/LibGGPK2/releases") { UseShellExecute = true });
                     Close();
                     return;
@@ -216,7 +216,7 @@ namespace VisualGGPK2
                 ButtonSave.Visibility = Visibility.Hidden;
                 if (tvi.Tag is RecordTreeNode rtn)
                 {
-                    TextBoxOffset.Text = rtn.Offset.ToString("X");
+                    TextBoxOffset.Text = "0x" + rtn.Offset.ToString("X");
                     TextBoxSize.Text = rtn.Length.ToString();
                     TextBoxHash.Text = rtn is DirectoryRecord || rtn is FileRecord ? BitConverter.ToString(rtn.Hash).Replace("-", "") : rtn is BundleFileNode bf ? bf.Hash.ToString("X") : ((BundleDirectoryNode)rtn).Hash.ToString("X");
                     TextBoxBundle.Text = "";
@@ -254,15 +254,16 @@ namespace VisualGGPK2
                                 break;
                             case IFileRecord.DataFormats.Dat:
                                 try {
-                                    var dat = new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name);
-                                    if (dat.FromOldDefinition)
-                                        OldDatDefTextBlock.Text = "Using DatDefinitions_extra.json :   True";
-                                    else
-                                        OldDatDefTextBlock.Text = "Using DatDefinitions_extra.json :   False";
                                     DatView.Visibility = Visibility.Visible;
-                                    ShowDatFile(dat);
+                                    ShowDatFile(new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name));
                                 } catch (Exception ex) {
-                                    MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    toMark.Clear();
+                                    DatTable.Tag = null;
+                                    DatTable.Columns.Clear();
+                                    DatTable.ItemsSource = null;
+                                    DatReferenceDataTable.Columns.Clear();
+                                    DatReferenceDataTable.ItemsSource = null;
+                                    MessageBox.Show(this, ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                 }
                                 break;
                             case IFileRecord.DataFormats.TextureDds:
@@ -354,7 +355,7 @@ namespace VisualGGPK2
             string fileName;
             if (dropped.Length != 1 || (fileName = Path.GetFileName(dropped[0])) != "ROOT" && !fileName.EndsWith(".zip"))
             {
-                MessageBox.Show("You can only drop \"ROOT\" folder or a .zip file that contains it", "Replace Faild",
+                MessageBox.Show(this, "You can only drop \"ROOT\" folder or a .zip file that contains it", "Replace Faild",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
@@ -366,14 +367,14 @@ namespace VisualGGPK2
                         var es = f.Entries;
                         var list = new List<KeyValuePair<IFileRecord, ZipArchiveEntry>>(es.Count);
                         ggpkContainer.GetFileListFromZip(es, list);
-                        if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
+                        if (MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
                             Dispatcher.Invoke(bkg.Close);
                             return;
                         }
                         bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                         ggpkContainer.Replace(list, bkg.NextProgress);
                         Dispatcher.Invoke(() => {
-                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show(this, "Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                             bkg.Close();
                         });
                     } catch (Exception ex) {
@@ -385,14 +386,14 @@ namespace VisualGGPK2
                     try {
                         var list = new Collection<KeyValuePair<IFileRecord, string>>();
                         ggpkContainer.GetFileList(dropped[0], list);
-                        if (MessageBox.Show($"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
+                        if (MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
                             Dispatcher.Invoke(bkg.Close);
                             return;
 					    }
                         bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                         ggpkContainer.Replace(list, bkg.NextProgress);
                         Dispatcher.Invoke(() => {
-                            MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show(this, "Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                             bkg.Close();
                         });
                     } catch (Exception ex) {
@@ -413,7 +414,7 @@ namespace VisualGGPK2
                     if (sfd.ShowDialog() == true)
                     {
                         File.WriteAllBytes(sfd.FileName, fr.ReadFileContent(ggpkContainer.fileStream));
-                        MessageBox.Show("Exported " + rtn.GetPath() + "\nto " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(this, "Exported " + rtn.GetPath() + "\nto " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 else
@@ -433,10 +434,10 @@ namespace VisualGGPK2
                                     GGPKContainer.Export(list, bkg.NextProgress);
                                 } catch (GGPKContainer.BundleMissingException bex) {
                                     failFileCount = bex.failFiles;
-                                    MessageBox.Show(bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    MessageBox.Show(this, bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
                                 }
                                 Dispatcher.Invoke(() => {
-                                    MessageBox.Show("Exported " + (list.Count - failFileCount).ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    MessageBox.Show(this, "Exported " + (list.Count - failFileCount).ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
@@ -459,7 +460,7 @@ namespace VisualGGPK2
                     if (ofd.ShowDialog() == true)
                     {
                         fr.ReplaceContent(File.ReadAllBytes(ofd.FileName));
-                        MessageBox.Show("Replaced " + rtn.GetPath() + "\nwith " + ofd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(this, "Replaced " + rtn.GetPath() + "\nwith " + ofd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
                 else
@@ -475,7 +476,7 @@ namespace VisualGGPK2
                                 bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                                 ggpkContainer.Replace(list, bkg.NextProgress);
                                 Dispatcher.Invoke(() => {
-                                    MessageBox.Show("Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                                    MessageBox.Show(this, "Replaced " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
@@ -507,7 +508,7 @@ namespace VisualGGPK2
                     default:
                         return;
                 }
-                MessageBox.Show("Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, "Saved to " + ((RecordTreeNode)fr).GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -535,7 +536,7 @@ namespace VisualGGPK2
                             tmp = tmp.Parent;
                         } while (tmp != null);
                         if (outsideBundles2) {
-                            MessageBox.Show("Tencent version currently only support recovering files under \"Bundles2\" directory!", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show(this, "Tencent version currently only support recovering files under \"Bundles2\" directory!", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
                             Dispatcher.Invoke(bkg.Close);
                             return;
                         }
@@ -585,7 +586,7 @@ namespace VisualGGPK2
                         else
                             ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
                     Dispatcher.Invoke(() => {
-                        MessageBox.Show("Recoveried " + l.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                        MessageBox.Show(this, "Recoveried " + l.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
                         bkg.Close();
                         OnTreeSelectedChanged(null, null);
                     });
@@ -617,7 +618,7 @@ namespace VisualGGPK2
                 pbe.Save(f);
                 f.Flush();
                 f.Close();
-                MessageBox.Show("Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -647,10 +648,10 @@ namespace VisualGGPK2
             var l = fi.Length;
         loop:
 			try {
-                MessageBox.Show(this, "GGPK file is now closed, you can open the game!\nClick OK to reopen the GGPK file and return to VisualGGPK2", "Released File Handle", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(this, "GGPK file is now closed, you can open the game!\nClose the game and click OK to reopen the GGPK file and return to VisualGGPK2", "Released File Handle", MessageBoxButton.OK, MessageBoxImage.Information);
                 fi = new FileInfo(FilePath);
                 if (fi.LastWriteTimeUtc != t || fi.Length != l) {
-                    MessageBox.Show(this, "The game file has been modified, Now it's going to be reloaded", "GGPK Changed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(this, "The Content.ggpk has been modified, Now it's going to be reloaded", "GGPK Changed", MessageBoxButton.OK, MessageBoxImage.Warning);
 
                     Tree.Items.Clear();
                     TextView.Text = "Loading . . .";

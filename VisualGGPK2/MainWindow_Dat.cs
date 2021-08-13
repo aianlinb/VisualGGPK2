@@ -61,7 +61,7 @@ namespace VisualGGPK2 {
 							oc.Add(rd);
 					}
 				} catch (InvalidCastException ex) {
-					MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+					MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 			}
 		}
@@ -82,7 +82,7 @@ namespace VisualGGPK2 {
 				try {
 					rd.FromString(newText);
 				} catch (InvalidCastException ex) {
-					MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+					MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 			}
 		}
@@ -100,13 +100,14 @@ namespace VisualGGPK2 {
 			for (var i = 0; i < dat.FieldDatas.Count; i++) {
 				var eo = new ExpandoObject() as IDictionary<string, object>;
 				eo.Add("Row", i);
-				var names = dat.FieldDefinitions.Select(t => t.Item1).GetEnumerator();
+				var names = dat.FieldDefinitions.Select(t => t.Key).GetEnumerator();
 				var values = dat.FieldDatas[i];
 				if (values != null)
 					foreach (var value in values) {
 						names.MoveNext();
 						eo.Add(names.Current, value);
 					}
+				names.Dispose();
 				eos.Add((ExpandoObject)eo);
 			}
 
@@ -165,8 +166,8 @@ namespace VisualGGPK2 {
 
 			DatReferenceDataTable.ItemsSource = pointedList;
 
-			if (dat.FirstError.HasValue)
-				MessageBox.Show($"At Row:{dat.FirstError.Value.Row},\r\nColumn:{dat.FirstError.Value.Column} ({dat.FirstError.Value.FieldName}),\r\nStreamPosition:{dat.FirstError.Value.StreamPosition},\r\nLastSucceededPosition:{dat.FirstError.Value.LastSucceededPosition}\r\n\r\n{dat.FirstError.Value.Exception}", "Error While Reading: " + dat.Name, MessageBoxButton.OK, MessageBoxImage.Error);
+			if (dat.Exception != null)
+				MessageBox.Show(this, dat.Exception.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 		}
 
 		/// <summary>
@@ -197,7 +198,7 @@ namespace VisualGGPK2 {
 					throw new("Unknown file extension for dat file: " + rtn.Name);
 			}
 			((IFileRecord)rtn).ReplaceContent(dat.Save(x64, UTF32));
-			MessageBox.Show("Saved changes to " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+			MessageBox.Show(this, "Saved changes to " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
 			ShowDatFile(dat);
 		}
 
@@ -209,7 +210,7 @@ namespace VisualGGPK2 {
 				DatContainer.ReloadDefinitions();
 				OnTreeSelectedChanged(null, null);
 			} catch (Exception ex) {
-				MessageBox.Show(ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				MessageBox.Show(this, ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
 
@@ -225,7 +226,7 @@ namespace VisualGGPK2 {
 			if (sfd.ShowDialog() != true)
 				return;
 			File.WriteAllText(sfd.FileName, dat.ToCsv());
-			MessageBox.Show($"Exported " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+			MessageBox.Show(this, $"Exported " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
 	}
 }

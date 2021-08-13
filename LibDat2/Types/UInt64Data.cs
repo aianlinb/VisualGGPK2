@@ -18,7 +18,12 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override void FromString(string value) {
-			Value = ulong.Parse(value);
+			Value = ulong.Parse(value.TrimEnd('U', 'L'));
+		}
+
+		/// <inheritdoc/>
+		public override string ToString() {
+			return Value.ToString() + "UL";
 		}
 	}
 }

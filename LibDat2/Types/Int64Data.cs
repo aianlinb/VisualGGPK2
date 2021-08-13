@@ -18,7 +18,12 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override void FromString(string value) {
-			Value = long.Parse(value);
+			Value = long.Parse(value.TrimEnd('L'));
+		}
+
+		/// <inheritdoc/>
+		public override string ToString() {
+			return Value.ToString() + "L";
 		}
 	}
 }
