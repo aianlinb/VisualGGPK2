@@ -65,7 +65,7 @@ namespace LibBundle.Records
                 d.Key.Offset = (int)data.Position + Bundle.uncompressed_size;
                 data.Write(d.Value, 0, d.Key.Size);
             }
-            UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
+            UncompressedSize = validSize = (int)data.Length + Bundle.uncompressed_size;
             FileToAdd.Clear();
                 if (newPath != null)
                     File.WriteAllBytes(newPath, Bundle.AppendAndSave(data, originalPath));
@@ -96,7 +96,7 @@ namespace LibBundle.Records
             }
             else
             {
-                UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
+                UncompressedSize = validSize =(int)data.Length + Bundle.uncompressed_size;
                 result = Bundle.AppendAndSave(data, br?.BaseStream ?? Bundle.Read());
             }
             FileToAdd.Clear();
@@ -114,7 +114,7 @@ namespace LibBundle.Records
                 d.Key.Offset = (int)data.Position;
                 data.Write(d.Value, 0, d.Key.Size);
             }
-            UncompressedSize = (int)data.Length;
+            UncompressedSize = validSize = (int)data.Length;
             FileToAdd.Clear();
             Bundle.Save(data, newPath ?? originalPath);
         }

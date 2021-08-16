@@ -600,11 +600,9 @@ namespace VisualGGPK2
 		private static string GetPatchServer(bool garena = false) {
             var tcp = new TcpClient() { NoDelay = true };
             tcp.Connect(Dns.GetHostAddresses(garena ? "login.tw.pathofexile.com" : "us.login.pathofexile.com"), garena ? 12999 : 12995);
-            var tcs = tcp.GetStream();
-            tcs.Write(new byte[] { 1, 4 }, 0, 2);
             var b = new byte[256];
-            tcs.Read(b, 0, 256);
-            tcs.Close();
+            tcp.Client.Send(new byte[] { 1, 4 });
+            tcp.Client.Receive(b);
             tcp.Close();
             return Encoding.Unicode.GetString(b, 35, b[34] * 2);
         }
