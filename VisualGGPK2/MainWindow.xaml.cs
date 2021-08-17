@@ -352,11 +352,12 @@ namespace VisualGGPK2
         private void OnDragDrop(object sender, DragEventArgs e)
         {
             if (!e.Effects.HasFlag(DragDropEffects.Copy)) return; // Drop File/Folder
+            Activate();
             var dropped = e.Data.GetData(DataFormats.FileDrop) as string[];
             string fileName;
-            if (dropped.Length != 1 || (fileName = Path.GetFileName(dropped[0])) != "ROOT" && !fileName.EndsWith(".zip"))
+            if (dropped.Length != 1 || (fileName = Path.GetFileName(dropped[0])) != ggpkContainer.rootDirectory.Name && !fileName.EndsWith(".zip"))
             {
-                MessageBox.Show(this, "You can only drop \"ROOT\" folder or a .zip file that contains it", "Replace Faild",
+                MessageBox.Show(this, "You can only drop root folder or a .zip file that contains it", "Replace Faild",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
@@ -367,7 +368,15 @@ namespace VisualGGPK2
                         var f = ZipFile.OpenRead(dropped[0]);
                         var es = f.Entries;
                         var list = new List<KeyValuePair<IFileRecord, ZipArchiveEntry>>(es.Count);
-                        ggpkContainer.GetFileListFromZip(es, list);
+						try {
+                            ggpkContainer.GetFileListFromZip(es, list);
+                        } catch (Exception ex) {
+                            Dispatcher.Invoke(() => {
+                                MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                bkg.Close();
+                            });
+                            return;
+                        }
                         var notOk = false;
                         Dispatcher.Invoke(() => {
                             if (notOk = MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
@@ -384,6 +393,7 @@ namespace VisualGGPK2
                         });
                     } catch (Exception ex) {
                         App.HandledException(ex);
+                        Dispatcher.Invoke(bkg.Close);
                     }
                 });
             else
@@ -407,6 +417,7 @@ namespace VisualGGPK2
                         });
                     } catch (Exception ex) {
                         App.HandledException(ex);
+                        Dispatcher.Invoke(bkg.Close);
                     }
             });
             bkg.ShowDialog();
@@ -451,6 +462,7 @@ namespace VisualGGPK2
                                 });
                             } catch (Exception ex) {
                                 App.HandledException(ex);
+                                Dispatcher.Invoke(bkg.Close);
                             }
                         });
                         bkg.ShowDialog();
@@ -490,6 +502,7 @@ namespace VisualGGPK2
                                 });
                             } catch (Exception ex) {
                                 App.HandledException(ex);
+                                Dispatcher.Invoke(bkg.Close);
                             }
                         });
                         bkg.ShowDialog();
@@ -603,6 +616,7 @@ namespace VisualGGPK2
                     });
                 } catch (Exception ex) {
                     App.HandledException(ex);
+                    Dispatcher.Invoke(bkg.Close);
                 }
             });
             bkg.ShowDialog();

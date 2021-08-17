@@ -81,12 +81,13 @@ namespace LibGGPK2
                 NextFreeOffset = current.NextFreeOffset;
             }
 
-            if (BundleMode) return;
             // Read Bundles
             OriginalBundles2 = rootDirectory.Children.FirstOrDefault(d => d.GetNameHash() == MurmurHash2Unsafe.Hash("bundles2", 0)) as DirectoryRecord;
             if (OriginalBundles2?.Children.FirstOrDefault(r => r.Name == "_.index.bin") is FileRecord _index)
             {
                 IndexRecord = _index;
+                if (BundleMode)
+                    return;
                 fileStream.Seek(_index.DataBegin, SeekOrigin.Begin);
                 Index = new IndexContainer(Reader);
                 if (BuildTree) {
@@ -156,13 +157,12 @@ namespace LibGGPK2
 
         /// <summary>
         /// Find the record with a <paramref name="path"/>
-        /// <param name="path">Path in GGPK from <paramref name="parent"/></param>
+        /// <param name="path">Path in GGPK under <paramref name="parent"/></param>
         /// <param name="parent">null for ROOT directory in GGPK</param>
         /// </summary>
-        public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null)
-        {
-            var SplittedPath = Regex.Replace(path, @"^ROOT(/|\\)", "").Split('/', '\\');
+        public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null) {
             parent ??= rootDirectory;
+            var SplittedPath = path.Split('/', '\\');
             foreach (var name in SplittedPath)
             {
                 var next = parent.GetChildItem(name);
@@ -420,11 +420,29 @@ namespace LibGGPK2
         /// <param name="ZipEntries">ZipArchiveEntries to read/></param>
         /// <param name="list">File list (use <see cref="BundleSortComparer"/> when reading)</param>
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
-        public virtual void GetFileListFromZip(ICollection<ZipArchiveEntry> ZipEntries, ICollection<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, string regex = null) {
+        public virtual void GetFileListFromZip(IEnumerable<ZipArchiveEntry> ZipEntries, ICollection<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, string regex = null) {
+            var first = ZipEntries.FirstOrDefault();
+            if (first == null)
+                return;
+
+            RecordTreeNode parent;
+            if (first.FullName.StartsWith("ROOT/"))
+                parent = rootDirectory;
+            else if (first.FullName.StartsWith("Bundles2/"))
+                parent = (RecordTreeNode)FakeBundles2 ?? OriginalBundles2;
+            else
+                throw new("The root directory in zip must be ROOT or Bundles2");
+
+            var rootNameOffset = parent.Name.Length + 1;
             foreach (var zae in ZipEntries) {
-                var path = zae.FullName[5..];
-                if ((regex == null || Regex.IsMatch(path, regex)) &&  FindRecord(path) is IFileRecord ifr)
+                if (zae.FullName.EndsWith('/'))
+                    continue;
+                var path = zae.FullName[rootNameOffset..];
+                if (regex == null || Regex.IsMatch(path, regex)) {
+                    if (FindRecord(path, parent) is not IFileRecord ifr)
+                        throw new Exception("Not found in GGPK: " + zae.FullName);
                     list.Add(new(ifr, zae));
+                }
 			}
         }
     }

@@ -22,8 +22,10 @@
 
         public virtual new void Close()
         {
-            Closing -= OnClosing;
-            Dispatcher.Invoke(base.Close);
+            try {
+                Closing -= OnClosing;
+                Dispatcher.Invoke(base.Close);
+            } catch { }
         }
     }
 }

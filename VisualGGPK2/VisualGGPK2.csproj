@@ -4,7 +4,7 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
-    <Version>0.12.10</Version>
+    <Version>0.12.11</Version>
     <Platforms>x64</Platforms>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
