@@ -24,6 +24,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace VisualGGPK2
 {
@@ -367,8 +368,12 @@ namespace VisualGGPK2
                         var es = f.Entries;
                         var list = new List<KeyValuePair<IFileRecord, ZipArchiveEntry>>(es.Count);
                         ggpkContainer.GetFileListFromZip(es, list);
-                        if (MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
-                            Dispatcher.Invoke(bkg.Close);
+                        var notOk = false;
+                        Dispatcher.Invoke(() => {
+                            if (notOk = MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                                bkg.Close();
+                        });
+                        if (notOk) {
                             return;
                         }
                         bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
@@ -386,10 +391,14 @@ namespace VisualGGPK2
                     try {
                         var list = new Collection<KeyValuePair<IFileRecord, string>>();
                         ggpkContainer.GetFileList(dropped[0], list);
-                        if (MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) {
-                            Dispatcher.Invoke(bkg.Close);
+                        var notOk = false;
+                        Dispatcher.Invoke(() => {
+                            if (notOk = MessageBox.Show(this, $"Replace {list.Count} Files?", "Replace Confirm", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK)
+                                bkg.Close();
+                        });
+                        if (notOk) {
                             return;
-					    }
+                        }
                         bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                         ggpkContainer.Replace(list, bkg.NextProgress);
                         Dispatcher.Invoke(() => {
@@ -434,7 +443,7 @@ namespace VisualGGPK2
                                     GGPKContainer.Export(list, bkg.NextProgress);
                                 } catch (GGPKContainer.BundleMissingException bex) {
                                     failFileCount = bex.failFiles;
-                                    MessageBox.Show(this, bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                                    Dispatcher.Invoke(() => MessageBox.Show(this, bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning));
                                 }
                                 Dispatcher.Invoke(() => {
                                     MessageBox.Show(this, "Exported " + (list.Count - failFileCount).ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -536,8 +545,10 @@ namespace VisualGGPK2
                             tmp = tmp.Parent;
                         } while (tmp != null);
                         if (outsideBundles2) {
-                            MessageBox.Show(this, "Tencent version currently only support recovering files under \"Bundles2\" directory!", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
-                            Dispatcher.Invoke(bkg.Close);
+                            Dispatcher.Invoke(() => {
+                                MessageBox.Show(this, "Tencent version currently only support recovering files under \"Bundles2\" directory!", "Unsupported", MessageBoxButton.OK, MessageBoxImage.Error);
+                                bkg.Close();
+                            });
                             return;
                         }
                     }
