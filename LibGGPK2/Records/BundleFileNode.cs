@@ -59,7 +59,7 @@ namespace LibGGPK2.Records
                 cached = BundleFileRecord.bundleRecord.Bundle.Read(br);
                 CachedBundleData.AddLast(new KeyValuePair<BundleRecord, MemoryStream>(BundleFileRecord.bundleRecord, cached));
                 CachedSize += cached.Length;
-                while (CachedSize > 300000000 && CachedBundleData.Count > 1) {
+                while (CachedSize > 500000000 && CachedBundleData.Count > 1) { // 500MB
                     var ms = CachedBundleData.First.Value.Value;
                     CachedSize -= ms.Length;
                     ms.Close();

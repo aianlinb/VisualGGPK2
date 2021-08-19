@@ -1,7 +1,6 @@
 ﻿using LibBundle.Records;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace LibBundle
@@ -169,7 +168,9 @@ namespace LibBundle
         public virtual BundleRecord GetSmallestBundle(IList<BundleRecord> Bundles = null)
         {
             Bundles ??= this.Bundles;
-            var result = Bundles.ElementAt(0);
+            if (Bundles.Count == 0)
+                return null;
+            var result = Bundles[0];
             var l = Bundles[0].UncompressedSize;
             foreach (var b in Bundles)
                 if (b.UncompressedSize < l)

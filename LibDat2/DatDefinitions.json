@@ -1367,20 +1367,28 @@
 		"IsAreaOption": "bool",
 		"RecipeIds": "array|i32",
 		"Tier": "i32",
-		"ModFamily": "string",
+		//"ModFamily": "string",
 		"CraftingItemClassCategoriesKeys": "array|foreignrow",
 		"MaximumMapTier": "i32",
 		"CraftingBenchUnlockCategoriesKey": "foreignrow",
 		"UnveilsRequired": "i32",
 		"UnveilsRequired2": "i32",
-		"AffixType": "string",
+		//"AffixType": "string",
 		"Unknown1": "array|foreignrow",
 		"Unknown2": "array|foreignrow",
 		"AchievementItemsKeys": "array|foreignrow",
 		"Unknown3": "i32",
 		"Unknown4": "i32",
 		"Unknown5": "bool",
-		"Unknown6": "foreignrow"
+		"Unknown6": "foreignrow",
+		"Unknown7": "foreignrow",
+		"Unknown8": "foreignrow",
+		"Unknown9": "foreignrow"
+	},
+	"CraftingBenchSortCategories": {
+		"Id": "string",
+		"Key0": "foreignrow",
+		"Flag0": "bool"
 	},
 	"CraftingBenchUnlockCategories": {
 		"Id": "string",
