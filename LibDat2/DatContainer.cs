@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using LibDat2.Types;
 
@@ -88,7 +87,7 @@ namespace LibDat2 {
 					UTF32 = true;
 					break;
 				default:
-					throw new ArgumentException("The provided file must be a dat file", nameof(fileName));
+					throw new ArgumentException("The provided file name must be a dat file", nameof(fileName));
 			}
 
 			Name = Path.GetFileNameWithoutExtension(fileName);
@@ -142,21 +141,21 @@ namespace LibDat2 {
 					FieldDatas.Add(null);
 					continue;
 				}
-				var array = new IFieldData[FieldDefinitions.Count];
+				var row = new IFieldData[FieldDefinitions.Count];
 				var index = 0;
 				foreach (var type in FieldDefinitions.Select(t => t.Value)) {
 					try {
 						if (type.StartsWith("array|"))
-							array[index++] = IArrayData.Read(reader, IFieldData.TypeFromString[type[6..]], this);
+							row[index++] = IArrayData.Read(reader, IFieldData.TypeFromString[type[6..]], this);
 						else
-							array[index++] = IFieldData.Read(reader, IFieldData.TypeFromString[type], this);
+							row[index++] = IFieldData.Read(reader, IFieldData.TypeFromString[type], this);
 						lastPos = reader.BaseStream.Position;
 					} catch (Exception e) {
 						ex = new(Name, i, index - 1, FieldDefinitions[index - 1].Key, reader.BaseStream.Position, lastPos, e);
 						break;
 					}
 				}
-				FieldDatas.Add(array);
+				FieldDatas.Add(row);
 			}
 
 			if (ReferenceDatas.Count != 0)
@@ -226,11 +225,38 @@ namespace LibDat2 {
 		/// <summary>
 		/// Create a DatContainer with Datas
 		/// </summary>
-		/// <param name="stream">Contents of a dat file</param>
+		/// <param name="fieldDatas">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
 		public DatContainer(List<IFieldData[]> fieldDatas, string fileName) {
-			FieldDatas = fieldDatas;
+			switch (Path.GetExtension(fileName)) {
+				case ".dat":
+					x64 = false;
+					UTF32 = false;
+					break;
+				case ".dat64":
+					x64 = true;
+					UTF32 = false;
+					break;
+				case ".datl":
+					x64 = false;
+					UTF32 = true;
+					break;
+				case ".datl64":
+					x64 = true;
+					UTF32 = true;
+					break;
+				default:
+					throw new ArgumentException("The provided file name must be a dat file", nameof(fileName));
+			}
+
 			Name = Path.GetFileNameWithoutExtension(fileName);
+
+			if (!DatDefinitions.TryGetValue(Name, out var kvps))
+				throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
+
+			FieldDatas = fieldDatas ?? new();
+
+			FieldDefinitions = new(kvps);
 		}
 
 		/// <summary>
@@ -287,7 +313,6 @@ namespace LibDat2 {
 					f.Append("\"" + field.Replace("\"", "\"\"") + "\",");
 				else
 					f.Append(field + ",");
-			 
 
 			if (f.Length == 0) {
 				for (var i=0; i< FieldDatas.Count; ++i)
@@ -311,6 +336,67 @@ namespace LibDat2 {
 			f.Length -= 1; // Remove ,
 
 			return f.ToString();
+		}
+
+		/// <summary>
+		/// Read <see cref="FieldDatas"/> from content of a csv file
+		/// </summary>
+		public virtual void FromCsv(string csv) {
+			var sr = new StringReader(csv.Replace("\r\n", "\n"));
+			if (sr.ReadLine() != string.Join(',', FieldDefinitions.Select(kvp => kvp.Key)))
+				throw new("Field names unmatched");
+
+			CurrentOffset = 8;
+			ReferenceDataOffsets.Clear();
+			ReferenceDatas.Clear();
+
+			var quotes = false;
+			var row = new IFieldData[FieldDefinitions.Count];
+			var i = 0;
+			var s = new StringBuilder();
+			var list = new List<IFieldData[]>(FieldDatas.Count);
+
+			for (var chr = 0; chr != -1; chr = sr.Read())
+				switch (chr) {
+					case '"':
+						if (sr.Peek() == '"') {
+							sr.Read();
+							goto default;
+						}
+						quotes = !quotes;
+						break;
+					case ',':
+						if (quotes)
+							goto default;
+						var type = FieldDefinitions[i].Value;
+						if (type.StartsWith("array|"))
+							row[i++] = IArrayData.FromString(s.ToString(), IFieldData.TypeFromString[type[6..]], this);
+						else
+							row[i++] = IFieldData.FromString(s.ToString(), IFieldData.TypeFromString[type], this);
+						s.Length = 0;
+						break;
+					case '\r':
+					case '\n':
+						if (quotes)
+							goto default;
+						var type2 = FieldDefinitions[i].Value;
+						if (type2.StartsWith("array|"))
+							row[i] = IArrayData.FromString(s.ToString(), IFieldData.TypeFromString[type2[6..]], this);
+						else
+							row[i] = IFieldData.FromString(s.ToString(), IFieldData.TypeFromString[type2], this);
+						i = 0;
+						s.Length = 0;
+						list.Add(row);
+						row = new IFieldData[row.Length];
+						break;
+					case -1:
+						break;
+					default:
+						s.Append(char.ConvertFromUtf32(chr));
+						break;
+				}
+
+			FieldDatas = list;
 		}
 
 		/// <summary>

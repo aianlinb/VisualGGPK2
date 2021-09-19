@@ -228,5 +228,25 @@ namespace VisualGGPK2 {
 			File.WriteAllText(sfd.FileName, dat.ToCsv());
 			MessageBox.Show(this, $"Exported " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
+
+		/// <summary>
+		/// On "Import from .csv" clicked
+		/// </summary>
+		private void OnImportClicked(object sender, RoutedEventArgs e) {
+			var dat = DatTable.Tag as DatContainer;
+			var ofd = new OpenFileDialog() {
+				FileName = dat.Name + ".csv",
+				DefaultExt = "csv"
+			};
+			if (ofd.ShowDialog() != true)
+				return;
+			try {
+				dat.FromCsv(File.ReadAllText(ofd.FileName));
+				ShowDatFile(dat);
+				MessageBox.Show(this, $"Imported from " + ofd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+			} catch (Exception ex) {
+				MessageBox.Show(this, ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			}
+		}
 	}
 }

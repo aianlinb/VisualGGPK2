@@ -232,7 +232,7 @@ namespace LibDat2.Types {
 			var value2 = TypeOfValue == FieldType.String || TypeOfValue == FieldType.ValueString ? value.Trim(' ') : Regex.Replace(value, @"\s", "");
 			if (!value2.StartsWith('[') || !value2.EndsWith(']'))
 				throw new InvalidCastException("\"" + value + "\" cannot be converted to an array");
-			if (TypeOfValue == FieldType.Unknown)
+			if (TypeOfValue == FieldType.Unknown || value2 == "[]")
 				Value = Array.Empty<TypeOfValueInArray>();
 			else if (TypeOfValue == FieldType.ForeignRow) {
 				value2 = value2[1..^1]; // Trim '[' ']'
