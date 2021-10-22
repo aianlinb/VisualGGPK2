@@ -60,7 +60,7 @@ namespace VisualGGPK2 {
 						if (!oc.Contains(rd))
 							oc.Add(rd);
 					}
-				} catch (InvalidCastException ex) {
+				} catch (Exception ex) {
 					MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
 			}

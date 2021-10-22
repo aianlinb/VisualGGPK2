@@ -4,7 +4,7 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
-    <Version>0.12.13</Version>
+    <Version>0.12.14</Version>
     <Platforms>x64</Platforms>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
@@ -26,6 +26,11 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BrotliSharpLib" Version="0.3.3" />
+    <PackageReference Include="Pfim" Version="0.10.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LibDat2\LibDat2.csproj" />
