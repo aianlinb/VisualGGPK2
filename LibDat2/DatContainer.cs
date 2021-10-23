@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using LibDat2.Types;
 
 namespace LibDat2 {
@@ -16,11 +18,48 @@ namespace LibDat2 {
 		public static Dictionary<string, KeyValuePair<string, string>[]> DatDefinitions;
 
 		/// <summary>
+		/// DatDefinitions from schema.min.json
+		/// </summary>
+		public static Dictionary<string, KeyValuePair<string, string>[]> SchemaMinDatDefinitions;
+
+		/// <summary>
+		/// Whether the current using DatDefinitions is from schema.min.json
+		/// </summary>
+		public readonly bool SchemaMin;
+
+		/// <summary>
 		/// Call <see cref="ReloadDefinitions"/>
 		/// </summary>
 		static DatContainer() {
-			//http.DefaultRequestHeaders.Add("User-Agent", "LibDat2");
 			ReloadDefinitions();
+		}
+
+		public static void DownloadSchemaMin() {
+			var http = new HttpClient() { Timeout = Timeout.InfiniteTimeSpan };
+			try {
+				http.DefaultRequestHeaders.Add("User-Agent", "LibDat2");
+				var s = http.GetStringAsync("http://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json").Result;
+				var json = JsonDocument.Parse(s);
+				var table = json.RootElement.GetProperty("tables");
+				SchemaMinDatDefinitions = new(table.GetArrayLength());
+				foreach (var dat in table.EnumerateArray()) {
+					var columns = dat.GetProperty("columns");
+					var array = new KeyValuePair<string, string>[columns.GetArrayLength()];
+					var Unknown = 0;
+					var index = 0;
+					foreach (var field in columns.EnumerateArray()) {
+						var name = field.GetProperty("name").GetString() ?? "Unknown" + Unknown++.ToString();
+						var type = field.GetProperty("type").GetString();
+						if (field.GetProperty("array").GetBoolean())
+							type = "array|" + type;
+						array[index++] = new(name, type);
+					}
+					SchemaMinDatDefinitions.Add(dat.GetProperty("name").GetString(), array);
+				}
+				json.Dispose();
+			} finally {
+				http.Dispose();
+			}
 		}
 
 		/// <summary>
@@ -52,7 +91,8 @@ namespace LibDat2 {
 		/// Parses the dat file contents from a file
 		/// </summary>
 		/// <param name="filePath">Path of a dat file</param>
-		public DatContainer(string filePath) : this(tmp = File.OpenRead(filePath), filePath) {
+		/// <param name="SchemaMin">Whether to use schema.min.json</param>
+		public DatContainer(string filePath, bool SchemaMin = false) : this(tmp = File.OpenRead(filePath), filePath, SchemaMin) {
 			tmp.Close();
 			tmp = null;
 		}
@@ -61,14 +101,17 @@ namespace LibDat2 {
 		/// Parses the dat file contents from a binary data
 		/// </summary>
 		/// <param name="fileData">Binary data of a dat file</param>
-		public DatContainer(byte[] fileData, string fileName) : this(new MemoryStream(fileData), fileName) { }
+		/// <param name="SchemaMin">Whether to use schema.min.json</param>
+		public DatContainer(byte[] fileData, string fileName, bool SchemaMin = false) : this(new MemoryStream(fileData), fileName, SchemaMin) { }
 
 		/// <summary>
 		/// Parses the dat file contents from a stream
 		/// </summary>
 		/// <param name="stream">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
-		public DatContainer(Stream stream, string fileName) {
+		/// <param name="SchemaMin">Whether to use schema.min.json</param>
+		public DatContainer(Stream stream, string fileName, bool SchemaMin = false) {
+			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
 					x64 = false;
@@ -93,27 +136,21 @@ namespace LibDat2 {
 			Name = Path.GetFileNameWithoutExtension(fileName);
 			var reader = new BinaryReader(stream, UTF32 ? Encoding.UTF32 : Encoding.Unicode);
 			var Count = reader.ReadInt32();
+			string def;
 
-			if (!DatDefinitions.TryGetValue(Name, out var kvps))
-				throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
-
-			FieldDefinitions = new(kvps);
-
-			// schema.min.json
-			/*
-			try {
-				var definition = DatDefinitions.GetProperty("tables").EnumerateArray().First(o => o.GetProperty("name").GetString() == Name);
-				var unknownCount = 0;
-				foreach (var field in definition.GetProperty("columns").EnumerateArray()) {
-					var s = field.GetProperty("name").ToString();
-					if (string.IsNullOrEmpty(s))
-						s = "Unknown" + unknownCount++.ToString();
-					definitions.Add((s, field.GetProperty("array").GetBoolean() ? "array|" + field.GetProperty("type").GetString() : field.GetProperty("type").GetString()));
-				}
-			} catch (KeyNotFoundException) {
-				throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
+			if (SchemaMin) {
+				def = "schema.min.json";
+				if (SchemaMinDatDefinitions == null)
+					DownloadSchemaMin();
+				if (!SchemaMinDatDefinitions.TryGetValue(Name, out var kvps))
+					throw new KeyNotFoundException(Name + " was not defined in " + def);
+				FieldDefinitions = new(kvps);
+			} else {
+				def = "DatDefinitions";
+				if (!DatDefinitions.TryGetValue(Name, out var kvps))
+					throw new KeyNotFoundException(Name + " was not defined in " + def);
+				FieldDefinitions = new(kvps);
 			}
-			*/
 
 			if (Name != "Languages") {
 				var actualRecordLength = GetActualRecordLength(reader, Count);
@@ -122,7 +159,7 @@ namespace LibDat2 {
 
 				var recordLength = CalculateRecordLength(FieldDefinitions.Select(t => t.Value), x64);
 				if (recordLength != actualRecordLength)
-					throw new($"{fileName} : Actual record length: {actualRecordLength} is not equal to that defined in DatDefinitions: {recordLength}");
+					throw new($"{fileName} : Actual record length: {actualRecordLength} is not equal to that defined in {def}: {recordLength}");
 
 				reader.BaseStream.Seek(4, SeekOrigin.Begin);
 			}
@@ -227,7 +264,9 @@ namespace LibDat2 {
 		/// </summary>
 		/// <param name="fieldDatas">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
-		public DatContainer(List<IFieldData[]> fieldDatas, string fileName) {
+		/// <param name="SchemaMin">Whether to use schema.min.json</param>
+		public DatContainer(List<IFieldData[]> fieldDatas, string fileName, bool SchemaMin = false) {
+			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
 					x64 = false;
@@ -251,12 +290,19 @@ namespace LibDat2 {
 
 			Name = Path.GetFileNameWithoutExtension(fileName);
 
-			if (!DatDefinitions.TryGetValue(Name, out var kvps))
-				throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
+			if (SchemaMin) {
+				if (SchemaMinDatDefinitions == null)
+					DownloadSchemaMin();
+				if (!SchemaMinDatDefinitions.TryGetValue(Name, out var kvps))
+					throw new KeyNotFoundException(Name + " was not defined in schema.min.json");
+				FieldDefinitions = new(kvps);
+			} else {
+				if (!DatDefinitions.TryGetValue(Name, out var kvps))
+					throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
+				FieldDefinitions = new(kvps);
+			}
 
 			FieldDatas = fieldDatas ?? new();
-
-			FieldDefinitions = new(kvps);
 		}
 
 		/// <summary>
@@ -452,26 +498,19 @@ namespace LibDat2 {
 				};
 		}
 
-		//private static readonly HttpClient http = new() { Timeout = TimeSpan.FromSeconds(5) };
 		/// <summary>
 		/// Reload DatDefinitions from a file
 		/// This won't affect the existing DatContainers
 		/// </summary>
 		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
 			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
-			DatDefinitions = new();
-			foreach (var dat in json.RootElement.EnumerateObject())
-				DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString())).ToArray());
-			/*
-			string s = null;
 			try {
-				s = http.GetStringAsync("http://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json").Result;
-			} catch {
-				try {
-					s = File.ReadAllText(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) + @"\schema.min.json");
-				} catch { }
+				DatDefinitions = new();
+				foreach (var dat in json.RootElement.EnumerateObject())
+					DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString())).ToArray());
+			} finally {
+				json.Dispose();
 			}
-			*/
 		}
 	}
 }

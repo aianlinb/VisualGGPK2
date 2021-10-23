@@ -248,5 +248,12 @@ namespace VisualGGPK2 {
 				MessageBox.Show(this, ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}
 		}
+
+		/// <summary>
+		/// On "Use schema.min.json" (un)checked
+		/// </summary>
+		private void OnSchemaMinChecked(object sender, RoutedEventArgs e) {
+			OnTreeSelectedChanged(null, null);
+		}
 	}
 }

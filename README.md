@@ -24,5 +24,9 @@ A visual program to view/edit ggpk file.
 - Custom exception window instead of crashing.
 - Port from .NET Framework to .NET Core.
 - Remove unnecessary code.
+- Add support to .dat64 .datl .datl64 files.
 - Allow editing the whole dat file.
+- Import data from csv to a dat file.
 - Automatically check for updates.
+- Batch convert dds files to png.
+- Allow zooming with the mouse wheel in ImageViewer

@@ -100,6 +100,10 @@ namespace VisualGGPK2
 
                 var setting = Properties.Settings.Default;
                 if (setting.GGPKPath == "") {
+                    setting.Upgrade();
+                    setting.Save();
+                }
+                if (setting.GGPKPath == "") {
                     string path;
                     path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
                     if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
@@ -259,7 +263,7 @@ namespace VisualGGPK2
                             case IFileRecord.DataFormats.Dat:
                                 try {
                                     DatView.Visibility = Visibility.Visible;
-                                    ShowDatFile(new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name));
+                                    ShowDatFile(new DatContainer(f.ReadFileContent(ggpkContainer.fileStream), rtn.Name, SchemaMin.IsChecked == true));
                                 } catch (Exception ex) {
                                     toMark.Clear();
                                     DatTable.Tag = null;
