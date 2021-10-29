@@ -72,6 +72,10 @@ namespace VisualGGPK2
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e) {
+            if (SteamMode)
+                Title += " (SteamMode)";
+            if (BundleMode)
+                Title += " (SteamMode)";
             // Version Check
             try {
                 var http = new HttpClient {

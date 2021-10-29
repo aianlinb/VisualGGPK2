@@ -204,7 +204,8 @@
 		"Unknown0": "i8"
 	},
 	"AfflictionRewardMapMods": {
-		"ModsKey": "foreignrow"
+		"ModsKey": "foreignrow",
+		"Unknown0": "bool"
 	},
 	"AfflictionRewardTypes": {},
 	"AfflictionRewardTypeVisuals": {
@@ -293,6 +294,12 @@
 		"Unknown7": "i32",
 		"Unknown8": "i32"
 	},
+	"AnimatedObjectFlags": {
+		"AOFile": "string",
+		"HASH32": "u32",
+		"Flag0": "bool",
+		"Flag1": "bool"
+	},
 	"Animation": {
 		"Id": "string",
 		"Flag0": "bool",
@@ -342,7 +349,8 @@
 		"Unknown0": "f32",
 		"AOFiles": "array|string",
 		"Unknown1": "i32",
-		"Unknown2": "i8"
+		"Unknown2": "i8",
+		"Unknown3": "string"
 	},
 	"AreaTransitionAnimations": {
 		"Id": "string",
@@ -372,12 +380,17 @@
 	"ArmourSurfaceTypes": {},
 	"ArmourTypes": {
 		"BaseItemTypesKey": "foreignrow",
+		"ArmourMin": "i32",
+		"ArmourMax": "i32",
+		"EvasionMin": "i32",
+		"EvasionMax": "i32",
+		"EnergyShieldMin": "i32",
+		"EnergyShieldMax": "i32",
 		"IncreasedMovementSpeed": "i32",
+		"WardMin": "i32",
+		"WardMax": "i32",
 		"Unknown0": "i32",
-		"Unknown1": "i32",
-		"Unknown2": "i32",
-		"Unknown3": "i32",
-		"Unknown4": "i32"
+		"Unknown1": "i32"
 	},
 	"Ascendancy": {
 		"Id": "string",
@@ -387,7 +400,10 @@
 		"RGBFlavourTextColour": "string",
 		"Name": "string",
 		"FlavourText": "string",
-		"OGGFile": "string"
+		"OGGFile": "string",
+		"PassiveTreeImage": "string",
+		"Unknown0": "i32",
+		"Unknown1": "i32"
 	},
 	"AtlasAwakeningStats": {
 		"AwakeningLevel": "i32",
@@ -542,18 +558,17 @@
 		"Id": "string",
 		"Name": "string",
 		"Unknown0": "i32",
-		"Key1": "row",
-		"Key2": "row",
-		"Unknown1": "f32",
+		"Unknown1": "foreignrow",
 		"Unknown2": "f32",
-		"Unknown3": "row",
-		"Unknown4": "row",
+		"Unknown3": "f32",
+		"Unknown4": "foreignrow",
 		"Citadel": "string",
 		"Unknown5": "i32",
 		"bk2Path": "string",
 		"Unknown6": "i32",
 		"Unknown7": "foreignrow",
-		"Unknown8": "foreignrow"
+		"Unknown8": "foreignrow",
+		"Unknown9": "foreignrow"
 	},
 	"AtlasRegionUpgradeRegions": {
 		"Unknown0": "foreignrow",
@@ -1075,7 +1090,8 @@
 		"Keys2": "array|foreignrow",
 		"Keys3": "array|foreignrow",
 		"Flag19": "bool",
-		"Unknown5": "i32"
+		"Unknown5": "i32",
+		"Key2": "foreignrow"
 	},
 	"BuffGroups": {},
 	"BuffMergeModes": {},
@@ -1139,6 +1155,11 @@
 		"EPKFiles": "array|string",
 		"Keys0": "array|foreignrow",
 		"Keys1": "foreignrow"
+	},
+	"BuffVisualsArtVariations": {
+		"Id": "string",
+		"Unknown0": "array|foreignrow",
+		"Unknown1": "i32"
 	},
 	"BuffVisualSetEntries": {
 		"Id": "string",
@@ -1358,7 +1379,9 @@
 	"ComponentCharges": {
 		"BaseItemTypesKey": "string",
 		"MaxCharges": "i32",
-		"PerCharge": "i32"
+		"PerCharge": "i32",
+		"MaxCharges2": "i32",
+		"PerCharge2": "i32"
 	},
 	"CooldownBypassTypes": {},
 	"CooldownGroups": {},
@@ -1372,7 +1395,7 @@
 	"CraftingBenchOptions": {
 		"HideoutNPCsKey": "foreignrow",
 		"Order": "i32",
-		"ModsKey": "foreignrow",
+		"AddMod": "foreignrow", // ModsKey
 		"Cost_BaseItemTypesKeys": "array|foreignrow",
 		"Cost_Values": "array|u32",
 		"RequiredLevel": "i32",
@@ -1398,14 +1421,15 @@
 		//"AffixType": "string",
 		"Unknown1": "array|foreignrow",
 		"Unknown2": "array|foreignrow",
-		"AchievementItemsKeys": "array|foreignrow",
+		//"AchievementItemsKeys": "array|foreignrow", // removed 3.16
 		"Unknown3": "i32",
 		"Unknown4": "i32",
 		"Unknown5": "bool",
 		"Unknown6": "foreignrow",
-		"Unknown7": "foreignrow",
-		"Unknown8": "foreignrow",
-		"Unknown9": "foreignrow"
+		"AddEnchantment": "foreignrow",
+		"SortCategory": "foreignrow",
+		"Unknown9": "foreignrow",
+		"Unknown10": "bool"
 	},
 	"CraftingBenchSortCategories": {
 		"Id": "string",
@@ -1537,7 +1561,8 @@
 		"Unknown1": "i32",
 		"Unknown2": "i32",
 		"Unknown3": "i32",
-		"Unknown4": "i32"
+		"Unknown4": "i32",
+		"Unknown5": "bool"
 	},
 	"DelveAzuriteShop": {
 		"BaseItemTypesKey": "foreignrow",
@@ -1586,7 +1611,9 @@
 		"Weight_TagsKeys": "array|foreignrow",
 		"Weight_Values": "array|i32",
 		"DelveCraftingModifierDescriptionsKeys": "array|foreignrow",
-		"BlockedDelveCraftingModifierDescriptionsKeys": "array|foreignrow"
+		"BlockedDelveCraftingModifierDescriptionsKeys": "array|foreignrow",
+		"Unknown0": "bool",
+		"Unknown1": "bool"
 	},
 	"DelveCraftingTags": {
 		"TagsKey": "foreignrow",
@@ -1705,7 +1732,9 @@
 		"IntId": "i32",
 		"Width": "i32",
 		"Height": "i32",
-		"StackSize": "i32"
+		"StackSize": "i32",
+		"Unknown1": "bool",
+		"MTXPath": "string"
 	},
 	"DelveUpgrades": {
 		"DelveUpgradeTypeKey": "i32",
@@ -2038,9 +2067,21 @@
 		"Unknown13": "i32"
 	},
 	"ExpeditionCurrency": {
-		"BaseItemType": "foreignrow",
+		"BaseItemTypesKey": "foreignrow",
 		"Unknown0": "i32",
-		"NPC": "foreignrow"
+		"NPCKey": "foreignrow",
+		"Unknown1": "foreignrow"
+	},
+	"ExpeditionDealFamilies": {},
+	"ExpeditionDeals": {
+		"Id": "i32",
+		"Function": "string",
+		"Arguments": "string",
+		"TextAudio": "foreignrow",
+		"Description": "string",
+		"BuyAchievements": "array|foreignrow",
+		"Unknown0": "foreignrow",
+		"DealFamily": "i32"
 	},
 	"ExpeditionFactions": {
 		"Id": "string",
@@ -2074,6 +2115,7 @@
 		"BombPlacedGeneric": "foreignrow",
 		"EncounterComplete": "foreignrow"
 	},
+	"ExpeditionRelicModCategories": {},
 	"ExpeditionRelicMods": {
 		"Mod": "foreignrow",
 		"Categories": "array|i32",
@@ -2089,7 +2131,7 @@
 	},
 	"ExpeditionStorageLayout": {
 		"Id": "string",
-		"BaseItemType": "foreignrow",
+		"BaseItemTypesKey": "foreignrow",
 		"PosX": "i32",
 		"PosY": "i32",
 		"Unknown0": "i32",
@@ -2097,7 +2139,8 @@
 		"Width": "i32",
 		"Height": "i32",
 		"Unknown2": "i32",
-		"Unknown3": "bool"
+		"Unknown3": "bool",
+		"Unknown4": "foreignrow"
 	},
 	"ExpeditionTerrainFeatures": {
 		"Id": "string",
@@ -2173,7 +2216,9 @@
 		"ManaPerUse": "i32",
 		"RecoveryTime": "i32",
 		"BuffDefinitionsKey": "foreignrow",
-		"BuffStatValues": "array|i32"
+		"BuffStatValues": "array|i32",
+		"RecoveryTime2": "i32",
+		"BuffStatValues2": "array|i32"
 	},
 	"FlaskType": {},
 	"FlavourText": {
@@ -2208,9 +2253,20 @@
 		"Value": "i32",
 		"Unknown0": "i32"
 	},
-	"GameStats": {
+	"GamepadButton": {
+		"Unknown0": "string",
+		"Unknown1": "string",
+		"Unknown2": "string",
+		"Unknown3": "string"
+	},
+	"GamepadType": {
 		"Id": "string",
-		"Id2": "string"
+		"Unknown0": "string",
+		"Unknown1": "string"
+	},
+	"GameStats": {
+		"Unknown0": "string",
+		"Unknown1": "string"
 	},
 	"GemTags": {
 		"Id": "string",
@@ -2268,7 +2324,9 @@
 		"Unknown22": "foreignrow",
 		"Flag18": "bool",
 		"Flag19": "bool",
-		"Flag20": "bool"
+		"Flag20": "bool",
+		"Flag21": "bool",
+		"Flag22": "bool"
 	},
 	"GeometryChannel": {
 		"Id": "string",
@@ -2307,7 +2365,8 @@
 		"Unknown12": "i8",
 		"Key1": "foreignrow",
 		"Unknown13": "i8",
-		"Key2": "foreignrow"
+		"Key2": "foreignrow",
+		"Unknown14": "i32"
 	},
 	"GeometryTrigger": {
 		"Unknown0": "i32",
@@ -2908,19 +2967,110 @@
 		"Unknown0": "f32",
 		"Unknown1": "f32"
 	},
+	"HellscapeAOReplacements": {
+		"Original": "string",
+		"HASH32": "u32",
+		"Replacement": "string"
+	},
+	"HellscapeAreaPacks": {
+		"WorldAreaKey": "foreignrow",
+		"MonsterPacksKeys": "array|foreignrow",
+		"Unknown0": "i32",
+		"Unknown1": "i32"
+	},
+	"HellscapeExperienceLevels": {
+		"Level": "i32",
+		"Experience": "i32"
+	},
+	"HellscapeFactions": {
+		"Id": "string",
+		"Unknown0": "foreignrow",
+		"Unknown1": "foreignrow",
+		"Unknown2": "array|foreignrow",
+		"Unknown3": "i32",
+		"Unknown4": "array|foreignrow",
+		"AOFile": "string",
+		"Unknown5": "foreignrow"
+	},
+	"HellscapeImmuneMonsters": {
+		"Unknown0": "foreignrow"
+	},
+	"HellscapeItemModificationTiers": {
+		"Tier": "i32",
+		"IsMap": "bool",
+		"Unknown0": "i32",
+		"MinItemLvl": "i32"
+	},
+	"HellscapeLifeScalingPerLevel": {
+		"AreaLevel": "i32",
+		"Scale": "i32"
+	},
+	"HellscapeModificationInventoryLayout": {
+		"Id": "string",
+		"Unknown0": "i32",
+		"Unknown1": "i32",
+		"IsMapSlot": "bool",
+		"Unknown2": "i32",
+		"Width": "i32",
+		"Height": "i32",
+		"StatKey": "foreignrow",
+		"StatValue": "i32",
+		"Unknown3": "foreignrow",
+		"Unknown4": "foreignrow"
+	},
+	"HellscapeMods": {
+		"ModKey": "foreignrow",
+		"Unknown0": "array|i32",
+		"TransformAchievement": "foreignrow" // AchievementItemsKey
+	},
+	"HellscapeMonsterPacks": {
+		"Id": "string",
+		"MonsterPacksKey": "foreignrow",
+		"HellscapeFactionsKey": "foreignrow",
+		"IsDonutPack": "bool",
+		"IsElite": "bool",
+		"MinLevel": "i32",
+		"MaxLevel": "i32"
+	},
+	"HellscapePassives": {
+		"Id": "string",
+		"Name": "string",
+		"StatsKeys": "array|foreignrow",
+		"StatsValuesKeys": "array|i32",
+		"Points": "i32",
+		"HASH16": "u32",
+		"Icon": "string",
+		"IconMaxed": "string",
+		"Unknown0": "foreignrow",
+		"Unknown1": "i32",
+		"Unknown2": "foreignrow"
+	},
+	"HellscapePassiveTree": {
+		"Id": "string",
+		"AllocationsRequired": "i32",
+		"HellscapePassivesKeys": "array|foreignrow"
+	},
 	"HideoutDoodads": {
 		"BaseItemTypesKey": "foreignrow",
 		"Variation_AOFiles": "array|string",
-		"FavourCost": "i32",
-		"MasterLevel": "i32",
-		"HideoutNPCsKey": "foreignrow",
+		//"FavourCost": "i32", // removed 3.16
+		//"MasterLevel": "i32", // removed 3.16
+		//"HideoutNPCsKey": "foreignrow", // removed 3.16
 		"IsNonMasterDoodad": "bool",
 		"Unknown0": "i32",
 		"Unknown1": "i32",
 		"Unknown2": "i32",
 		"InheritsFrom": "string",
+		"Unknown3": "bool",
 		"IsCraftingBench": "bool",
-		"Unknown3": "bool"
+		"Unknown4": "array|foreignrow",
+		"Unknown5": "bool",
+		"Unknown6": "foreignrow"
+	},
+	"HideoutDoodadTags": {
+		"Id": "string",
+		"Unknown0": "array|i32",
+		"Unknown1": "array|i32"
 	},
 	"HideoutNPCs": {
 		"Hideout_NPCsKey": "foreignrow",
@@ -2946,13 +3096,16 @@
 		"Unknown1": "array|foreignrow",
 		"LargeWorldAreasKey": "foreignrow",
 		"HideoutImage": "string",
-		"IsEnabled": "i8",
+		"IsEnabled": "bool",
 		"Weight": "i32",
 		"Unknown2": "foreignrow",
 		"Unknown3": "bool",
 		"Name": "string",
 		"Unknown4": "array|i32",
-		"Unknown5": "bool"
+		"Unknown5": "bool",
+		"Unknown6": "bool",
+		"Unknown7": "bool",
+		"Unknown8": "bool"
 	},
 	"ImpactSoundData": {
 		"Id": "string",
@@ -4769,6 +4922,23 @@
 		"Name": "string",
 		"Unknown1": "string"
 	},
+	"PassiveSkillMasteryEffects": {
+		"Id": "string",
+		"hash": "u32",
+		"StatsKeys": "array|foreignrow",
+		"Stat1Value": "i32",
+		"Stat2Value": "i32",
+		"Stat3Value": "i32"
+	},
+	"PassiveSkillMasteryGroups": {
+		"Id": "string",
+		"PassiveSkillMasteryEffectsKeys": "array|foreignrow",
+		"InactiveIcon": "string",
+		"ActiveIcon": "string",
+		"ActiveEffectImage": "string",
+		"Unknown0": "bool",
+		"Unknown1": "foreignrow"
+	},
 	"PassiveSkills": {
 		"Id": "string",
 		"Icon_DDSFile": "string",
@@ -5978,8 +6148,9 @@
 	},
 	"WarbandsPackMonsters": {
 		"Id": "string",
-		"Unknown0": "i64",
+		"Unknown0": "i32",
 		"Unknown1": "i32",
+		"Unknown2": "i32",
 		"Tier4_MonsterVarietiesKeys": "array|foreignrow",
 		"Tier3_MonsterVarietiesKeys": "array|foreignrow",
 		"Tier2_MonsterVarietiesKeys": "array|foreignrow",

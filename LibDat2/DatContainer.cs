@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -503,6 +504,7 @@ namespace LibDat2 {
 		/// This won't affect the existing DatContainers
 		/// </summary>
 		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
+			filePath = Path.GetFullPath(filePath, Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
 			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
 			try {
 				DatDefinitions = new();
