@@ -1,7 +1,7 @@
 ﻿<Window x:Class="VisualGGPK2.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		Title="VisualGGPK2 (v0.12.16)" Width="960" Height="560" AllowDrop="True" Loaded="OnLoaded" DragEnter="OnDragEnter" Drop="OnDragDrop">
+		Title="VisualGGPK2 (v0.12.17)" Width="960" Height="560" AllowDrop="True" Loaded="OnLoaded" DragEnter="OnDragEnter" Drop="OnDragDrop">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="280" MinWidth="10"/>

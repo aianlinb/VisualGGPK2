@@ -66,7 +66,7 @@ namespace LibGGPK2
 
             // Read ROOT Directory Record
             BaseRecord ggpk;
-            while (!((ggpk = GetRecord()) is GGPKRecord));
+            while ((ggpk = GetRecord()) is not GGPKRecord);
             ggpkRecord = ggpk as GGPKRecord;
             rootDirectory = GetRecord(ggpkRecord.RootDirectoryOffset) as DirectoryRecord;
             rootDirectory.Name = "ROOT";

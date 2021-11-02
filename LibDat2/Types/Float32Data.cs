@@ -23,7 +23,7 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override string ToString() {
-			return Value.ToString() + "F";
+			return Value.ToString() + "f";
 		}
 	}
 }

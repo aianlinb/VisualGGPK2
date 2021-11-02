@@ -1,7 +1,7 @@
 ﻿<Window x:Class="VisualGGPK2.ErrorWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-		Title="ErrorWindow (v0.12.16)" Width="560" Height="500" WindowStartupLocation="CenterScreen" Closing="OnClosing">
+		Title="ErrorWindow (v0.12.17)" Width="560" Height="500" WindowStartupLocation="CenterScreen" Closing="OnClosing">
     <Grid>
         <TextBox x:Name="ErrorBox" Text="Loading Exception . . ." Padding="2" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,31" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
 		<TextBlock FontSize="14"

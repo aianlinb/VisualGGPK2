@@ -221,7 +221,8 @@ namespace VisualGGPK2 {
 			var dat = DatTable.Tag as DatContainer;
 			var sfd = new SaveFileDialog() {
 				FileName = dat.Name + ".csv",
-				DefaultExt = "csv"
+				DefaultExt = "csv",
+				Filter = "*.csv|*.csv"
 			};
 			if (sfd.ShowDialog() != true)
 				return;
@@ -236,7 +237,8 @@ namespace VisualGGPK2 {
 			var dat = DatTable.Tag as DatContainer;
 			var ofd = new OpenFileDialog() {
 				FileName = dat.Name + ".csv",
-				DefaultExt = "csv"
+				DefaultExt = "csv",
+				Filter = "*.csv|*.csv|*.*|*.*"
 			};
 			if (ofd.ShowDialog() != true)
 				return;

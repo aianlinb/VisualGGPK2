@@ -658,7 +658,7 @@ namespace VisualGGPK2
         private void OnSavePngClicked(object sender, RoutedEventArgs e) {
             var o = (Tree.SelectedItem as TreeViewItem)?.Tag;
             if (o is RecordTreeNode rtn && rtn is not IFileRecord) {
-                var sfd = new SaveFileDialog { FileName = rtn.Name + ".dir" };
+                var sfd = new SaveFileDialog { FileName = rtn.Name + ".dir", Filter= "*.png|*.png" };
                 if (sfd.ShowDialog() == true) {
                     var bkg = new BackgroundDialog();
                     Task.Run(() => {
@@ -688,7 +688,7 @@ namespace VisualGGPK2
             } else if (o is IFileRecord fr && !(fr as RecordTreeNode).Name.EndsWith(".dds") && !(fr as RecordTreeNode).Name.EndsWith(".dds.header")) {
                 MessageBox.Show(this, "Selected file is not a DDS file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             } else {
-                var sfd = new SaveFileDialog { FileName = Path.GetFileNameWithoutExtension((string)Image.Tag) + ".png" };
+                var sfd = new SaveFileDialog { FileName = Path.GetFileNameWithoutExtension((string)Image.Tag) + ".png", Filter = "*.png|*.png" };
                 if (sfd.ShowDialog() == true) {
                     BitmapSourceSave((BitmapSource)Image.Source, sfd.FileName);
                     MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);

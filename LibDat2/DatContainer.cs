@@ -403,7 +403,7 @@ namespace LibDat2 {
 			var s = new StringBuilder();
 			var list = new List<IFieldData[]>(FieldDatas.Count);
 
-			for (var chr = 0; chr != -1; chr = sr.Read())
+			for (var chr = sr.Read(); chr != -1; chr = sr.Read())
 				switch (chr) {
 					case '"':
 						if (sr.Peek() == '"') {

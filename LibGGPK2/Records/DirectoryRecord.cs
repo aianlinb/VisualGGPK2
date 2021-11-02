@@ -28,7 +28,7 @@ namespace LibGGPK2.Records
         /// <summary>
         /// Use for sort the children of directory.
         /// </summary>
-        public static readonly SortComp Comparer = new SortComp();
+        public static readonly SortComp Comparer = new();
 
         /// <summary>
         /// Records (File/Directory) this directory contains.
