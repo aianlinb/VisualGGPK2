@@ -157,9 +157,10 @@ namespace LibGGPK2
 
         /// <summary>
         /// Find the record with a <paramref name="path"/>
-        /// <param name="path">Path in GGPK under <paramref name="parent"/></param>
-        /// <param name="parent">null for ROOT directory in GGPK</param>
         /// </summary>
+        /// <param name="path">Path in GGPK under <paramref name="parent"/></param>
+        /// <param name="parent">Where to start searching, null for ROOT directory in GGPK</param>
+        /// <returns>null if not found</returns>
         public virtual RecordTreeNode FindRecord(string path, RecordTreeNode parent = null) {
             parent ??= rootDirectory;
             var SplittedPath = path.Split('/', '\\');
