@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace LibBundle {
     public class BundleContainer {
-        [DllImport("oo2core_8_win64.dll")]
+        [DllImport("oo2core_9_win64.dll")]
         public static extern int OodleLZ_Decompress(byte[] buffer, int bufferSize, byte[] result, long outputBufferSize, int a, int b, int c, IntPtr d, long e, IntPtr f, IntPtr g, IntPtr h, long i, int ThreadModule);
-        [DllImport("oo2core_8_win64.dll")]
+        [DllImport("oo2core_9_win64.dll")]
         public static extern int OodleLZ_Compress(ENCODE_TYPES format, byte[] buffer, long bufferSize, byte[] outputBuffer, COMPRESSTION_LEVEL level, IntPtr opts, long offs, long unused, IntPtr scratch, long scratch_size);
         public enum ENCODE_TYPES {
             LZH = 0,

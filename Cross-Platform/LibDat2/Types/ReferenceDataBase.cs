@@ -68,8 +68,8 @@ namespace LibDat2.Types {
 				if (fd == this)
 					contains = true;
 				// Prevent confusion between array|int and array|long etc...
-				// array|string is a special case that will cause the game to crash if two fields point to the same position even if their data are completely equal
-				if (fd is not IArrayData || fd is IArrayData ad and not ArrayData<StringData> && ad.Value is TypeOfValue t && (t as Array).Length == (Value as Array).Length) {
+				// Array is a special case that will cause the game to crash if two fields point to the same position even if their datas are completely equal
+				if (fd is not IArrayData) {
 					if (Dat.x64)
 						writer.Write(this.Offset = offset);
 					else

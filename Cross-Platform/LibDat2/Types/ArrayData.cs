@@ -215,7 +215,7 @@ namespace LibDat2.Types {
 		/// Read a <see cref="ArrayData{TypeOfValueInArray}"/> from its value in string representation
 		/// </summary>
 		public static ArrayData<TypeOfValueInArray> FromString(string value, DatContainer dat, FieldType typeOfarrayInArray) {
-			value = typeOfarrayInArray == FieldType.String || typeOfarrayInArray == FieldType.ValueString ? value.Trim(' ') : Regex.Replace(value, @"\s", "").Replace(",", ", ");
+			value = typeOfarrayInArray == FieldType.String || typeOfarrayInArray == FieldType.ValueString ? value : Regex.Replace(value, @"\s", "").Replace(",", ", ");
 			if (dat.ReferenceDataOffsets.TryGetValue(value, out long offset) && dat.ReferenceDatas.TryGetValue(offset, out IReferenceData rd) && rd is ArrayData<TypeOfValueInArray> a)
 				return a;
 
