@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 
 namespace LibGGPK3 {
-	public class GGPKContainer {
+	public class GGPK {
         internal FileStream FileStream;
         internal BinaryReader Reader;
         internal BinaryWriter Writer;
@@ -14,9 +14,10 @@ namespace LibGGPK3 {
         public readonly DirectoryRecord RootDirectory;
         public readonly LinkedList<FreeRecord> LinkedFreeRecords;
 
-        public GGPKContainer(string pathToGGPK) {
+        /// <param name="filePath">Path to Content.ggpk</param>
+        public GGPK(string filePath) {
             // Open File
-            FileStream = File.Open(pathToGGPK, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+            FileStream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
             Reader = new BinaryReader(FileStream);
             Writer = new BinaryWriter(FileStream);
 

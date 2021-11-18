@@ -4,12 +4,12 @@ using System.IO.Compression;
 using LibGGPK3;
 using LibGGPK3.Records;
 
-namespace PatchGGPK3 {
+namespace PatchBundleGGPK3 {
 	public class Program {
 		public static void Main(string[] args) {
-			Console.WriteLine("PatchGGPK3  Copyright (C) 2021 aianlinb."); // ©
+			Console.WriteLine("PatchBundleGGPK3  Copyright (C) 2021 aianlinb."); // ©
 			if (args.Length != 2) {
-				Console.WriteLine("Usage: PatchGGPK3 <PathToGGPK> <ZipFile>");
+				Console.WriteLine("Usage: PatchBundleGGPK3 <PathToGGPK> <ZipFile>");
 				return;
 			}
 			if (!File.Exists(args[0])) {
@@ -24,7 +24,7 @@ namespace PatchGGPK3 {
 			Console.WriteLine("GGPK: " + args[0]);
 			Console.WriteLine("Patch file: " + args[1]);
 			Console.WriteLine("Reading ggpk file . . .");
-			var ggpk = new GGPKContainer(args[0]);
+			var ggpk = new GGPK(args[0]);
 			Console.WriteLine("Replacing files . . .");
 			var zip = ZipFile.OpenRead(args[1]);
 

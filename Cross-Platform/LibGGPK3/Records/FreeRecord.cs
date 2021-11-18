@@ -16,28 +16,28 @@ namespace LibGGPK3.Records {
         /// </summary>
         public long NextFreeOffset;
 
-        public FreeRecord(int length, GGPKContainer ggpk) {
-            GGPK = ggpk;
+        public FreeRecord(int length, GGPK ggpk) {
+            Ggpk = ggpk;
             Offset = ggpk.FileStream.Position - 8;
             Length = length;
             Read();
         }
 
-        public FreeRecord(int length, GGPKContainer ggpk, long nextFreeOffset, long recordBegin) {
-            GGPK = ggpk;
+        public FreeRecord(int length, GGPK ggpk, long nextFreeOffset, long recordBegin) {
+            Ggpk = ggpk;
             Offset = recordBegin;
             Length = length;
             NextFreeOffset = nextFreeOffset;
         }
 
         protected override void Read() {
-            var br = GGPK.Reader;
+            var br = Ggpk.Reader;
             NextFreeOffset = br.ReadInt64();
             br.BaseStream.Seek(Length - 16, SeekOrigin.Current);
         }
 
         protected internal override void Write(BinaryWriter bw = null) {
-            bw ??= GGPK.Writer;
+            bw ??= Ggpk.Writer;
             Offset = bw.BaseStream.Position;
             bw.Write(Length);
             bw.Write(Tag);
@@ -48,32 +48,32 @@ namespace LibGGPK3.Records {
         /// <summary>
         /// Remove this FreeRecord from the Linked FreeRecord List
         /// </summary>
-        /// <param name="node">Node in <see cref="GGPKContainer.LinkedFreeRecords"/> to remove</param>
+        /// <param name="node">Node in <see cref="GGPK.LinkedFreeRecords"/> to remove</param>
         public virtual void Remove(LinkedListNode<FreeRecord> node = null) {
-            node ??= GGPK.LinkedFreeRecords.Find(this);
+            node ??= Ggpk.LinkedFreeRecords.Find(this);
             var previous = node.Previous?.Value;
             var next = node.Next?.Value;
             if (next == null)
                 if (previous == null) {
-                    GGPK.GgpkRecord.FirstFreeRecordOffset = 0;
-                    GGPK.FileStream.Seek(GGPK.GgpkRecord.Offset + 20, SeekOrigin.Begin);
-                    GGPK.Writer.Write((long)0);
+                    Ggpk.GgpkRecord.FirstFreeRecordOffset = 0;
+                    Ggpk.FileStream.Seek(Ggpk.GgpkRecord.Offset + 20, SeekOrigin.Begin);
+                    Ggpk.Writer.Write((long)0);
                 } else {
                     previous.NextFreeOffset = 0;
-                    GGPK.FileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
-                    GGPK.Writer.Write((long)0);
+                    Ggpk.FileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
+                    Ggpk.Writer.Write((long)0);
                 }
             else
                 if (previous == null) {
-                GGPK.GgpkRecord.FirstFreeRecordOffset = next.Offset;
-                GGPK.FileStream.Seek(GGPK.GgpkRecord.Offset + 20, SeekOrigin.Begin);
-                GGPK.Writer.Write(next.Offset);
+                Ggpk.GgpkRecord.FirstFreeRecordOffset = next.Offset;
+                Ggpk.FileStream.Seek(Ggpk.GgpkRecord.Offset + 20, SeekOrigin.Begin);
+                Ggpk.Writer.Write(next.Offset);
             } else {
                 previous.NextFreeOffset = next.Offset;
-                GGPK.FileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
-                GGPK.Writer.Write(next.Offset);
+                Ggpk.FileStream.Seek(previous.Offset + 8, SeekOrigin.Begin);
+                Ggpk.Writer.Write(next.Offset);
             }
-            GGPK.LinkedFreeRecords.Remove(node);
+            Ggpk.LinkedFreeRecords.Remove(node);
         }
     }
 }

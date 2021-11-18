@@ -18,7 +18,7 @@ namespace LibGGPK3.Records {
         /// <summary>
         /// GGPK which contains this record
         /// </summary>
-        public GGPKContainer GGPK;
+        public GGPK Ggpk;
 
         /// <summary>
         /// Read the record data from GGPK

@@ -39,8 +39,8 @@ namespace LibGGPK3.Records {
         /// <summary>
         /// Read a DirectoryRecord from GGPK
         /// </summary>
-        public DirectoryRecord(int length, GGPKContainer ggpk) {
-            GGPK = ggpk;
+        public DirectoryRecord(int length, GGPK ggpk) {
+            Ggpk = ggpk;
             Offset = ggpk.FileStream.Position - 8;
             Length = length;
             Read();
@@ -52,7 +52,7 @@ namespace LibGGPK3.Records {
                 if (_Children == null) {
                     _Children = new SortedSet<TreeNode>(Comparer);
                     foreach (var e in Entries) {
-                        var b = GGPK.GetRecord(e.Offset) as TreeNode;
+                        var b = Ggpk.GetRecord(e.Offset) as TreeNode;
                         b.Parent = this;
                         _Children.Add(b);
                     }
@@ -68,7 +68,7 @@ namespace LibGGPK3.Records {
         }
 
         protected override void Read() {
-            var br = GGPK.Reader;
+            var br = Ggpk.Reader;
             var nameLength = br.ReadInt32();
             var totalEntries = br.ReadInt32();
 
@@ -83,7 +83,7 @@ namespace LibGGPK3.Records {
         }
 
         protected internal override void Write(BinaryWriter bw = null) {
-            bw ??= GGPK.Writer;
+            bw ??= Ggpk.Writer;
             Offset = bw.BaseStream.Position;
             bw.Write(Length);
 bw.Write(Tag);

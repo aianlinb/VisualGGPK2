@@ -303,9 +303,9 @@ namespace LibGGPK2
             }
             if (BundleToSave != null && SavedSize > 0) {
                 changed = true;
-                if (fileStream == null) {
+                if (fileStream == null) // SteamMode
                     BundleToSave.Save();
-                } else {
+                else {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
                     BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
@@ -326,39 +326,63 @@ namespace LibGGPK2
         /// <param name="list">File list to replace (generate by <see cref="RecursiveFileList"/>)</param>
         /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
         public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, ZipArchiveEntry>> list, Action ProgressStep = null) {
-            var bundles = new List<LibBundle.Records.BundleRecord>(Index.Bundles);
+            var bundles = Index == null ? new() : new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
-            var BundleToSave = Index?.GetSmallestBundle();
+            var BundleToSave = Index.GetSmallestBundle(bundles);
             var fr = RecordOfBundle(BundleToSave);
-            while (fr == null) {
-                bundles.Remove(BundleToSave);
-                BundleToSave = Index?.GetSmallestBundle(bundles);
-                fr = RecordOfBundle(BundleToSave);
-            }
+
+            if (Index != null) // else BundleMode
+                if (fileStream == null) // SteamMode
+                    while (!File.Exists(BundleToSave.Name)) {
+                        bundles.Remove(BundleToSave);
+                        if (bundles.Count == 0)
+                            throw new("Couldn't find a bundle to save");
+                        BundleToSave = Index.GetSmallestBundle(bundles);
+                    }
+                else
+                    while (fr == null) {
+                        bundles.Remove(BundleToSave);
+                        if (bundles.Count == 0)
+                            throw new("Couldn't find a bundle to save");
+                        BundleToSave = Index.GetSmallestBundle(bundles);
+                        fr = RecordOfBundle(BundleToSave);
+                    }
+
             var SavedSize = 0;
             foreach (var (record, zipped) in list) {
-                if (SavedSize > 50000000) // 50MB per bundle
-                {
+                if (SavedSize > 200000000 && bundles.Count > 1) { // 200MB per bundle
                     changed = true;
-                    if (fr == null) {
+                    if (fileStream == null) // SteamMode
                         BundleToSave.Save();
-                    } else {
+                    else {
                         fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                         BundleToSave.Bundle.offset = fr.DataBegin;
                         BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
                     }
                     BundleToSave = Index.GetSmallestBundle();
-                    fr = RecordOfBundle(BundleToSave);
-                    while (fr == null) {
-                        bundles.Remove(BundleToSave);
-                        BundleToSave = Index?.GetSmallestBundle(bundles);
+
+                    if (Index != null) { // else BundleMode
                         fr = RecordOfBundle(BundleToSave);
+                        if (fileStream == null) // SteamMode
+                            while (!File.Exists(BundleToSave.Name)) {
+                                bundles.Remove(BundleToSave);
+                                BundleToSave = Index.GetSmallestBundle(bundles);
+                            }
+                        else
+                            while (fr == null) {
+                                bundles.Remove(BundleToSave);
+                                BundleToSave = Index.GetSmallestBundle(bundles);
+                                fr = RecordOfBundle(BundleToSave);
+                            }
                     }
                     SavedSize = 0;
                 }
+
                 var s = zipped.Open();
                 var b = new byte[zipped.Length];
-                s.Read(b, 0, b.Length);
+                var l = 0;
+                while (l < b.Length)
+                    l += s.Read(b, l, b.Length - l);
                 s.Close();
                 if (record is BundleFileNode bfn) // In Bundle
                     SavedSize += bfn.BatchReplaceContent(b, BundleToSave);
@@ -368,9 +392,9 @@ namespace LibGGPK2
             }
             if (BundleToSave != null && SavedSize > 0) {
                 changed = true;
-                if (fr == null) {
+                if (fileStream == null)
                     BundleToSave.Save();
-                } else {
+                else {
                     fr.ReplaceContent(BundleToSave.Save(Reader, fr.DataBegin));
                     BundleToSave.Bundle.offset = fr.DataBegin;
                     BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
