@@ -207,7 +207,7 @@ namespace LibGGPK2
             var failBundles = 0;
             var failFiles = 0;
             foreach (var (record, path) in list) {
-                Directory.CreateDirectory(Directory.GetParent(path).FullName);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
                 if (record is BundleFileNode bfn) {
                     if (br != bfn.BundleFileRecord.bundleRecord) {
                         ms?.Close();

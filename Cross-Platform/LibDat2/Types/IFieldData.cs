@@ -153,24 +153,23 @@ namespace LibDat2.Types {
 		/// If <paramref name="type"/> is <see cref="FieldType.Array"/>, use <see cref="IArrayData.Read(BinaryReader, DatContainer, FieldType)"/> instead
 		/// </summary>
 		public static IFieldData Read(BinaryReader reader, FieldType type, DatContainer dat) {
-			IFieldData fd = type switch {
-				FieldType.Boolean     => new BooleanData(dat),
-				FieldType.Int8        => new Int8Data(dat),
-				FieldType.Int16       => new Int16Data(dat),
-				FieldType.Int32       => new Int32Data(dat),
-				FieldType.Int64       => new Int64Data(dat),
-				FieldType.UInt8       => new UInt8Data(dat),
-				FieldType.UInt16      => new UInt16Data(dat),
-				FieldType.UInt32      => new UInt32Data(dat),
-				FieldType.UInt64      => new UInt64Data(dat),
-				FieldType.Float32     => new Float32Data(dat),
-				FieldType.Float64     => new Float64Data(dat),
-				FieldType.Row         => new RowData(dat),
-				FieldType.ForeignRow  => new ForeignRowData(dat),
-				FieldType.Array       => throw new InvalidOperationException("IArrayData.Read should be called instead"),
-				FieldType.String      => StringData.Read(reader, dat),
-				FieldType.ValueString => new ValueStringData(dat),
-				FieldType.Unknown     => null,
+			IFieldData? fd = type switch {
+				FieldType.Boolean		=> new BooleanData(dat),
+				FieldType.Int8			=> new Int8Data(dat),
+				FieldType.Int16			=> new Int16Data(dat),
+				FieldType.Int32			=> new Int32Data(dat),
+				FieldType.Int64			=> new Int64Data(dat),
+				FieldType.UInt8			=> new UInt8Data(dat),
+				FieldType.UInt16		=> new UInt16Data(dat),
+				FieldType.UInt32		=> new UInt32Data(dat),
+				FieldType.UInt64		=> new UInt64Data(dat),
+				FieldType.Float32		=> new Float32Data(dat),
+				FieldType.Float64		=> new Float64Data(dat),
+				FieldType.Row			=> new RowData(dat),
+				FieldType.ForeignRow	=> new ForeignRowData(dat),
+				FieldType.Array			=> throw new InvalidOperationException("IArrayData.Read should be called instead"),
+				FieldType.String		=> StringData.Read(reader, dat),
+				FieldType.ValueString	=> new ValueStringData(dat),
 				_ => throw new InvalidCastException("Unknown Type: " + type)
 			};
 			if (fd is not IReferenceData)
@@ -184,27 +183,26 @@ namespace LibDat2.Types {
 		/// </summary>
 		public static IFieldData FromString(string value, FieldType type, DatContainer dat) {
 			IFieldData fd = type switch {
-				FieldType.Boolean     => new BooleanData(dat),
-				FieldType.Int8        => new Int8Data(dat),
-				FieldType.Int16       => new Int16Data(dat),
-				FieldType.Int32       => new Int32Data(dat),
-				FieldType.Int64       => new Int64Data(dat),
-				FieldType.UInt8       => new UInt8Data(dat),
-				FieldType.UInt16      => new UInt16Data(dat),
-				FieldType.UInt32      => new UInt32Data(dat),
-				FieldType.UInt64      => new UInt64Data(dat),
-				FieldType.Float32     => new Float32Data(dat),
-				FieldType.Float64     => new Float64Data(dat),
-				FieldType.Row         => new RowData(dat),
-				FieldType.ForeignRow  => new ForeignRowData(dat),
-				FieldType.Array       => throw new InvalidOperationException("IFieldData.FromArrayString should be called instead"),
-				FieldType.String      => StringData.FromString(value, dat),
-				FieldType.ValueString => new ValueStringData(dat),
-				FieldType.Unknown     => null,
+				FieldType.Boolean		=> new BooleanData(dat),
+				FieldType.Int8			=> new Int8Data(dat),
+				FieldType.Int16			=> new Int16Data(dat),
+				FieldType.Int32			=> new Int32Data(dat),
+				FieldType.Int64			=> new Int64Data(dat),
+				FieldType.UInt8			=> new UInt8Data(dat),
+				FieldType.UInt16		=> new UInt16Data(dat),
+				FieldType.UInt32		=> new UInt32Data(dat),
+				FieldType.UInt64		=> new UInt64Data(dat),
+				FieldType.Float32		=> new Float32Data(dat),
+				FieldType.Float64		=> new Float64Data(dat),
+				FieldType.Row			=> new RowData(dat),
+				FieldType.ForeignRow	=> new ForeignRowData(dat),
+				FieldType.Array			=> throw new InvalidOperationException("IFieldData.FromArrayString should be called instead"),
+				FieldType.String		=> StringData.FromString(value, dat),
+				FieldType.ValueString	=> new ValueStringData(dat),
 				_ => throw new InvalidCastException("Unknown Type: " + type)
 			};
 			if (type != FieldType.String)
-				fd?.FromString(value);
+				fd.FromString(value);
 			return fd;
 		}
 

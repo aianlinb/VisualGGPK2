@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Authors>aianlinb</Authors>
-    <Copyright>Copyright © 2021 aianlinb.</Copyright>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<TargetFramework>net6.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<Authors>aianlinb</Authors>
+	<Copyright>Copyright © 2021 aianlinb.</Copyright>
+	<Version>1.0.0</Version>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<DebugType>embedded</DebugType>
-	<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
 
 </Project>

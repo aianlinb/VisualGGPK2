@@ -21,7 +21,7 @@ namespace LibDat2 {
 		/// <summary>
 		/// DatDefinitions from schema.min.json
 		/// </summary>
-		public static Dictionary<string, KeyValuePair<string, string>[]> SchemaMinDatDefinitions;
+		public static Dictionary<string, KeyValuePair<string, string>[]>? SchemaMinDatDefinitions;
 
 		/// <summary>
 		/// Whether the current using DatDefinitions is from schema.min.json
@@ -31,6 +31,7 @@ namespace LibDat2 {
 		/// <summary>
 		/// Call <see cref="ReloadDefinitions"/>
 		/// </summary>
+#pragma warning disable CS8618
 		static DatContainer() {
 			ReloadDefinitions();
 		}
@@ -50,12 +51,12 @@ namespace LibDat2 {
 					var index = 0;
 					foreach (var field in columns.EnumerateArray()) {
 						var name = field.GetProperty("name").GetString() ?? "Unknown" + Unknown++.ToString();
-						var type = field.GetProperty("type").GetString();
+						var type = field.GetProperty("type").GetString()!;
 						if (field.GetProperty("array").GetBoolean())
 							type = "array|" + type;
 						array[index++] = new(name, type);
 					}
-					SchemaMinDatDefinitions.Add(dat.GetProperty("name").GetString(), array);
+					SchemaMinDatDefinitions.Add(dat.GetProperty("name").GetString()!, array);
 				}
 				json.Dispose();
 			} finally {
@@ -77,17 +78,17 @@ namespace LibDat2 {
 		/// <summary>
 		/// List of record content of the dat file
 		/// </summary>
-		public List<IFieldData[]> FieldDatas;
+		public List<IFieldData?[]?> FieldDatas;
 
 		/// <summary>
 		/// Store the first error that occurred during reading
 		/// </summary>
-		public readonly DatDataReadException Exception;
+		public readonly DatDataReadException? Exception;
 
 		/// <summary>
 		/// Used to dispose the FileStream created when calling <see cref="DatContainer(string)"/>
 		/// </summary>
-		private static FileStream tmp;
+		private static FileStream? tmp;
 		/// <summary>
 		/// Parses the dat file contents from a file
 		/// </summary>
@@ -143,7 +144,7 @@ namespace LibDat2 {
 				def = "schema.min.json";
 				if (SchemaMinDatDefinitions == null)
 					DownloadSchemaMin();
-				if (!SchemaMinDatDefinitions.TryGetValue(Name, out var kvps))
+				if (!SchemaMinDatDefinitions!.TryGetValue(Name, out var kvps))
 					throw new KeyNotFoundException(Name + " was not defined in " + def);
 				FieldDefinitions = new(kvps);
 			} else {
@@ -168,10 +169,10 @@ namespace LibDat2 {
 			Exception = Read(reader, Count);
 		}
 
-		protected virtual DatDataReadException Read(BinaryReader reader, int entryCount) {
+		protected virtual DatDataReadException? Read(BinaryReader reader, int entryCount) {
 			ReferenceDatas.Clear();
 			ReferenceDataOffsets.Clear();
-			DatDataReadException ex = null;
+			DatDataReadException? ex = null;
 			FieldDatas = new(entryCount);
 			var lastPos = reader.BaseStream.Position;
 			for (var i = 0; i < entryCount; ++i) {
@@ -266,7 +267,7 @@ namespace LibDat2 {
 		/// <param name="fieldDatas">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
 		/// <param name="SchemaMin">Whether to use schema.min.json</param>
-		public DatContainer(List<IFieldData[]> fieldDatas, string fileName, bool SchemaMin = false) {
+		public DatContainer(string fileName, List<IFieldData?[]?>? fieldDatas = null, bool SchemaMin = false) {
 			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
@@ -294,7 +295,7 @@ namespace LibDat2 {
 			if (SchemaMin) {
 				if (SchemaMinDatDefinitions == null)
 					DownloadSchemaMin();
-				if (!SchemaMinDatDefinitions.TryGetValue(Name, out var kvps))
+				if (!SchemaMinDatDefinitions!.TryGetValue(Name, out var kvps))
 					throw new KeyNotFoundException(Name + " was not defined in schema.min.json");
 				FieldDefinitions = new(kvps);
 			} else {
@@ -340,8 +341,8 @@ namespace LibDat2 {
 			ReferenceDatas.Clear();
 			ReferenceDataOffsets.Clear();
 			foreach (var fds in FieldDatas)
-				foreach (var fd in fds)
-					fd.Write(bw);
+				foreach (var fd in fds!)
+					fd!.Write(bw);
 			bw.Write(0xBBBBBBBBBBBBBBBB); // Magic number
 			bw.Seek((int)(DataSectionOffset + CurrentOffset), SeekOrigin.Begin); // Move to the end of dat file
 		}
@@ -370,8 +371,8 @@ namespace LibDat2 {
 			f.AppendLine();
 
 			foreach (var row in FieldDatas) {
-				foreach (var col in row) {
-					var s = col.ToString();
+				foreach (var col in row!) {
+					var s = col!.ToString();
 					if (reg.IsMatch(s))
 						f.Append("\"" + s + "\",");
 					else
@@ -401,7 +402,7 @@ namespace LibDat2 {
 			var row = new IFieldData[FieldDefinitions.Count];
 			var i = 0;
 			var s = new StringBuilder();
-			var list = new List<IFieldData[]>(FieldDatas.Count);
+			var list = new List<IFieldData?[]?>(FieldDatas.Count);
 
 			for (var chr = sr.Read(); chr != -1; chr = sr.Read())
 				switch (chr) {
@@ -504,12 +505,14 @@ namespace LibDat2 {
 		/// This won't affect the existing DatContainers
 		/// </summary>
 		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
-			filePath = Path.GetFullPath(filePath, Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+			var bp = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
+			if (bp is not null)
+				filePath = Path.GetFullPath(filePath, bp);
 			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
 			try {
 				DatDefinitions = new();
 				foreach (var dat in json.RootElement.EnumerateObject())
-					DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString())).ToArray());
+					DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString()!)).ToArray());
 			} finally {
 				json.Dispose();
 			}

@@ -192,7 +192,7 @@ namespace VisualGGPK2
                 });
             stack.Children.Add(new TextBlock { Text = rtn.Name, FontSize = 16 }); // File/Directory Name
             tvi.Header = stack;
-            if (!(rtn is IFileRecord))
+            if (rtn is not IFileRecord)
                 tvi.Items.Add("Loading . . ."); // Add expand button
             tvi.ContextMenu = TreeMenu;
             return tvi;

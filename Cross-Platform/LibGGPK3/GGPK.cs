@@ -7,117 +7,116 @@ using System.Text;
 
 namespace LibGGPK3 {
 	public class GGPK {
-        internal FileStream FileStream;
-        internal BinaryReader Reader;
-        internal BinaryWriter Writer;
-        public readonly GGPKRecord GgpkRecord;
-        public readonly DirectoryRecord RootDirectory;
-        public readonly LinkedList<FreeRecord> LinkedFreeRecords;
+		protected internal FileStream FileStream;
+		protected internal BinaryReader Reader;
+		protected internal BinaryWriter Writer;
+		public readonly GGPKRecord GgpkRecord;
+		public readonly DirectoryRecord Root;
+		public readonly LinkedList<FreeRecord> FreeRecords;
 
-        /// <param name="filePath">Path to Content.ggpk</param>
-        public GGPK(string filePath) {
-            // Open File
-            FileStream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
-            Reader = new BinaryReader(FileStream);
-            Writer = new BinaryWriter(FileStream);
+		/// <param name="filePath">Path to Content.ggpk</param>
+		public GGPK(string filePath) {
+			// Open File
+			FileStream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
+			Reader = new BinaryReader(FileStream);
+			Writer = new BinaryWriter(FileStream);
 
-            // Read ROOT Directory Record
-            BaseRecord ggpk;
-            while ((ggpk = GetRecord()) is not GGPKRecord);
-            GgpkRecord = ggpk as GGPKRecord;
-            RootDirectory = GetRecord(GgpkRecord.RootDirectoryOffset) as DirectoryRecord;
-            RootDirectory.Name = "ROOT";
+			// Read ROOT Directory Record
+			BaseRecord ggpk;
+			while ((ggpk = GetRecord()) is not GGPKRecord);
+			GgpkRecord = (GGPKRecord)ggpk;
+			Root = (DirectoryRecord)GetRecord(GgpkRecord.RootDirectoryOffset);
+			Root.Name = "ROOT";
 
-            // Build Linked FreeRecord List
-            LinkedFreeRecords = new();
-            var NextFreeOffset = GgpkRecord.FirstFreeRecordOffset;
-            while (NextFreeOffset > 0) {
-                FreeRecord current = GetRecord(NextFreeOffset) as FreeRecord;
-                LinkedFreeRecords.AddLast(current);
-                NextFreeOffset = current.NextFreeOffset;
-            }
-        }
+			// Build Linked FreeRecord List
+			FreeRecords = new();
+			var NextFreeOffset = GgpkRecord.FirstFreeRecordOffset;
+			while (NextFreeOffset > 0) {
+				var current = (FreeRecord)GetRecord(NextFreeOffset);
+				FreeRecords.AddLast(current);
+				NextFreeOffset = current.NextFreeOffset;
+			}
+		}
 
-        /// <summary>
-        /// Read a record from GGPK at <paramref name="offset"/>
-        /// </summary>
-        /// <param name="offset">Record offset, null for current stream position</param>
-        public virtual BaseRecord GetRecord(long? offset = null) {
-            if (offset.HasValue)
-                FileStream.Seek(offset.Value, SeekOrigin.Begin);
-            var length = Reader.ReadInt32();
-            var tag = Reader.ReadBytes(4);
-            if (tag.SequenceEqual(FileRecord.Tag))
-                return new FileRecord(length, this);
-            else if (tag.SequenceEqual(DirectoryRecord.Tag))
-                return new DirectoryRecord(length, this);
-            else if (tag.SequenceEqual(FreeRecord.Tag))
-                return new FreeRecord(length, this);
-            else if (tag.SequenceEqual(GGPKRecord.Tag))
-                return new GGPKRecord(length, this);
-            else
-                throw new Exception("Invalid Record Tag: " + Encoding.UTF8.GetString(tag) + " at offset: " + (FileStream.Position - 8).ToString());
-        }
+		/// <summary>
+		/// Read a record from GGPK at <paramref name="offset"/>
+		/// </summary>
+		/// <param name="offset">Record offset, null for current stream position</param>
+		public virtual BaseRecord GetRecord(long? offset = null) {
+			if (offset.HasValue)
+				FileStream.Seek(offset.Value, SeekOrigin.Begin);
+			var length = Reader.ReadInt32();
+			var tag = Reader.ReadBytes(4);
+			if (tag.SequenceEqual(FileRecord.Tag))
+				return new FileRecord(length, this);
+			else if (tag.SequenceEqual(DirectoryRecord.Tag))
+				return new DirectoryRecord(length, this);
+			else if (tag.SequenceEqual(FreeRecord.Tag))
+				return new FreeRecord(length, this);
+			else if (tag.SequenceEqual(GGPKRecord.Tag))
+				return new GGPKRecord(length, this);
+			else
+				throw new Exception("Invalid Record Tag: " + Encoding.UTF8.GetString(tag) + " at offset: " + (FileStream.Position - 8).ToString());
+		}
 
-        /// <summary>
-        /// Find the record with a <paramref name="path"/>
-        /// </summary>
-        /// <param name="path">Path in GGPK under <paramref name="parent"/></param>
-        /// <param name="parent">Where to start searching, null for ROOT directory in GGPK</param>
-        /// <returns>null if not found</returns>
-        public virtual TreeNode FindRecord(string path, TreeNode parent = null) {
-            parent ??= RootDirectory;
-            var SplittedPath = path.Split('/', '\\');
-            foreach (var name in SplittedPath) {
-                if (parent is not DirectoryRecord dr)
-                    return null;
-                parent = dr.GetChildItem(name);
-            }
-            return parent;
-        }
+		/// <summary>
+		/// Find the record with a <paramref name="path"/>
+		/// </summary>
+		/// <param name="path">Path in GGPK under <paramref name="parent"/></param>
+		/// <param name="parent">Where to start searching, null for ROOT directory in GGPK</param>
+		/// <returns>null if not found</returns>
+		public virtual TreeNode? FindRecord(string path, DirectoryRecord? parent = null) {
+			parent ??= Root;
+			var SplittedPath = path.Split('/', '\\');
+			foreach (var name in SplittedPath) {
+				var next = parent.Children.FirstOrDefault(t => t.Name == name);
+				if (next is not DirectoryRecord dr)
+					return next;
+				parent = dr;
+			}
+			return parent;
+		}
 
-        /// <summary>
-        /// Export file/directory synchronously
-        /// </summary>
-        /// <param name="record">File/Directory Record to export</param>
-        /// <param name="path">Path to save</param>
-        /// <param name="ProgressStep">It will be executed every time a file is exported</param>
-        /// <returns>Number of files exported</returns>
-        public static int Export(TreeNode record, string path, Action ProgressStep = null) {
-            if (record is FileRecord fr) {
-                File.WriteAllBytes(path, fr.ReadFileContent());
-                ProgressStep?.Invoke();
-                return 1;
-            } else {
-                int count = 0;
-                Directory.CreateDirectory(path);
-                foreach (var f in ((DirectoryRecord)record).Children)
-                    count += Export(f, path + "\\" + f.Name, ProgressStep);
-                return count;
-            }
-        }
+		/// <summary>
+		/// Export file/directory synchronously
+		/// </summary>
+		/// <param name="record">File/Directory Record to export</param>
+		/// <param name="path">Path to save</param>
+		/// <param name="ProgressStep">It will be executed every time a file is exported</param>
+		/// <returns>Number of files exported</returns>
+		public static int Extract(TreeNode record, string path) {
+			if (record is FileRecord fr) {
+				File.WriteAllBytes(path, fr.ReadFileContent());
+				return 1;
+			} else {
+				var count = 0;
+				Directory.CreateDirectory(path);
+				foreach (var f in ((DirectoryRecord)record).Children)
+					count += Extract(f, path + "\\" + f.Name);
+				return count;
+			}
+		}
 
-        /// <summary>
-        /// Replace file/directory synchronously
-        /// </summary>
-        /// <param name="record">File/Directory Record to replace</param>
-        /// <param name="path">Path to file to import</param>
-        /// <param name="ProgressStep">It will be executed every time a file is replaced</param>
-        /// <returns>Number of files replaced</returns>
-        public static int Replace(TreeNode record, string path, Action ProgressStep = null) {
-            if (record is FileRecord fr) {
-                if (File.Exists(path)) {
-                    fr.ReplaceContent(File.ReadAllBytes(path));
-                    ProgressStep?.Invoke();
-                    return 1;
-                }
-                return 0;
-            } else {
-                int count = 0;
-                foreach (var f in ((DirectoryRecord)record).Children)
-                    count += Replace(f, path + "\\" + f.Name, ProgressStep);
-                return count;
-            }
-        }
-    }
+		/// <summary>
+		/// Replace file/directory synchronously
+		/// </summary>
+		/// <param name="record">File/Directory Record to replace</param>
+		/// <param name="path">Path to file to import</param>
+		/// <param name="ProgressStep">It will be executed every time a file is replaced</param>
+		/// <returns>Number of files replaced</returns>
+		public static int Replace(TreeNode record, string path) {
+			if (record is FileRecord fr) {
+				if (File.Exists(path)) {
+					fr.ReplaceContent(File.ReadAllBytes(path));
+					return 1;
+				}
+				return 0;
+			} else {
+				var count = 0;
+				foreach (var f in ((DirectoryRecord)record).Children)
+					count += Replace(f, path + "\\" + f.Name);
+				return count;
+			}
+		}
+	}
 }

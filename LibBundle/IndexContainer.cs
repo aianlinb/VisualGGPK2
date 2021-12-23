@@ -192,7 +192,7 @@ namespace LibBundle
             var hash = 0xCBF29CE484222325UL;
             foreach (var by in bs)
                 hash = (hash ^ by) * 0x100000001B3UL;
-            // Equal to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
+            // Equals to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
             return hash;
         }
     }

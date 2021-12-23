@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <Authors>aianlinb</Authors>
-    <Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
-    <Version>0.13.0</Version>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<TargetFramework>net6.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<Authors>aianlinb</Authors>
+	<Copyright>Copyright © 2020-2021 aianlinb.</Copyright>
+	<Version>0.13.0</Version>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	<DebugType>embedded</DebugType>
-	<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="DatDefinitions.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+	<None Update="DatDefinitions.json">
+	  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
   </ItemGroup>
 </Project>

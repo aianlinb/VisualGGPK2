@@ -71,7 +71,8 @@ namespace LibGGPK2.Records
             var buffer = new byte[DataLength];
             stream ??= ggpkContainer.fileStream;
             stream.Seek(DataBegin, SeekOrigin.Begin);
-            stream.Read(buffer, 0, DataLength);
+            for (var l = 0;  l < DataLength;)
+                stream.Read(buffer, l, DataLength - l);
             return buffer;
         }
 
