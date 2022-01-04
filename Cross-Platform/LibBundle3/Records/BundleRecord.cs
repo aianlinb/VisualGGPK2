@@ -13,10 +13,9 @@ namespace LibBundle3.Records {
 		public Index Index;
 
 		protected Bundle? _Bundle;
-		public static Func<BundleRecord, Bundle> ReadBundle = (br) => new(br.Path);
 		public virtual Bundle Bundle {
 			get {
-				_Bundle ??= ReadBundle(this);
+				_Bundle ??= Index.FuncReadBundle(this);
 				return _Bundle;
 			}
 		}

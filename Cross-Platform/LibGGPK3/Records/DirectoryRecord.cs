@@ -38,18 +38,20 @@ namespace LibGGPK3.Records {
 		/// </summary>
 		public DirectoryRecord(int length, GGPK ggpk) : base(length, ggpk) {
 			Offset = ggpk.FileStream.Position - 8;
-			var br = Ggpk.Reader;
-			var nameLength = br.ReadInt32();
-			var totalEntries = br.ReadInt32();
+			var nameLength = ggpk.FileStream.ReadInt32();
+			var totalEntries = ggpk.FileStream.ReadInt32();
 
-			Hash = br.ReadBytes(32);
-			Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
-			br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
+			Hash = new byte[32];
+			ggpk.FileStream.Read(Hash, 0, 32);
+			var name = new byte[2 * (nameLength - 1)];
+			ggpk.FileStream.Read(name, 0, name.Length);
+			Name = Encoding.Unicode.GetString(name);
+			ggpk.FileStream.Seek(2, SeekOrigin.Current); // Null terminator
 
-			EntriesBegin = br.BaseStream.Position;
+			EntriesBegin = ggpk.FileStream.Position;
 			Entries = new DirectoryEntry[totalEntries];
 			for (var i = 0; i < totalEntries; i++)
-				Entries[i] = new DirectoryEntry(br.ReadUInt32(), br.ReadInt64());
+				Entries[i] = new DirectoryEntry((uint)ggpk.FileStream.ReadInt32(), ggpk.FileStream.ReadInt64());
 		}
 
 		private SortedSet<TreeNode>? _Children;
@@ -58,7 +60,7 @@ namespace LibGGPK3.Records {
 				if (_Children == null) {
 					_Children = new SortedSet<TreeNode>(NodeComparer.Instance);
 					foreach (var e in Entries) {
-						var b = (TreeNode)Ggpk.GetRecord(e.Offset);
+						var b = (TreeNode)Ggpk.ReadRecord(e.Offset);
 						b.Parent = this;
 						_Children.Add(b);
 					}
@@ -67,19 +69,19 @@ namespace LibGGPK3.Records {
 			}
 		}
 
-		protected internal override void Write(BinaryWriter? bw = null) {
-			bw ??= Ggpk.Writer;
-			Offset = bw.BaseStream.Position;
-			bw.Write(Length);
-			bw.Write(Tag);
-			bw.Write(Name.Length + 1);
-			bw.Write(Entries.Length);
-			bw.Write(Hash);
-			bw.Write(Encoding.Unicode.GetBytes(Name));
-			bw.Write((short)0); // Null terminator
+		protected internal override void Write(Stream? writeTo = null) {
+			writeTo ??= Ggpk.FileStream;
+			Offset = writeTo.Position;
+			writeTo.Write(Length);
+			writeTo.Write(Tag);
+			writeTo.Write(Name.Length + 1);
+			writeTo.Write(Entries.Length);
+			writeTo.Write(Hash);
+			writeTo.Write(Encoding.Unicode.GetBytes(Name));
+			writeTo.Write((short)0); // Null terminator
 			foreach (var entry in Entries) {
-				bw.Write(entry.EntryNameHash);
-				bw.Write(entry.Offset);
+				writeTo.Write(entry.EntryNameHash);
+				writeTo.Write(entry.Offset);
 			}
 		}
 

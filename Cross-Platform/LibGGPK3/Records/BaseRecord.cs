@@ -28,6 +28,6 @@ namespace LibGGPK3.Records {
 		/// <summary>
 		/// Write the record data to GGPK
 		/// </summary>
-		protected internal abstract void Write(BinaryWriter? bw = null);
+		protected internal abstract void Write(Stream? writeTo = null);
 	}
 }

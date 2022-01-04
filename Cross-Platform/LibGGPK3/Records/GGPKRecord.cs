@@ -22,14 +22,14 @@ namespace LibGGPK3.Records {
 			FirstFreeRecordOffset = br.ReadInt64();
 		}
 
-		protected internal override void Write(BinaryWriter? bw = null) {
-			bw ??= Ggpk.Writer;
-			Offset = bw.BaseStream.Position;
-			bw.Write(Length); // 28
-			bw.Write(Tag);
-			bw.Write(GGPKVersion); // 3
-			bw.Write(RootDirectoryOffset);
-			bw.Write(FirstFreeRecordOffset);
+		protected internal override void Write(Stream? writeTo = null) {
+			writeTo ??= Ggpk.FileStream;
+			Offset = writeTo.Position;
+			writeTo.Write(Length); // 28
+			writeTo.Write(Tag);
+			writeTo.Write(GGPKVersion); // 3
+			writeTo.Write(RootDirectoryOffset);
+			writeTo.Write(FirstFreeRecordOffset);
 		}
 	}
 }

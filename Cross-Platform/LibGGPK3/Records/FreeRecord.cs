@@ -28,13 +28,13 @@ namespace LibGGPK3.Records {
 			NextFreeOffset = nextFreeOffset;
 		}
 
-		protected internal override void Write(BinaryWriter? bw = null) {
-			bw ??= Ggpk.Writer;
-			Offset = bw.BaseStream.Position;
-			bw.Write(Length);
-			bw.Write(Tag);
-			bw.Write(NextFreeOffset);
-			bw.BaseStream.Seek(Length - 16, SeekOrigin.Current);
+		protected internal override void Write(Stream? writeTo = null) {
+			writeTo ??= Ggpk.FileStream;
+			Offset = writeTo.Position;
+			writeTo.Write(Length);
+			writeTo.Write(Tag);
+			writeTo.Write(NextFreeOffset);
+			writeTo.Seek(Length - 16, SeekOrigin.Current);
 		}
 
 		/// <summary>

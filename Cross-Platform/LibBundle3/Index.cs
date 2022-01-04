@@ -11,10 +11,11 @@ using System.Text;
 
 namespace LibBundle3 {
 	public unsafe class Index : IDisposable {
-		protected readonly Bundle bundle;
 		public readonly BundleRecord[] Bundles;
 		public readonly Dictionary<ulong, FileRecord> Files;
 		public readonly DirectoryRecord[] Directories;
+
+		protected readonly Bundle bundle;
 		protected readonly byte[] directoryBundleData;
 		protected int UncompressedSize; // For memory alloc when saving
 
@@ -41,6 +42,8 @@ namespace LibBundle3 {
 				return _Root;
 			}
 		}
+
+		public Func<BundleRecord, Bundle> FuncReadBundle = static (br) => new(br.Path);
 
 		public Index(string filePath) : this(File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read), false) { }
 

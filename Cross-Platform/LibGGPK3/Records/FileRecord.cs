@@ -2,6 +2,7 @@
 using System.Text;
 using System.Security.Cryptography;
 using System.Collections.Generic;
+using System;
 
 namespace LibGGPK3.Records {
 	/// <summary>
@@ -14,7 +15,7 @@ namespace LibGGPK3.Records {
 		/// <summary>
 		/// Offset in pack file where the raw data begins
 		/// </summary>
-		public long DataBegin;
+		public long DataOffset;
 		/// <summary>
 		/// Length of the raw file data
 		/// </summary>
@@ -27,34 +28,34 @@ namespace LibGGPK3.Records {
 			Hash = br.ReadBytes(32);
 			Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
 			br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
-			DataBegin = br.BaseStream.Position;
+			DataOffset = br.BaseStream.Position;
 			DataLength = Length - (nameLength * 2 + 44); // Length - (8 + nameLength * 2 + 32 + 4)
 			br.BaseStream.Seek(DataLength, SeekOrigin.Current);
 		}
 
-		protected internal override void Write(BinaryWriter? bw = null) {
-			bw ??= Ggpk.Writer;
-			Offset = bw.BaseStream.Position;
-			bw.Write(Length);
-			bw.Write(Tag);
-			bw.Write(Name.Length + 1);
-			bw.Write(Hash);
-			bw.Write(Encoding.Unicode.GetBytes(Name));
-			bw.Write((short)0); // Null terminator
-			DataBegin = bw.BaseStream.Position;
+		protected internal override void Write(Stream? writeTo = null) {
+			writeTo ??= Ggpk.FileStream;
+			Offset = writeTo.Position;
+			writeTo.Write(Length);
+			writeTo.Write(Tag);
+			writeTo.Write(Name.Length + 1);
+			writeTo.Write(Hash);
+			writeTo.Write(Encoding.Unicode.GetBytes(Name));
+			writeTo.Write((short)0); // Null terminator
+			DataOffset = writeTo.Position;
 			// Actual file content writing of FileRecord isn't here
 		}
 
 		/// <summary>
 		/// Get the file content of this record
 		/// </summary>
-		/// <param name="stream">Stream of GGPK file</param>
-		public virtual byte[] ReadFileContent(Stream? stream = null) {
+		/// <param name="ggpkStream">Stream of GGPK file</param>
+		public virtual byte[] ReadFileContent(Stream? ggpkStream = null) {
 			var buffer = new byte[DataLength];
-			stream ??= Ggpk.FileStream;
-			stream.Seek(DataBegin, SeekOrigin.Begin);
+			ggpkStream ??= Ggpk.FileStream;
+			ggpkStream.Seek(DataOffset, SeekOrigin.Begin);
 			for (var l = 0; l < DataLength;)
-				stream.Read(buffer, l, DataLength - l);
+				ggpkStream.Read(buffer, l, DataLength - l);
 			return buffer;
 		}
 
@@ -62,13 +63,14 @@ namespace LibGGPK3.Records {
 		/// Replace the file content with a new content,
 		/// and move the record to the FreeRecord with most suitable size.
 		/// </summary>
-		public virtual void ReplaceContent(byte[] NewContent) {
+		public virtual void ReplaceContent(ReadOnlySpan<byte> NewContent) {
 			var bw = Ggpk.Writer;
 
-			Hash = Hash256.ComputeHash(NewContent); // New Hash
+			if (!Hash256.TryComputeHash(NewContent, Hash, out _))
+				throw new("Unable to compute hash of the content");
 
 			if (NewContent.Length == DataLength) { // Replace in situ
-				bw.BaseStream.Seek(DataBegin, SeekOrigin.Begin);
+				bw.BaseStream.Seek(DataOffset, SeekOrigin.Begin);
 				bw.Write(NewContent);
 			} else { // Replace a FreeRecord
 				var oldOffset = Offset;

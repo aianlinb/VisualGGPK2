@@ -34,7 +34,7 @@ namespace PatchGGPK3 {
 				if (e.FullName.EndsWith('/'))
 					continue;
 				Console.Write("Replacing " + e.FullName + " . . . ");
-				if (ggpk.FindRecord(e.FullName) is not FileRecord fr) {
+				if (ggpk.FindNode(e.FullName) is not FileRecord fr) {
 					++failed;
 					Console.WriteLine();
 					Console.WriteLine("Not found in GGPK!");

@@ -148,6 +148,7 @@ namespace LibBundle3 {
 			fixed (int* p = chunkSizes)
 				baseStream.Write(new(p, chunkSizes.Length * sizeof(int)));
 
+			baseStream.SetLength(12 + header.head_size + header.compressed_size);
 			baseStream.Flush();
 		}
 

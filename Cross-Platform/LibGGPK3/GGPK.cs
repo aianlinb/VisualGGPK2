@@ -7,9 +7,7 @@ using System.Text;
 
 namespace LibGGPK3 {
 	public class GGPK {
-		protected internal FileStream FileStream;
-		protected internal BinaryReader Reader;
-		protected internal BinaryWriter Writer;
+		protected internal Stream FileStream;
 		public readonly GGPKRecord GgpkRecord;
 		public readonly DirectoryRecord Root;
 		public readonly LinkedList<FreeRecord> FreeRecords;
@@ -18,21 +16,19 @@ namespace LibGGPK3 {
 		public GGPK(string filePath) {
 			// Open File
 			FileStream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
-			Reader = new BinaryReader(FileStream);
-			Writer = new BinaryWriter(FileStream);
 
 			// Read ROOT Directory Record
 			BaseRecord ggpk;
-			while ((ggpk = GetRecord()) is not GGPKRecord);
+			while ((ggpk = ReadRecord()) is not GGPKRecord);
 			GgpkRecord = (GGPKRecord)ggpk;
-			Root = (DirectoryRecord)GetRecord(GgpkRecord.RootDirectoryOffset);
+			Root = (DirectoryRecord)ReadRecord(GgpkRecord.RootDirectoryOffset);
 			Root.Name = "ROOT";
 
 			// Build Linked FreeRecord List
 			FreeRecords = new();
 			var NextFreeOffset = GgpkRecord.FirstFreeRecordOffset;
 			while (NextFreeOffset > 0) {
-				var current = (FreeRecord)GetRecord(NextFreeOffset);
+				var current = (FreeRecord)ReadRecord(NextFreeOffset);
 				FreeRecords.AddLast(current);
 				NextFreeOffset = current.NextFreeOffset;
 			}
@@ -42,11 +38,12 @@ namespace LibGGPK3 {
 		/// Read a record from GGPK at <paramref name="offset"/>
 		/// </summary>
 		/// <param name="offset">Record offset, null for current stream position</param>
-		public virtual BaseRecord GetRecord(long? offset = null) {
+		public unsafe virtual BaseRecord ReadRecord(long? offset = null) {
 			if (offset.HasValue)
 				FileStream.Seek(offset.Value, SeekOrigin.Begin);
-			var length = Reader.ReadInt32();
-			var tag = Reader.ReadBytes(4);
+			var length = FileStream.ReadInt32();
+			var tag = new byte[4];
+			FileStream.Read(tag, 0, 4);
 			if (tag.SequenceEqual(FileRecord.Tag))
 				return new FileRecord(length, this);
 			else if (tag.SequenceEqual(DirectoryRecord.Tag))
@@ -65,7 +62,7 @@ namespace LibGGPK3 {
 		/// <param name="path">Path in GGPK under <paramref name="parent"/></param>
 		/// <param name="parent">Where to start searching, null for ROOT directory in GGPK</param>
 		/// <returns>null if not found</returns>
-		public virtual TreeNode? FindRecord(string path, DirectoryRecord? parent = null) {
+		public virtual TreeNode? FindNode(string path, DirectoryRecord? parent = null) {
 			parent ??= Root;
 			var SplittedPath = path.Split('/', '\\');
 			foreach (var name in SplittedPath) {
