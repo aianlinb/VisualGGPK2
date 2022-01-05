@@ -10,7 +10,5 @@ namespace LibBundledGGPK {
 			index = new(new GGFileStream(f));
 			index.FuncReadBundle = (br) => new(new GGFileStream((FileRecord)FindNode("Bundles2/" + br.Path + ".bundle.bin")!));
 		}
-
-		// TODO
 	}
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace LibBundle3.Records {
 	public class FileRecord {
@@ -21,6 +22,18 @@ namespace LibBundle3.Records {
 
 		public virtual Span<byte> Read() {
 			return BundleRecord.Bundle.ReadData(Offset, Size);
+		}
+
+		public virtual void Write(ReadOnlySpan<byte> newContent) {
+			var b = BundleRecord.Bundle.ReadData();
+			Offset = BundleRecord.ValidSize;
+			Size = newContent.Length;
+			BundleRecord.ValidSize += Size;
+			var b2 = new byte[BundleRecord.ValidSize];
+			Unsafe.CopyBlockUnaligned(ref b2[0], ref b[0], (uint)Offset);
+			newContent.CopyTo(b2.AsSpan()[Offset..Size]);
+			BundleRecord.Bundle.SaveData(b2);
+			BundleRecord.Index.Save();
 		}
 
 		public virtual void Redirect(BundleRecord bundle, int offset, int size) {

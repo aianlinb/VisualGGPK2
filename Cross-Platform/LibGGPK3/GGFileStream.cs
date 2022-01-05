@@ -7,7 +7,8 @@ namespace LibGGPK3 {
 		public readonly FileRecord Record;
 
 		protected MemoryStream? _Buffer;
-		protected MemoryStream Buffer { get {
+		protected MemoryStream Buffer {
+			get {
 				if (_Buffer is null) {
 					var b = new byte[Record.DataLength];
 					Record.Ggpk.FileStream.Seek(Record.DataOffset, SeekOrigin.Begin);
@@ -18,14 +19,17 @@ namespace LibGGPK3 {
 			}
 		}
 
+		protected bool Modified;
+
 		public GGFileStream(FileRecord record) {
 			Record = record;
 		}
 
 		public override void Flush() {
-			if (_Buffer is null)
+			if (_Buffer is null || !Modified)
 				return;
 			Record.ReplaceContent(new(_Buffer.GetBuffer(), 0, (int)_Buffer.Length));
+			Modified = false;
 		}
 
 		public override int Read(byte[] buffer, int offset, int count) {
@@ -43,18 +47,26 @@ namespace LibGGPK3 {
 		}
 
 		public override void SetLength(long value) {
+			if (value == Length)
+				return;
 			Buffer.SetLength(value);
+			Modified = true;
 		}
 
 		public override void Write(byte[] buffer, int offset, int count) {
 			Buffer.Write(buffer, offset, count);
+			Modified = true;
 		}
 
 		public override void Write(ReadOnlySpan<byte> buffer) {
 			Buffer.Write(buffer);
+			Modified = true;
 		}
 
-		public override void WriteByte(byte value) => Buffer.WriteByte(value);
+		public override void WriteByte(byte value) {
+			Buffer.WriteByte(value);
+			Modified = true;
+		}
 
 		public override bool CanRead => Record.Ggpk.FileStream.CanRead;
 

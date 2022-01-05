@@ -30,7 +30,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibBundledGGPK", "Cross-Pla
 		{CD9D6239-9E6F-464B-84A8-07BF5EF754C8} = {CD9D6239-9E6F-464B-84A8-07BF5EF754C8}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PatchBundledGGPK3", "Cross-Platform\PatchBundledGGPK3\PatchBundledGGPK3.csproj", "{56A8F315-4902-4259-A5BE-0273202B9F19}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PatchBundledGGPK3", "Cross-Platform\PatchBundledGGPK3\PatchBundledGGPK3.csproj", "{56A8F315-4902-4259-A5BE-0273202B9F19}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
