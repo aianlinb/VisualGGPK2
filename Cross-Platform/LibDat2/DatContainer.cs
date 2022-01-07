@@ -374,7 +374,7 @@ namespace LibDat2 {
 				foreach (var col in row!) {
 					var s = col!.ToString();
 					if (reg.IsMatch(s))
-						f.Append("\"" + s + "\",");
+						f.Append("\"" + s.Replace("\"", "\"\"") + "\",");
 					else
 						f.Append(s + ",");
 				}
