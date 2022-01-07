@@ -353,11 +353,11 @@ namespace LibDat2 {
 		/// <returns>Content of the csv file</returns>
 		public virtual string ToCsv() {
 			var f = new StringBuilder();
-			var reg = new Regex("\n|\r|,|\"", RegexOptions.Compiled);
+			var reg = new Regex("\n|\r|,", RegexOptions.Compiled);
 
 			// Field Names
 			foreach (var field in FieldDefinitions.Select(t => t.Key))
-				if (reg.IsMatch(field))
+				if (field.StartsWith('"') || reg.IsMatch(field))
 					f.Append("\"" + field.Replace("\"", "\"\"") + "\",");
 				else
 					f.Append(field + ",");
@@ -373,8 +373,8 @@ namespace LibDat2 {
 			foreach (var row in FieldDatas) {
 				foreach (var col in row!) {
 					var s = col!.ToString();
-					if (reg.IsMatch(s))
-						f.Append("\"" + s + "\",");
+					if (s.StartsWith('"') || reg.IsMatch(s))
+						f.Append("\"" + s.Replace("\"", "\"\"") + "\",");
 					else
 						f.Append(s + ",");
 				}
@@ -404,18 +404,29 @@ namespace LibDat2 {
 			var s = new StringBuilder();
 			var list = new List<IFieldData?[]?>(FieldDatas.Count);
 
+			if (sr.Peek() == '"') {
+				sr.Read();
+				quotes = true;
+			}
 			for (var chr = sr.Read(); chr != -1; chr = sr.Read())
 				switch (chr) {
 					case '"':
-						if (sr.Peek() == '"') {
-							sr.Read();
-							goto default;
+						if (quotes) {
+							if (sr.Peek() == '"') {
+								sr.Read();
+								goto default;
+							}
+							quotes = false;
+							break;
 						}
-						quotes = !quotes;
-						break;
+						goto default;
 					case ',':
 						if (quotes)
 							goto default;
+						if (sr.Peek() == '"') {
+							sr.Read();
+							quotes = true;
+						}
 						var type = FieldDefinitions[i].Value;
 						if (type.StartsWith("array|"))
 							row[i++] = IArrayData.FromString(s.ToString(), IFieldData.TypeFromString[type[6..]], this);
@@ -427,6 +438,10 @@ namespace LibDat2 {
 					case '\n':
 						if (quotes)
 							goto default;
+						if (sr.Peek() == '"') {
+							sr.Read();
+							quotes = true;
+						}
 						var type2 = FieldDefinitions[i].Value;
 						if (type2.StartsWith("array|"))
 							row[i] = IArrayData.FromString(s.ToString(), IFieldData.TypeFromString[type2[6..]], this);
