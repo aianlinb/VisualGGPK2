@@ -9,9 +9,3 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA2211.severity = none
 # CA1051: 請勿宣告可見的執行個體欄位
 dotnet_diagnostic.CA1051.severity = none
-# CS0809: 過時成員會覆寫非過時成員
-dotnet_diagnostic.CS0809.severity = none
-# CA1720: 識別項包含類型名稱
-dotnet_diagnostic.CA1720.severity = none
-# CA1000: 請勿在泛型型別上宣告靜態成員
-dotnet_diagnostic.CA1000.severity = none

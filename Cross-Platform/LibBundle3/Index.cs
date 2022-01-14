@@ -12,6 +12,7 @@ namespace LibBundle3 {
 		public Dictionary<ulong, FileRecord> Files;
 		public DirectoryRecord[] Directories;
 
+		protected readonly string? baseDirectory;
 		protected readonly Bundle bundle;
 		protected readonly byte[] directoryBundleData;
 		protected int UncompressedSize; // For memory alloc when saving
@@ -46,10 +47,10 @@ namespace LibBundle3 {
 		/// <summary>
 		/// Function to get <see cref="Bundle"/> instance with a <see cref="BundleRecord"/>
 		/// </summary>
-		public Func<BundleRecord, Bundle> FuncReadBundle = static (br) => new(br.Path);
+		public Func<BundleRecord, Bundle> FuncReadBundle = static (br) => new(br.Index.baseDirectory + "/" + br.Path);
 
 		public Index(string filePath) : this(File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read), false) {
-			Environment.CurrentDirectory = Path.GetDirectoryName(filePath)!;
+			baseDirectory = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
 		}
 
 		public unsafe Index(Stream stream, bool leaveOpen = true) {
@@ -242,7 +243,7 @@ namespace LibBundle3 {
 		/// Extract files with their path, throw when a file couldn't be found
 		/// </summary>
 		/// <returns>KeyValuePairs of path and data of the files</returns>
-		public virtual IEnumerable<KeyValuePair<string, Memory<byte>>> Extract(ISet<string> filePaths) {
+		public virtual IEnumerable<KeyValuePair<string, Memory<byte>>> Extract(IEnumerable<string> filePaths) {
 			var list = new List<FileRecord>(filePaths.Select(s => Files[FNV1a64Hash(s.Replace('\\', '/'))]));
 			if (list.Count == 0)
 				yield break;
@@ -351,7 +352,7 @@ namespace LibBundle3 {
 			Save();
 		}
 
-		public delegate Span<byte> FuncGetData(string filePath);
+		public delegate ReadOnlySpan<byte> FuncGetData(string filePath);
 		/// <summary>
 		/// Replace files with their path, throw when a file couldn't be found
 		/// </summary>

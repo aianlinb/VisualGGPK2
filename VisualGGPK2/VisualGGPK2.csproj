@@ -5,7 +5,6 @@
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb.</Copyright>
     <Version>0.13.3</Version>
-    <Platforms>x64</Platforms>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -13,14 +12,6 @@
 	<NoWin32Manifest>true</NoWin32Manifest>
 	<DebugType>embedded</DebugType>
 	<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutputPath>..\Release</OutputPath>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutputPath>..\Release\Release</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
