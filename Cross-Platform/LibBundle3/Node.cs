@@ -6,5 +6,12 @@
 		public Node(string name) {
 			Name = name;
 		}
+
+		/// <summary>
+		/// Get the absolute path in the tree
+		/// </summary>
+		public virtual string GetPath() {
+			return Parent is null ? Name : Parent.GetPath() + Name;
+		}
 	}
 }

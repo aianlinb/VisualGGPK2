@@ -6,8 +6,14 @@ using System.IO.Compression;
 namespace PatchGGPK3 {
 	public class Program {
 		public static void Main(string[] args) {
-			Console.WriteLine("PatchBundledGGPK3  Copyright (C) 2021 aianlinb."); // ©
-			if (args.Length != 2) {
+			Console.WriteLine("PatchBundledGGPK3  Copyright (C) 2021-2022 aianlinb."); // ©
+			if (args.Length == 0) {
+				args = new string[2];
+				Console.Write("Path To GGPK: ");
+				args[0] = Console.ReadLine()!;
+				Console.Write("Path To Zip File: ");
+				args[1] = Console.ReadLine()!;
+			} else if (args.Length != 2) {
 				Console.WriteLine("Usage: PatchBundledGGPK3 <PathToGGPK> <ZipFile>");
 				return;
 			}

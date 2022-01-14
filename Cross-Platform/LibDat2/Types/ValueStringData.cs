@@ -11,7 +11,7 @@ namespace LibDat2.Types {
 		/// <inheritdoc/>
 		public override unsafe void Read(BinaryReader reader) {
 			if (reader.BaseStream.Position == reader.BaseStream.Length) {
-				Value = null;
+				Value = null!;
 				return;
 			}
 

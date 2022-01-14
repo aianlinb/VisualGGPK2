@@ -22,7 +22,7 @@ namespace LibDat2.Types {
 		private TypeOfValue _Value;
 
 		/// <inheritdoc/>
-		object IFieldData.Value { get => Value; set => Value = (TypeOfValue)value; }
+		object IFieldData.Value { get => Value!; set => Value = (TypeOfValue)value; }
 
 		/// <summary>
 		/// <see cref="Value"/> in string representation.
@@ -30,12 +30,15 @@ namespace LibDat2.Types {
 		/// </summary>
 		public virtual string StringValue { get => ToString(); set => FromString(value); }
 
+#pragma warning disable CS8612
 		public event PropertyChangedEventHandler PropertyChanged = new((o, e) => { });
+#pragma warning restore CS8612
 		protected virtual void RaisePropertyChanged(object sender, PropertyChangedEventArgs e) => PropertyChanged(sender, e);
 
 		/// <summary>
 		/// Create an instance of <see cref="FieldDataBase{TypeOfValue}"/> with the <paramref name="value"/>
 		/// </summary>
+#pragma warning disable CS8618
 		public FieldDataBase(DatContainer dat) {
 			Dat = dat;
 		}

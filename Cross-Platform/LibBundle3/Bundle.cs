@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace LibBundle3 {
 	public unsafe class Bundle : IDisposable {
-		[StructLayout(LayoutKind.Sequential, Size = 60)]
+		[StructLayout(LayoutKind.Sequential, Size = 60, Pack = 1)]
 		public struct Header {
 			public int uncompressed_size;
 			public int compressed_size;
@@ -29,7 +29,6 @@ namespace LibBundle3 {
 		public int CompressedSize => header.compressed_size;
 
 		protected readonly Stream baseStream;
-		protected readonly long streamOffset;
 		protected readonly bool streamLeaveOpen; // If false, close the baseStream when dispose
 
 		protected Header header;
@@ -41,40 +40,57 @@ namespace LibBundle3 {
 
 		public Bundle(Stream stream, bool leaveOpen = false) {
 			baseStream = stream ?? throw new ArgumentNullException(nameof(stream));
-			streamOffset = stream.Position;
 			streamLeaveOpen = leaveOpen;
+			stream.Seek(0, SeekOrigin.Begin);
 
 			var p = stackalloc byte[60];
 
 			stream.Read(new(p, 60));
-			Marshal.PtrToStructure((IntPtr)p, header); // Read bundle header
+			header = Marshal.PtrToStructure<Header>((IntPtr)p); // Read bundle header
 
 			compressed_chunk_sizes = new int[header.chunk_count];
 			fixed (int* p2 = compressed_chunk_sizes)
 				stream.Read(new(p2, header.chunk_count << 2));
 		}
 
+		/// <summary>
+		/// Read the whole data of the bundle
+		/// </summary>
+		/// <returns>Data read, or <see cref="CachedData"/> if not null</returns>
 		public virtual byte[] ReadData() {
 			if (CachedData is not null)
 				return CachedData;
-			return ReadChunks(0, compressed_chunk_sizes.Length);
+			return ReadChunks(0, header.chunk_count);
 		}
 
+		/// <summary>
+		/// Call <see cref="ReadData()"/> and cache it into <see cref="CachedData"/>
+		/// </summary>
 		public virtual void ReadDataAndCache() {
 			CachedData = ReadData();
 		}
 
-		public virtual Span<byte> ReadData(int offset, int length) {
+		/// <summary>
+		/// Read the data with the given offset and length
+		/// </summary>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		public virtual Memory<byte> ReadData(int offset, int length) {
 			if (offset < 0 || offset >= header.uncompressed_size)
 				throw new ArgumentOutOfRangeException(nameof(offset));
 			if (length < 0 || offset + length > header.uncompressed_size)
 				throw new ArgumentOutOfRangeException(nameof(length));
 
 			if (CachedData is not null)
-				return CachedData.AsSpan()[offset..length];
+				return new(CachedData, offset, length);
 			return new(ReadChunks(offset / header.chunk_size, (length - offset) / header.chunk_size), offset, length);
 		}
 
+		/// <summary>
+		/// Read chunks (with size of <see cref="Header.chunk_size"/>) start with the chunk with index of <paramref name="start"/> and combine them to a <see cref="byte[]"/>
+		/// </summary>
+		/// <param name="start">Index of a chunk</param>
+		/// <param name="count">Number of chunks to read</param>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public virtual byte[] ReadChunks(int start, int count = 1) {
 			if (start < 0 || start >= compressed_chunk_sizes.Length)
 				throw new ArgumentOutOfRangeException(nameof(start));
@@ -84,47 +100,49 @@ namespace LibBundle3 {
 			var ofs = 0;
 			for (var i = 0; i < start; ++i)
 				ofs += compressed_chunk_sizes[i];
-			baseStream.Seek(streamOffset + 60 + ofs, SeekOrigin.Begin);
+			baseStream.Seek(12 + header.head_size + ofs, SeekOrigin.Begin);
 
 			if (count == 0)
 				return Array.Empty<byte>();
 
-			var result = new byte[header.chunk_size * count];
+			var result = new byte[header.uncompressed_size];
 
-			var tmp = stackalloc byte[header.chunk_size];
+			var tmpp = new byte[header.chunk_size + 64];
 
 			ofs = 0;
-			fixed (byte* p = result) {
-				count -= 1;
+			fixed (byte* p = result, tmp = tmpp) {
+				count = start + count - 1;
 				for (var i = start; i < count; ++i) {
-					var len = 0;
-					while (len < compressed_chunk_sizes[i])
+					for (var len = 0; len < compressed_chunk_sizes[i];)
 						len += baseStream.Read(new(tmp + len, compressed_chunk_sizes[i] - len));
-					ofs += (int)Oodle.OodleLZ_Decompress(tmp, len, p + ofs, result.Length - ofs);
+					var tmpofs = Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[i], p + ofs, header.chunk_size, 0);
+					ofs += header.chunk_size;
 				}
-				var len2 = 0;
 				var lastChunkSize = header.GetLastChunkSize();
-				while (len2 < lastChunkSize)
-					len2 += baseStream.Read(new(tmp + len2, lastChunkSize - len2));
-				ofs += (int)Oodle.OodleLZ_Decompress(tmp, len2, p + ofs, header.chunk_size);
+				for (var len = 0; len < compressed_chunk_sizes[^1];)
+					len += baseStream.Read(new(tmp + len, compressed_chunk_sizes[^1] - len));
+				Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[^1], p + ofs, lastChunkSize, 0);
 			}
 
 			return result;
 		}
 
+		/// <summary>
+		/// Save the bundle with new contents
+		/// </summary>
 		public virtual void SaveData(ReadOnlySpan<byte> newData, Oodle.CompressionLevel compressionLevel = Oodle.CompressionLevel.Normal) {
 			CachedData = null;
 
 			header.size_decompressed = header.uncompressed_size = newData.Length;
 			header.chunk_count = header.uncompressed_size / header.chunk_size;
 			if (header.uncompressed_size % header.chunk_size != 0)
-				header.chunk_count++;
+				++header.chunk_count;
 			header.head_size = header.chunk_count * 4 + 48;
 
-			baseStream.Seek(streamOffset + 12 + header.head_size, SeekOrigin.Begin);
+			baseStream.Seek(12 + header.head_size, SeekOrigin.Begin);
 			header.compressed_size = 0;
 			var chunkSizes = new int[header.chunk_count];
-			var compressed = new byte[header.chunk_size];
+			var compressed = new byte[header.chunk_size + 64];
 			fixed (byte* cp = compressed, p = newData) {
 				var ptr = p;
 				var count = header.chunk_count - 1;
@@ -140,7 +158,7 @@ namespace LibBundle3 {
 			}
 			header.size_compressed = header.compressed_size;
 
-			baseStream.Seek(streamOffset, SeekOrigin.Begin);
+			baseStream.Seek(0, SeekOrigin.Begin);
 			var tmp = new byte[60];
 			fixed (byte* p = tmp)
 				Marshal.StructureToPtr(header, (IntPtr)p, false);

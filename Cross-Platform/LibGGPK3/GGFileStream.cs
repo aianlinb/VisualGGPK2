@@ -3,6 +3,9 @@ using System;
 using System.IO;
 
 namespace LibGGPK3 {
+	/// <summary>
+	/// Stream to access a file in <see cref="GGPK"/>, use <see cref="FileRecord.ReadFileContent"/> and <see cref="FileRecord.ReplaceContent"/> for better performance
+	/// </summary>
 	public class GGFileStream : Stream {
 		public readonly FileRecord Record;
 
@@ -10,10 +13,13 @@ namespace LibGGPK3 {
 		protected MemoryStream Buffer {
 			get {
 				if (_Buffer is null) {
+					_Buffer = new(Record.DataLength);
 					var b = new byte[Record.DataLength];
 					Record.Ggpk.FileStream.Seek(Record.DataOffset, SeekOrigin.Begin);
-					Record.Ggpk.FileStream.Read(b, 0, b.Length);
-					_Buffer = new MemoryStream(b);
+					for (var l = 0; l < Record.DataLength;)
+						l += Record.Ggpk.FileStream.Read(b, l, Record.DataLength - l);
+					_Buffer.Write(b, 0, Record.DataLength);
+					_Buffer.Seek(0, SeekOrigin.Begin);
 				}
 				return _Buffer;
 			}
@@ -25,6 +31,9 @@ namespace LibGGPK3 {
 			Record = record;
 		}
 
+		/// <summary>
+		/// Write all changes to GGPK
+		/// </summary>
 		public override void Flush() {
 			if (_Buffer is null || !Modified)
 				return;
@@ -53,16 +62,25 @@ namespace LibGGPK3 {
 			Modified = true;
 		}
 
+		/// <summary>
+		/// Won't affect the actual file before calling <see cref="Flush"/>
+		/// </summary>
 		public override void Write(byte[] buffer, int offset, int count) {
 			Buffer.Write(buffer, offset, count);
 			Modified = true;
 		}
 
+		/// <summary>
+		/// Won't affect the actual file before calling <see cref="Flush"/>
+		/// </summary>
 		public override void Write(ReadOnlySpan<byte> buffer) {
 			Buffer.Write(buffer);
 			Modified = true;
 		}
 
+		/// <summary>
+		/// Won't affect the actual file before calling <see cref="Flush"/>
+		/// </summary>
 		public override void WriteByte(byte value) {
 			Buffer.WriteByte(value);
 			Modified = true;
@@ -70,6 +88,7 @@ namespace LibGGPK3 {
 
 		public override bool CanRead => Record.Ggpk.FileStream.CanRead;
 
+		/// <returns><see langword="true"/></returns>
 		public override bool CanSeek => true;
 
 		public override bool CanWrite => Record.Ggpk.FileStream.CanWrite;

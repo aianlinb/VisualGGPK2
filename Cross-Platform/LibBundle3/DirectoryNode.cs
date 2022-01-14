@@ -9,6 +9,8 @@ namespace LibBundle3 {
 
 		public SortedSet<Node> Children = new(NodeComparer.Instance);
 
+		public override string GetPath() => base.GetPath() + "/";
+
 		protected sealed class NodeComparer : IComparer<Node> {
 			public static readonly IComparer<Node> Instance = OperatingSystem.IsWindows() ? new NodeComparer_Windows() : new NodeComparer();
 

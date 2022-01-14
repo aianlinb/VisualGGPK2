@@ -4,21 +4,39 @@ using System.Runtime.InteropServices;
 namespace LibBundle3 {
 	public static unsafe class Oodle {
 		[DllImport("oo2core", CallingConvention = CallingConvention.Winapi)]
-		public static extern nint OodleLZ_Decompress(byte* buffer, nint bufferSize, byte* output, nint outputBufferSize, int fuzzSafe = 1, int checkCRC = 0, int verbose = 0, byte* v_decBufBase = null, nint decBufSize = 0, void* fpCallback = null, void* callbackUserData = null, void* decoderMemory = null, nint decoderMemorySize = 0, int threadPhase = 3);
+		public static extern nint OodleLZ_Decompress(byte* buffer, nint bufferSize, byte* output, nint decompressedSize, int fuzzSafe = 1, int checkCRC = 0, int verbose = 0, byte* v_decBufBase = null, nint decBufSize = 0, void* fpCallback = null, void* callbackUserData = null, void* decoderMemory = null, nint decoderMemorySize = 0, int threadPhase = 3);
 
 		[DllImport("oo2core", CallingConvention = CallingConvention.Winapi)]
 		public static extern nint OodleLZ_Compress(Compressor compressor, byte* buffer, nint bufferSize, byte* outputBuffer, CompressionLevel level, void* pOptions = null, void* dictionaryBase = null, void* longRangeMatcher = null, void* scratchMem = null, nint scratchSize = 0);
 
 		public enum Compressor {
 			Invalid = -1,
-			None = 3,  // None = memcpy, pass through uncompressed bytes
+			/// <summary>
+			/// None = memcpy, pass through uncompressed bytes
+			/// </summary>
+			None = 3,
 
 			// NEW COMPRESSORS :
-			Kraken = 8,	// Fast decompression and high compression ratios, amazing!
-			Leviathan = 13,// Leviathan = Kraken's big brother with higher compression, slightly slower decompression.
-			Mermaid = 9,   // Mermaid is between Kraken & Selkie - crazy fast, still decent compression.
-			Selkie = 11,   // Selkie is a super-fast relative of Mermaid.  For maximum decode speed.
-			Hydra = 12,	// Hydra, the many-headed beast = Leviathan, Kraken, Mermaid, or Selkie (see $OodleLZ_About_Hydra)
+			/// <summary>
+			/// Fast decompression and high compression ratios, amazing!
+			/// </summary>
+			Kraken = 8,
+			/// <summary>
+			/// Leviathan = Kraken's big brother with higher compression, slightly slower decompression.
+			/// </summary>
+			Leviathan = 13,
+			/// <summary>
+			/// Mermaid is between Kraken & Selkie - crazy fast, still decent compression.
+			/// </summary>
+			Mermaid = 9,
+			/// <summary>
+			/// Selkie is a super-fast relative of Mermaid.  For maximum decode speed.
+			/// </summary>
+			Selkie = 11,
+			/// <summary>
+			/// Hydra, the many-headed beast = Leviathan, Kraken, Mermaid, or Selkie (see $OodleLZ_About_Hydra)
+			/// </summary>
+			Hydra = 12,
 
 			// DEPRECATED :
 			[Obsolete("no longer supported as of Oodle 2.9.0")] BitKnit = 10,

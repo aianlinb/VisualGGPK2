@@ -7,6 +7,7 @@ using static LibDat2.Types.IFieldData;
 
 namespace LibDat2.Types {
 	[FieldType(FieldType.Array)]
+#pragma warning disable CS8612
 	public class ArrayData<TypeOfValueInArray> : ReferenceDataBase<TypeOfValueInArray[]>, IArrayData {
 		/// <inheritdoc/>
 		public virtual FieldType TypeOfValue { get; }
@@ -35,7 +36,7 @@ namespace LibDat2.Types {
 					Length = (int)length
 				};
 
-			if (dat.ReferenceDatas.TryGetValue(offset, out IReferenceData rd) && rd is ArrayData<TypeOfValueInArray> a)
+			if (dat.ReferenceDatas.TryGetValue(offset, out IReferenceData? rd) && rd is ArrayData<TypeOfValueInArray> a)
 				return a;
 
 			reader.BaseStream.Seek(dat.x64 ? -16 : -8, SeekOrigin.Current);
@@ -187,6 +188,7 @@ namespace LibDat2.Types {
 						writer.BaseStream.Write(new ReadOnlySpan<byte>(b, Value.Length * sizeof(double)));
 					break;
 				case FieldType.Row:
+#pragma warning disable CS8602
 					foreach (var r in Value as RowData[])
 						r.Write(writer);
 					break;
@@ -195,7 +197,7 @@ namespace LibDat2.Types {
 						fr.Write(writer);
 					break;
 				case FieldType.Array:
-					foreach (IArrayData a in Value)
+					foreach (IArrayData? a in Value)
 						a.Write(writer);
 					break;
 				case FieldType.String:
@@ -216,7 +218,7 @@ namespace LibDat2.Types {
 		/// </summary>
 		public static ArrayData<TypeOfValueInArray> FromString(string value, DatContainer dat, FieldType typeOfarrayInArray) {
 			value = typeOfarrayInArray == FieldType.String || typeOfarrayInArray == FieldType.ValueString ? value : Regex.Replace(value, @"\s", "").Replace(",", ", ");
-			if (dat.ReferenceDataOffsets.TryGetValue(value, out long offset) && dat.ReferenceDatas.TryGetValue(offset, out IReferenceData rd) && rd is ArrayData<TypeOfValueInArray> a)
+			if (dat.ReferenceDataOffsets.TryGetValue(value, out long offset) && dat.ReferenceDatas.TryGetValue(offset, out IReferenceData? rd) && rd is ArrayData<TypeOfValueInArray> a)
 				return a;
 
 			var ad = new ArrayData<TypeOfValueInArray>(dat, typeOfarrayInArray);

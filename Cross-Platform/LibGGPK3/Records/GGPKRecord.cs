@@ -16,10 +16,9 @@ namespace LibGGPK3.Records {
 
 		public GGPKRecord(int length, GGPK ggpk) : base(length, ggpk) {
 			Offset = ggpk.FileStream.Position - 8;
-			var br = Ggpk.Reader;
-			GGPKVersion = br.ReadUInt32(); // 3
-			RootDirectoryOffset = br.ReadInt64();
-			FirstFreeRecordOffset = br.ReadInt64();
+			GGPKVersion = (uint)ggpk.FileStream.ReadInt32(); // 3
+			RootDirectoryOffset = ggpk.FileStream.ReadInt64();
+			FirstFreeRecordOffset = ggpk.FileStream.ReadInt64();
 		}
 
 		protected internal override void Write(Stream? writeTo = null) {

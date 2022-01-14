@@ -22,15 +22,18 @@ namespace LibGGPK3.Records {
 		public int DataLength;
 
 		public FileRecord(int length, GGPK ggpk) : base(length, ggpk) {
-			Offset = ggpk.FileStream.Position - 8;
-			var br = Ggpk.Reader;
-			var nameLength = br.ReadInt32();
-			Hash = br.ReadBytes(32);
-			Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
-			br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
-			DataOffset = br.BaseStream.Position;
+			var s = ggpk.FileStream;
+			Offset = s.Position - 8;
+			var nameLength = s.ReadInt32();
+			Hash = new byte[32];
+			s.Read(Hash, 0, 32);
+			var name = new byte[2 * (nameLength - 1)];
+			s.Read(name, 0, name.Length);
+			Name = Encoding.Unicode.GetString(name);
+			s.Seek(2, SeekOrigin.Current); // Null terminator
+			DataOffset = s.Position;
 			DataLength = Length - (nameLength * 2 + 44); // Length - (8 + nameLength * 2 + 32 + 4)
-			br.BaseStream.Seek(DataLength, SeekOrigin.Current);
+			s.Seek(DataLength, SeekOrigin.Current);
 		}
 
 		protected internal override void Write(Stream? writeTo = null) {
@@ -55,7 +58,7 @@ namespace LibGGPK3.Records {
 			ggpkStream ??= Ggpk.FileStream;
 			ggpkStream.Seek(DataOffset, SeekOrigin.Begin);
 			for (var l = 0; l < DataLength;)
-				ggpkStream.Read(buffer, l, DataLength - l);
+				l += ggpkStream.Read(buffer, l, DataLength - l);
 			return buffer;
 		}
 
@@ -64,14 +67,14 @@ namespace LibGGPK3.Records {
 		/// and move the record to the FreeRecord with most suitable size.
 		/// </summary>
 		public virtual void ReplaceContent(ReadOnlySpan<byte> NewContent) {
-			var bw = Ggpk.Writer;
+			var s = Ggpk.FileStream;
 
 			if (!Hash256.TryComputeHash(NewContent, Hash, out _))
 				throw new("Unable to compute hash of the content");
 
 			if (NewContent.Length == DataLength) { // Replace in situ
-				bw.BaseStream.Seek(DataOffset, SeekOrigin.Begin);
-				bw.Write(NewContent);
+				s.Seek(DataOffset, SeekOrigin.Begin);
+				s.Write(NewContent);
 			} else { // Replace a FreeRecord
 				var oldOffset = Offset;
 				MarkAsFreeRecord();
@@ -95,45 +98,45 @@ namespace LibGGPK3.Records {
 				} while ((currentNode = currentNode.Next) != null);
 
 				if (bestNode == null) {
-					bw.BaseStream.Seek(0, SeekOrigin.End); // Write to the end of GGPK
+					s.Seek(0, SeekOrigin.End); // Write to the end of GGPK
 					Write();
-					bw.Write(NewContent);
+					s.Write(NewContent);
 				} else {
 					FreeRecord free = bestNode.Value;
-					bw.BaseStream.Seek(free.Offset + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
+					s.Seek(free.Offset + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
 					Write();
-					bw.Write(NewContent);
+					s.Write(NewContent);
 					free.Length = space;
 					if (space >= 16) { // Update offset of FreeRecord
-						bw.BaseStream.Seek(free.Offset, SeekOrigin.Begin);
-						bw.Write(free.Length);
+						s.Seek(free.Offset, SeekOrigin.Begin);
+						s.Write(free.Length);
 					} else // Remove the FreeRecord
 						free.Remove(bestNode);
 				}
 
 				UpdateOffset(oldOffset); // Update the offset of FileRecord in Parent.Entries/>
 			}
-			bw.Flush();
+			s.Flush();
 		}
 
 		/// <summary>
 		/// Set the record to a FreeRecord
 		/// </summary>
 		public virtual void MarkAsFreeRecord() {
-			var bw = Ggpk.Writer;
-			bw.BaseStream.Seek(Offset, SeekOrigin.Begin);
+			var s = Ggpk.FileStream;
+			s.Seek(Offset, SeekOrigin.Begin);
 			var free = new FreeRecord(Length, Ggpk, 0, Offset);
 			free.Write();
 			var lastFree = Ggpk.FreeRecords.Last?.Value;
 			if (lastFree == null) // No FreeRecord
 			{
 				Ggpk.GgpkRecord.FirstFreeRecordOffset = Offset;
-				Ggpk.FileStream.Seek(Ggpk.GgpkRecord.Offset + 20, SeekOrigin.Begin);
-				Ggpk.Writer.Write(Offset);
+				s.Seek(Ggpk.GgpkRecord.Offset + 20, SeekOrigin.Begin);
+				s.Write(Offset);
 			} else {
 				lastFree.NextFreeOffset = Offset;
-				Ggpk.FileStream.Seek(lastFree.Offset + 8, SeekOrigin.Begin);
-				Ggpk.Writer.Write(Offset);
+				s.Seek(lastFree.Offset + 8, SeekOrigin.Begin);
+				s.Write(Offset);
 			}
 			Ggpk.FreeRecords.AddLast(free);
 		}
@@ -148,11 +151,11 @@ namespace LibGGPK3.Records {
 				if (Parent.Entries[i].Offset == OldOffset) {
 					Parent.Entries[i].Offset = Offset;
 					Ggpk.FileStream.Seek(Parent.EntriesBegin + i * 12 + 4, SeekOrigin.Begin);
-					Ggpk.Writer.Write(Offset);
+					Ggpk.FileStream.Write(Offset);
 					return;
 				}
 			}
-			throw new System.Exception(GetPath() + " update offset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
+			throw new(GetPath() + " update offset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
 		}
 
 		public enum DataFormats {

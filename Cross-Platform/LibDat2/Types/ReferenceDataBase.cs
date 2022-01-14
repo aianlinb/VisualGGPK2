@@ -3,6 +3,7 @@ using System.IO;
 using static LibDat2.Types.IFieldData;
 
 namespace LibDat2.Types {
+#pragma warning disable CS8612
 	public abstract class ReferenceDataBase<TypeOfValue> : FieldDataBase<TypeOfValue>, IReferenceData {
 		public ReferenceDataBase(DatContainer dat) : base(dat) { }
 

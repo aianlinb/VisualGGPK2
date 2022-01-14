@@ -20,7 +20,7 @@ namespace LibBundle3.Records {
 			Size = size;
 		}
 
-		public virtual Span<byte> Read() {
+		public virtual Memory<byte> Read() {
 			return BundleRecord.Bundle.ReadData(Offset, Size);
 		}
 

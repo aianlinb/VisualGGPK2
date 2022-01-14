@@ -37,21 +37,22 @@ namespace LibGGPK3.Records {
 		/// Read a DirectoryRecord from GGPK
 		/// </summary>
 		public DirectoryRecord(int length, GGPK ggpk) : base(length, ggpk) {
-			Offset = ggpk.FileStream.Position - 8;
-			var nameLength = ggpk.FileStream.ReadInt32();
-			var totalEntries = ggpk.FileStream.ReadInt32();
+			var s = ggpk.FileStream;
+			Offset = s.Position - 8;
+			var nameLength = s.ReadInt32();
+			var totalEntries = s.ReadInt32();
 
 			Hash = new byte[32];
-			ggpk.FileStream.Read(Hash, 0, 32);
+			s.Read(Hash, 0, 32);
 			var name = new byte[2 * (nameLength - 1)];
-			ggpk.FileStream.Read(name, 0, name.Length);
+			s.Read(name, 0, name.Length);
 			Name = Encoding.Unicode.GetString(name);
-			ggpk.FileStream.Seek(2, SeekOrigin.Current); // Null terminator
+			s.Seek(2, SeekOrigin.Current); // Null terminator
 
-			EntriesBegin = ggpk.FileStream.Position;
+			EntriesBegin = s.Position;
 			Entries = new DirectoryEntry[totalEntries];
 			for (var i = 0; i < totalEntries; i++)
-				Entries[i] = new DirectoryEntry((uint)ggpk.FileStream.ReadInt32(), ggpk.FileStream.ReadInt64());
+				Entries[i] = new DirectoryEntry((uint)s.ReadInt32(), s.ReadInt64());
 		}
 
 		private SortedSet<TreeNode>? _Children;

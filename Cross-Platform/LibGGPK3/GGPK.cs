@@ -79,7 +79,6 @@ namespace LibGGPK3 {
 		/// </summary>
 		/// <param name="record">File/Directory Record to export</param>
 		/// <param name="path">Path to save</param>
-		/// <param name="ProgressStep">It will be executed every time a file is exported</param>
 		/// <returns>Number of files exported</returns>
 		public static int Extract(TreeNode record, string path) {
 			if (record is FileRecord fr) {
@@ -99,7 +98,6 @@ namespace LibGGPK3 {
 		/// </summary>
 		/// <param name="record">File/Directory Record to replace</param>
 		/// <param name="path">Path to file to import</param>
-		/// <param name="ProgressStep">It will be executed every time a file is replaced</param>
 		/// <returns>Number of files replaced</returns>
 		public static int Replace(TreeNode record, string path) {
 			if (record is FileRecord fr) {
