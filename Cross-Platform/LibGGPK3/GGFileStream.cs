@@ -12,7 +12,7 @@ namespace LibGGPK3 {
 		protected MemoryStream? _Buffer;
 		protected MemoryStream Buffer {
 			get {
-				if (_Buffer is null) {
+				if (_Buffer == null) {
 					_Buffer = new(Record.DataLength);
 					var b = new byte[Record.DataLength];
 					Record.Ggpk.FileStream.Seek(Record.DataOffset, SeekOrigin.Begin);
@@ -35,7 +35,7 @@ namespace LibGGPK3 {
 		/// Write all changes to GGPK
 		/// </summary>
 		public override void Flush() {
-			if (_Buffer is null || !Modified)
+			if (_Buffer == null || !Modified)
 				return;
 			Record.ReplaceContent(new(_Buffer.GetBuffer(), 0, (int)_Buffer.Length));
 			Modified = false;

@@ -58,7 +58,7 @@ namespace LibBundle3 {
 		/// </summary>
 		/// <returns>Data read, or <see cref="CachedData"/> if not null</returns>
 		public virtual byte[] ReadData() {
-			if (CachedData is not null)
+			if (CachedData != null)
 				return CachedData;
 			return ReadChunks(0, header.chunk_count);
 		}
@@ -80,7 +80,7 @@ namespace LibBundle3 {
 			if (length < 0 || offset + length > header.uncompressed_size)
 				throw new ArgumentOutOfRangeException(nameof(length));
 
-			if (CachedData is not null)
+			if (CachedData != null)
 				return new(CachedData, offset, length);
 			return new(ReadChunks(offset / header.chunk_size, (length - offset) / header.chunk_size), offset, length);
 		}

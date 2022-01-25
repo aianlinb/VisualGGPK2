@@ -31,7 +31,7 @@ namespace LibBundle3.Records {
 			BundleRecord.ValidSize += Size;
 			var b2 = new byte[BundleRecord.ValidSize];
 			Unsafe.CopyBlockUnaligned(ref b2[0], ref b[0], (uint)Offset);
-			newContent.CopyTo(b2.AsSpan()[Offset..Size]);
+			newContent.CopyTo(b2.AsSpan().Slice(Offset, Size));
 			BundleRecord.Bundle.SaveData(b2);
 			BundleRecord.Index.Save();
 		}

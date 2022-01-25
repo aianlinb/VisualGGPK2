@@ -521,7 +521,7 @@ namespace LibDat2 {
 		/// </summary>
 		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
 			var bp = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-			if (bp is not null)
+			if (bp != null)
 				filePath = Path.GetFullPath(filePath, bp);
 			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
 			try {

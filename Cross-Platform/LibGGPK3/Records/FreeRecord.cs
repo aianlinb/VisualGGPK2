@@ -43,7 +43,7 @@ namespace LibGGPK3.Records {
 		public virtual void Remove(LinkedListNode<FreeRecord>? node = null) {
 			var s = Ggpk.FileStream;
 			node ??= Ggpk.FreeRecords.Find(this);
-			if (node is null)
+			if (node == null)
 				return;
 			var previous = node.Previous?.Value;
 			var next = node.Next?.Value;

@@ -23,7 +23,7 @@ namespace LibBundle3 {
 		/// </summary>
 		public virtual DirectoryNode Root {
 			get {
-				if (_Root is null) {
+				if (_Root == null) {
 					_Root = new("");
 					foreach (var f in Files.Values) {
 						var paths = f.Path.Split('/');
@@ -173,7 +173,7 @@ namespace LibBundle3 {
 		}
 
 		/// <summary>
-		/// Extract files to disk
+		/// Extract files to disk, and skip all files in unavailable bundles
 		/// </summary>
 		/// <param name="node">Node to extract (recursively)</param>
 		/// <param name="pathToSave">Path on disk</param>
@@ -181,7 +181,7 @@ namespace LibBundle3 {
 			pathToSave = pathToSave.Replace('\\', '/');
 			if (node is FileNode fn) {
 				var d = Path.GetDirectoryName(pathToSave);
-				if (d is not null && !pathToSave.EndsWith('/'))
+				if (d != null && !pathToSave.EndsWith('/'))
 					Directory.CreateDirectory(d);
 				var f = File.Create(pathToSave);
 				f.Write(fn.Record.Read().Span);
@@ -489,25 +489,16 @@ namespace LibBundle3 {
 		/// Get a available bundle with smallest uncompressed_size
 		/// </summary>
 		public virtual BundleRecord GetSmallestBundle() {
-			if (Bundles is null || Bundles.Length == 0)
-				throw new("Unable to find a valid bundle");
-			var bundles = new List<BundleRecord>(Bundles);
-			var result = bundles[0];
-			var l = result.UncompressedSize;
-			while (bundles.Count > 0) {
-				foreach (var b in Bundles)
-					if (b.UncompressedSize < l) {
-						l = b.UncompressedSize;
-						result = b;
-					}
+			if (Bundles == null || Bundles.Length == 0)
+				throw new("Unable to find an available bundle");
+			var bundles = (BundleRecord[])Bundles.Clone();
+			Array.Sort(bundles, (x, y) => x.UncompressedSize - y.UncompressedSize);
+			for (var i = 0; i < bundles.Length; ++i)
 				try {
-					_ = result.Bundle;
-					return result;
-				} catch {
-					bundles.Remove(result);
-				}
-			}
-			throw new("Unable to find a valid bundle");
+					_ = bundles[i].Bundle;
+					return bundles[i];
+				} catch { }
+			throw new("Unable to find an available bundle");
 		}
 
 		public virtual void Dispose() {
