@@ -2,12 +2,11 @@
 
 namespace LibBundle3.Records {
 	public class BundleRecord {
-		public int PathLength;
 		public string Path; // without extension
 		public int UncompressedSize;
 
-		internal int BundleIndex;
-		internal int ValidSize;
+		public int BundleIndex;
+		public int ValidSize;
 		public readonly List<FileRecord> Files = new();
 		public Index Index;
 
@@ -19,9 +18,8 @@ namespace LibBundle3.Records {
 			}
 		}
 
-		public BundleRecord(int nameLength, string name, int uncompressedSize, Index index) {
-			PathLength = nameLength;
-			Path = name;
+		public BundleRecord(string path, int uncompressedSize, Index index) {
+			Path = path;
 			UncompressedSize = uncompressedSize;
 			Index = index;
 		}

@@ -1,4 +1,4 @@
-﻿namespace LibBundle3 {
+﻿namespace LibBundle3.Nodes {
 	public abstract class Node {
 		public Node? Parent;
 		public string Name;

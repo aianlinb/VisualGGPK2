@@ -1,4 +1,5 @@
-﻿using LibBundle3.Records;
+﻿using LibBundle3.Nodes;
+using LibBundle3.Records;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -64,11 +65,11 @@ namespace LibBundle3 {
 				var bundleCount = *ptr++;
 				Bundles = new BundleRecord[bundleCount];
 				for (var i = 0; i < bundleCount; i++) {
-					var nameLength = *ptr++;
-					var name = UTF8.GetString((byte*)ptr, nameLength);
-					ptr = (int*)((byte*)ptr + nameLength);
+					var pathLength = *ptr++;
+					var path = UTF8.GetString((byte*)ptr, pathLength);
+					ptr = (int*)((byte*)ptr + pathLength);
 					var uncompressedSize = *ptr++;
-					Bundles[i] = new BundleRecord(nameLength, name, uncompressedSize, this) { BundleIndex = i };
+					Bundles[i] = new BundleRecord(path, uncompressedSize, this) { BundleIndex = i };
 				}
 
 				var fileCount = *ptr++;
@@ -141,12 +142,13 @@ namespace LibBundle3 {
 		public virtual void Save() {
 			var ms = new MemoryStream(UncompressedSize);
 			var bw = new BinaryWriter(ms);
-			var utf8 = Encoding.UTF8;
+			var UTF8 = Encoding.UTF8;
 
 			bw.Write(Bundles.Length);
 			foreach (var b in Bundles) {
-				bw.Write(b.PathLength);
-				bw.Write(utf8.GetBytes(b.Path), 0, b.PathLength);
+				var path = UTF8.GetBytes(b.Path);
+				bw.Write(path.Length);
+				bw.Write(path, 0, path.Length);
 				bw.Write(b.UncompressedSize);
 			}
 
@@ -242,9 +244,10 @@ namespace LibBundle3 {
 		/// <summary>
 		/// Extract files with their path, throw when a file couldn't be found
 		/// </summary>
-		/// <returns>KeyValuePairs of path and data of the files</returns>
-		public virtual IEnumerable<KeyValuePair<string, Memory<byte>>> Extract(IEnumerable<string> filePaths) {
-			var list = new List<FileRecord>(filePaths.Select(s => Files[FNV1a64Hash(s.Replace('\\', '/'))]));
+		/// <param name="filePaths">Path of files to extract, <see langword="null"/> for all files in <see cref="Files"/></param>
+		/// <returns>KeyValuePairs of path and data of each file</returns>
+		public virtual IEnumerable<KeyValuePair<string, Memory<byte>>> Extract(IEnumerable<string>? filePaths) {
+			var list = filePaths == null ? new List<FileRecord>(Files.Values) : filePaths.Select(s => Files[FNV1a64Hash(s.Replace('\\', '/'))]).ToList();
 			if (list.Count == 0)
 				yield break;
 			list.Sort(BundleComparer.Instance);
@@ -303,7 +306,7 @@ namespace LibBundle3 {
 
 				var br = first.BundleRecord;
 				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 				foreach (var fr in list) {
 					if (br != fr.BundleRecord) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
@@ -311,7 +314,7 @@ namespace LibBundle3 {
 						br.UncompressedSize = br.Bundle.UncompressedSize;
 						br = fr.BundleRecord;
 						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 					}
 					var b = File.ReadAllBytes(pathToLoad + fr.Path[trim..]);
 					ms.Write(b);
@@ -327,7 +330,7 @@ namespace LibBundle3 {
 				while (br.ValidSize >= maxSize)
 					maxSize *= 2;
 				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 				foreach (var fr in list) {
 					if (ms.Length >= maxSize) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
@@ -338,7 +341,7 @@ namespace LibBundle3 {
 						while (br.ValidSize >= maxSize)
 							maxSize *= 2;
 						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 					}
 					var b = File.ReadAllBytes(pathToLoad + fr.Path);
 					fr.Redirect(br, (int)ms.Length, b.Length);
@@ -356,11 +359,11 @@ namespace LibBundle3 {
 		/// <summary>
 		/// Replace files with their path, throw when a file couldn't be found
 		/// </summary>
+		/// <param name="filePaths">Path of files to replace, <see langword="null"/> for all files in <see cref="Files"/></param>
 		/// <param name="funcGetDataFromFilePath">For getting new data with the path of the file</param>
 		/// <param name="dontChangeBundle">Whether to force all files to be written to their respective original bundle</param>
-		public virtual void Replace(IEnumerable<string> filePaths, FuncGetData funcGetDataFromFilePath, bool dontChangeBundle = false) {
-			var list = filePaths.Select(p => Files[FNV1a64Hash(p.Replace('\\', '/'))]).ToList();
-
+		public virtual void Replace(IEnumerable<string>? filePaths, FuncGetData funcGetDataFromFilePath, bool dontChangeBundle = false) {
+			var list = filePaths == null ? new List<FileRecord>(Files.Values) : filePaths.Select(s => Files[FNV1a64Hash(s.Replace('\\', '/'))]).ToList();
 			if (list.Count == 0)
 				return;
 
@@ -376,7 +379,7 @@ namespace LibBundle3 {
 
 				var br = first.BundleRecord;
 				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 				foreach (var fr in list) {
 					if (br != fr.BundleRecord) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
@@ -384,7 +387,7 @@ namespace LibBundle3 {
 						br.UncompressedSize = br.Bundle.UncompressedSize;
 						br = fr.BundleRecord;
 						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 					}
 					var b = funcGetDataFromFilePath(fr.Path);
 					ms.Write(b);
@@ -400,7 +403,7 @@ namespace LibBundle3 {
 				while (br.ValidSize >= maxSize)
 					maxSize *= 2;
 				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 				foreach (var fr in list) {
 					if (ms.Length >= maxSize) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
@@ -411,7 +414,7 @@ namespace LibBundle3 {
 						while (br.ValidSize >= maxSize)
 							maxSize *= 2;
 						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 					}
 					var b = funcGetDataFromFilePath(fr.Path);
 					fr.Redirect(br, (int)ms.Length, b.Length);
@@ -434,7 +437,7 @@ namespace LibBundle3 {
 			while (br.ValidSize >= maxSize)
 				maxSize *= 2;
 			var ms = new MemoryStream(br.ValidSize);
-			ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+			ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 			foreach (var zip in zipEntries) {
 				if (zip.FullName.EndsWith('/'))
 					continue;
@@ -449,7 +452,7 @@ namespace LibBundle3 {
 					while (br.ValidSize >= maxSize)
 						maxSize *= 2;
 					ms = new MemoryStream(br.ValidSize);
-					ms.Write(br.Bundle.ReadData(), 0, br.ValidSize);
+					ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
 				}
 				var b = zip.Open();
 				f.Redirect(br, (int)ms.Length, (int)zip.Length);

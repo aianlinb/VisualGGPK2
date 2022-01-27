@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace LibBundle3 {
+namespace LibBundle3.Nodes {
 	public class DirectoryNode : Node {
 		public DirectoryNode(string name) : base(name) {
 		}

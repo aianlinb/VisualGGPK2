@@ -25,12 +25,12 @@ namespace LibBundle3.Records {
 		}
 
 		public virtual void Write(ReadOnlySpan<byte> newContent) {
-			var b = BundleRecord.Bundle.ReadData();
+			var b = BundleRecord.Bundle.ReadData(0, BundleRecord.ValidSize);
 			Offset = BundleRecord.ValidSize;
 			Size = newContent.Length;
 			BundleRecord.ValidSize += Size;
 			var b2 = new byte[BundleRecord.ValidSize];
-			Unsafe.CopyBlockUnaligned(ref b2[0], ref b[0], (uint)Offset);
+			b.CopyTo(b2);
 			newContent.CopyTo(b2.AsSpan().Slice(Offset, Size));
 			BundleRecord.Bundle.SaveData(b2);
 			BundleRecord.Index.Save();
