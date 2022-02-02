@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 
-namespace PatchGGPK3 {
+namespace PatchBundledGGPK3 {
 	public class Program {
 		public static void Main(string[] args) {
 			Console.WriteLine("PatchBundledGGPK3  Copyright (C) 2021-2022 aianlinb."); // ©

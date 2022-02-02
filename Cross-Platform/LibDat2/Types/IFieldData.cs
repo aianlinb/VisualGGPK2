@@ -134,6 +134,7 @@ namespace LibDat2.Types {
 			{ "i8", FieldType.Int8  },
 			{ "i16", FieldType.Int16 },
 			{ "i32", FieldType.Int32 },
+			{ "enumrow", FieldType.Int32 },
 			{ "i64", FieldType.Int64 },
 			{ "u8", FieldType.UInt8  },
 			{ "u16", FieldType.UInt16 },
@@ -145,7 +146,8 @@ namespace LibDat2.Types {
 			{ "foreignrow", FieldType.ForeignRow },
 			{ "array", FieldType.Unknown },
 			{ "string", FieldType.String },
-			{ "valueString", FieldType.ValueString }
+			{ "valuestring", FieldType.ValueString },
+			{ "valueString", FieldType.ValueString } // forward support
 		});
 
 		/// <summary>

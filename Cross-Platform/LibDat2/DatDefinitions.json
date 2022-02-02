@@ -3543,10 +3543,10 @@
 	},
 	"Languages": {
 		"Index": "i32",
-		"Id": "valueString",
-		"Text": "valueString",
-		"Tag1": "valueString",
-		"Tag2": "valueString",
+		"Id": "valuestring",
+		"Text": "valuestring",
+		"Tag1": "valuestring",
+		"Tag2": "valuestring",
 		"Unknown0": "i32",
 		"IsEnabled": "i32"
 	},

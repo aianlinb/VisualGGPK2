@@ -82,7 +82,7 @@ namespace LibBundle3 {
 
 			if (CachedData != null)
 				return new(CachedData, offset, length);
-			return new(ReadChunks(offset / header.chunk_size, (length - offset) / header.chunk_size), offset, length);
+			return new(ReadChunks(offset / header.chunk_size, (length - offset) / header.chunk_size + 1), offset % header.chunk_size, length);
 		}
 
 		/// <summary>
