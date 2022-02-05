@@ -637,14 +637,15 @@
 		"Equip_AchievementItemsKey": "foreignrow",
 		"IsCorrupted": "bool",
 		"Identify_AchievementItemsKeys": "array|foreignrow",
-		"ItemThemesKey": "foreignrow",
+		//"ItemThemesKey": "foreignrow", removed 3.17
 		"IdentifyMagic_AchievementItemsKeys": "array|foreignrow",
 		"FragmentBaseItemTypesKey": "row",
+		//"ItemShopType": "foreignrow", removed 3.17
 		"Unknown0": "bool",
-		"ItemShopType": "foreignrow",
 		"Unknown1": "foreignrow",
 		"Unknown2": "foreignrow",
-		"Unknown3": "bool"
+		"Unknown3": "bool",
+		"Unknown4": "foreignrow"
 	},
 	"BestiaryCapturableMonsters": {
 		"MonsterVarietiesKey": "foreignrow",
@@ -1337,7 +1338,9 @@
 		"Unknown7": "i32",
 		"Unknown8": "bool",
 		"Unknown9": "foreignrow",
-		"Unknown10": "foreignrow"
+		"Unknown10": "foreignrow",
+		"Flag7": "bool",
+		"Flag8": "bool"
 	},
 	"ClientStrings": {
 		"Id": "string",
@@ -3245,16 +3248,16 @@
 	"ItemClasses": {
 		"Id": "string",
 		"Name": "string",
-		"Category": "string",
+		"Unknown0": "foreignrow",
 		"ItemClassCategory": "foreignrow",
 		"RemovedIfLeavesArea": "bool",
-		"Unknown0": "array|foreignrow",
 		"Unknown1": "array|foreignrow",
+		"Unknown2": "array|foreignrow",
 		"AllocateToMapOwner": "bool",
 		"AlwaysAllocate": "bool",
 		"CanHaveVeiledMods": "bool",
-		"Unknown2": "i32",
 		"Unknown3": "i32",
+		"Unknown4": "i32",
 		"AlwaysShow": "bool",
 		"CanBeCorrupted": "bool",
 		"CanHaveIncubators": "bool",
@@ -3264,7 +3267,8 @@
 		"CanTransferSkin": "bool",
 		"ItemStance": "foreignrow",
 		"CanScourge": "bool", // Added 3.16
-		"Unknown4": "bool" // Added 3.16
+		"Unknown5": "bool", // Added 3.16
+		"Unknown6": "bool" // Added 3.17
 	},
 	"ItemCostPerLevel": {
 		"ContractBaseItemTypesKey": "foreignrow",
@@ -3548,7 +3552,8 @@
 		"Tag1": "valuestring",
 		"Tag2": "valuestring",
 		"Unknown0": "i32",
-		"IsEnabled": "i32"
+		"IsEnabled": "i32",
+		"Unknown1": "i32"
 	},
 	"LeagueCategory": {},
 	"LeagueFlag": {
@@ -4178,7 +4183,7 @@
 	"ModGenerationType": {},
 	"Mods": {
 		"Id": "string",
-		"Unknown0": "i32",
+		"HASH16": "i32",
 		"ModTypeKey": "foreignrow",
 		"Level": "i32",
 		"StatsKey1": "foreignrow",
@@ -4201,10 +4206,10 @@
 		"SpawnWeight_Values": "array|u32",
 		"TagsKeys": "array|foreignrow",
 		"GrantedEffectsPerLevelKeys": "array|foreignrow",
-		"Data1": "array|u32",
+		"Unknown0": "array|u32",
 		"MonsterMetadata": "string",
-		"Data3": "array|foreignrow",
-		"Data4": "array|foreignrow",
+		"MonsterKillAchievements": "array|foreignrow",
+		"ChestModType": "array|foreignrow",
 		"Stat5Min": "i32",
 		"Stat5Max": "i32",
 		"StatsKey5": "foreignrow",
@@ -4212,14 +4217,14 @@
 		"AchievementItemsKey": "array|foreignrow",
 		"GenerationWeight_TagsKeys": "array|foreignrow",
 		"GenerationWeight_Values": "array|i32",
-		"Data5": "array|foreignrow",
+		"ModifyMapsAchievements": "array|foreignrow",
 		"IsEssenceOnlyModifier": "bool",
 		"Stat6Min": "i32",
 		"Stat6Max": "i32",
 		"StatsKey6": "foreignrow",
 		"MaxLevel": "i32",
-		"Unknown1": "i8",
-		"Keys0": "array|foreignrow",
+		"Unknown1": "bool",
+		"CraftingItemClassRestrictions": "array|foreignrow",
 		"MonsterOnDeath": "string",
 		"Unknown2": "i32",
 		"Unknown3": "array|foreignrow",
@@ -4248,7 +4253,9 @@
 		"Unknown18": "i32",
 		"Unknown19": "i32",
 		"Unknown20": "i32",
-		"Unknown21": "foreignrow"
+		"BuffTemplate": "row",
+		"ArchnemesisMinionMod": "foreignrow",
+		"HASH32": "u32"
 	},
 	"ModSellPriceTypes": {
 		"Id": "string"
@@ -5021,7 +5028,8 @@
 		"IsExpansion": "bool",
 		"IsProxyPassive": "bool",
 		"SkillType": "i32", // enum { PASSIVE_TREE, ATLAS_TREE }
-		"Key0": "foreignrow"
+		"MasteryGroup": "foreignrow",
+		"Unknown1": "foreignrow"
 	},
 	"PassiveSkillStatCategories": {
 		"Id": "string",
@@ -5055,7 +5063,10 @@
 		"Flag22": "i8",
 		"Flag23": "i8",
 		"Flag24": "i8",
-		"Flag25": "i8"
+		"Flag25": "i8",
+		"Flag26": "i8",
+		"Unknown0": "foreignrow",
+		"Unknown1": "foreignrow"
 	},
 	"PassiveSkillTreeTutorial": {
 		"Id": "string",
@@ -5142,7 +5153,8 @@
 		"Unknown0": "i32",
 		"Flag0": "bool",
 		"Flag1": "bool",
-		"Keys0": "array|foreignrow"
+		"Unknown1": "array|foreignrow",
+		"Unknown2": "foreignrow"
 	},
 	"PlayerConditions": {
 		"Id": "string",
@@ -6309,7 +6321,7 @@
 		"Unknown1": "i32",
 		"Hover_BMPFile": "string",
 		"Text": "string",
-		"IsEnabled": "bool",
+		"IsFreeToUse": "bool",
 		"Unknown2": "i32"
 	},
 	"Wordlists": {},

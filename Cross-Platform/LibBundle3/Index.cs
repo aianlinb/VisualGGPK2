@@ -82,8 +82,6 @@ namespace LibBundle3 {
 					var b = Bundles[f.BundleIndex];
 					f.BundleRecord = b;
 					b.Files.Add(f);
-					if (f.Offset >= b.ValidSize)
-						b.ValidSize = f.Offset + f.Size;
 				}
 
 				var directoryCount = *ptr++;
@@ -126,7 +124,7 @@ namespace LibBundle3 {
 								temp.Add(str);
 							else {
 								var f = Files[FNV1a64Hash(str)];
-								f.Path = str;
+								f._Path = str;
 								d.Children.Add(f);
 								f.DirectoryRecord = d;
 							}
@@ -305,16 +303,16 @@ namespace LibBundle3 {
 				list.Sort(BundleComparer.Instance);
 
 				var br = first.BundleRecord;
-				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+				var ms = new MemoryStream(br.Bundle.UncompressedSize);
+				ms.Write(br.Bundle.ReadData());
 				foreach (var fr in list) {
 					if (br != fr.BundleRecord) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 						ms.Close();
 						br.UncompressedSize = br.Bundle.UncompressedSize;
 						br = fr.BundleRecord;
-						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+						ms = new(br.Bundle.UncompressedSize);
+						ms.Write(br.Bundle.ReadData());
 					}
 					var b = File.ReadAllBytes(pathToLoad + fr.Path[trim..]);
 					ms.Write(b);
@@ -327,21 +325,20 @@ namespace LibBundle3 {
 			} else {
 				var maxSize = 200000000; //200MB
 				var br = GetSmallestBundle();
-				while (br.ValidSize >= maxSize)
+				while (br.Bundle.UncompressedSize >= maxSize)
 					maxSize *= 2;
-				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+				var ms = new MemoryStream(br.Bundle.UncompressedSize);
+				ms.Write(br.Bundle.ReadData());
 				foreach (var fr in list) {
 					if (ms.Length >= maxSize) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 						ms.Close();
 						br.UncompressedSize = br.Bundle.UncompressedSize;
-						br.ValidSize = br.UncompressedSize;
 						br = GetSmallestBundle();
-						while (br.ValidSize >= maxSize)
+						while (br.Bundle.UncompressedSize >= maxSize)
 							maxSize *= 2;
-						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+						ms = new(br.Bundle.UncompressedSize);
+						ms.Write(br.Bundle.ReadData());
 					}
 					var b = File.ReadAllBytes(pathToLoad + fr.Path);
 					fr.Redirect(br, (int)ms.Length, b.Length);
@@ -350,7 +347,6 @@ namespace LibBundle3 {
 				br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 				ms.Close();
 				br.UncompressedSize = br.Bundle.UncompressedSize;
-				br.ValidSize = br.UncompressedSize;
 			}
 			Save();
 		}
@@ -378,16 +374,16 @@ namespace LibBundle3 {
 				list.Sort(BundleComparer.Instance);
 
 				var br = first.BundleRecord;
-				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+				var ms = new MemoryStream(br.Bundle.UncompressedSize);
+				ms.Write(br.Bundle.ReadData());
 				foreach (var fr in list) {
 					if (br != fr.BundleRecord) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 						ms.Close();
 						br.UncompressedSize = br.Bundle.UncompressedSize;
 						br = fr.BundleRecord;
-						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+						ms = new(br.Bundle.UncompressedSize);
+						ms.Write(br.Bundle.ReadData());
 					}
 					var b = funcGetDataFromFilePath(fr.Path);
 					ms.Write(b);
@@ -400,21 +396,20 @@ namespace LibBundle3 {
 			} else {
 				var maxSize = 200000000; //200MB
 				var br = GetSmallestBundle();
-				while (br.ValidSize >= maxSize)
+				while (br.Bundle.UncompressedSize >= maxSize)
 					maxSize *= 2;
-				var ms = new MemoryStream(br.ValidSize);
-				ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+				var ms = new MemoryStream(br.Bundle.UncompressedSize);
+				ms.Write(br.Bundle.ReadData());
 				foreach (var fr in list) {
 					if (ms.Length >= maxSize) {
 						br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 						ms.Close();
 						br.UncompressedSize = br.Bundle.UncompressedSize;
-						br.ValidSize = br.UncompressedSize;
 						br = GetSmallestBundle();
-						while (br.ValidSize >= maxSize)
+						while (br.Bundle.UncompressedSize >= maxSize)
 							maxSize *= 2;
-						ms = new(br.ValidSize);
-						ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+						ms = new(br.Bundle.UncompressedSize);
+						ms.Write(br.Bundle.ReadData());
 					}
 					var b = funcGetDataFromFilePath(fr.Path);
 					fr.Redirect(br, (int)ms.Length, b.Length);
@@ -423,7 +418,6 @@ namespace LibBundle3 {
 				br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 				ms.Close();
 				br.UncompressedSize = br.Bundle.UncompressedSize;
-				br.ValidSize = br.UncompressedSize;
 			}
 			Save();
 		}
@@ -434,10 +428,10 @@ namespace LibBundle3 {
 		public virtual void Replace(IEnumerable<ZipArchiveEntry> zipEntries) {
 			var maxSize = 200000000; //200MB
 			var br = GetSmallestBundle();
-			while (br.ValidSize >= maxSize)
+			while (br.Bundle.UncompressedSize >= maxSize)
 				maxSize *= 2;
-			var ms = new MemoryStream(br.ValidSize);
-			ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+			var ms = new MemoryStream(br.Bundle.UncompressedSize);
+			ms.Write(br.Bundle.ReadData());
 			foreach (var zip in zipEntries) {
 				if (zip.FullName.EndsWith('/'))
 					continue;
@@ -447,12 +441,11 @@ namespace LibBundle3 {
 					br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 					ms.Close();
 					br.UncompressedSize = br.Bundle.UncompressedSize;
-					br.ValidSize = br.UncompressedSize;
 					br = GetSmallestBundle();
-					while (br.ValidSize >= maxSize)
+					while (br.Bundle.UncompressedSize >= maxSize)
 						maxSize *= 2;
-					ms = new MemoryStream(br.ValidSize);
-					ms.Write(br.Bundle.ReadData(0, br.ValidSize).Span);
+					ms = new MemoryStream(br.Bundle.UncompressedSize);
+					ms.Write(br.Bundle.ReadData());
 				}
 				var b = zip.Open();
 				f.Redirect(br, (int)ms.Length, (int)zip.Length);
@@ -461,17 +454,17 @@ namespace LibBundle3 {
 			br.Bundle.SaveData(new(ms.GetBuffer(), 0, (int)ms.Length));
 			ms.Close();
 			br.UncompressedSize = br.Bundle.UncompressedSize;
-			br.ValidSize = br.UncompressedSize;
 
 			Save();
 		}
 
 		/// <summary>
-		/// Get a FileRecord from its path (This won't cause the tree building)
+		/// Get a FileRecord from its path (This won't cause the tree building),
+		/// The separator of the <paramref name="path"/> must be forward slash '/'
 		/// </summary>
 		/// <returns>Null when not found</returns>
-		public virtual FileRecord? FindFile(string path) {
-			return Files.GetValueOrDefault(FNV1a64Hash(path.Replace('\\', '/')));
+		public virtual bool TryGetFile(string path, out FileRecord? file) {
+			return Files.TryGetValue(FNV1a64Hash(path), out file);
 		}
 
 		/// <param name="path">Relative path below <paramref name="parent"/></param>

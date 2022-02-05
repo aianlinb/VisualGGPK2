@@ -12,7 +12,6 @@ namespace LibBundle.Records
         public int UncompressedSize;
 
         public int bundleIndex;
-        public int validSize;
         public readonly List<FileRecord> Files = new();
         internal readonly Dictionary<FileRecord, byte[]> FileToAdd = new();
         protected BundleContainer _bundle;
@@ -65,7 +64,7 @@ namespace LibBundle.Records
                 d.Key.Offset = (int)data.Position + Bundle.uncompressed_size;
                 data.Write(d.Value, 0, d.Key.Size);
             }
-            UncompressedSize = validSize = (int)data.Length + Bundle.uncompressed_size;
+            UncompressedSize = (int)data.Length + Bundle.uncompressed_size;
             FileToAdd.Clear();
                 if (newPath != null)
                     File.WriteAllBytes(newPath, Bundle.AppendAndSave(data, originalPath));
@@ -96,7 +95,7 @@ namespace LibBundle.Records
             }
             else
             {
-                UncompressedSize = validSize =(int)data.Length + Bundle.uncompressed_size;
+                UncompressedSize =(int)data.Length + Bundle.uncompressed_size;
                 result = Bundle.AppendAndSave(data, br?.BaseStream ?? Bundle.Read());
             }
             FileToAdd.Clear();
@@ -108,13 +107,11 @@ namespace LibBundle.Records
             if (newPath == null && originalPath == null && Bundle.path == null)
                 throw new ArgumentNullException();
             var data = Bundle.Read(originalPath);
-            data.SetLength(validSize);
-            data.Position = validSize;
             foreach (var d in FileToAdd) {
                 d.Key.Offset = (int)data.Position;
                 data.Write(d.Value, 0, d.Key.Size);
             }
-            UncompressedSize = validSize = (int)data.Length;
+            UncompressedSize = (int)data.Length;
             FileToAdd.Clear();
             Bundle.Save(data, newPath ?? originalPath);
         }
@@ -122,13 +119,11 @@ namespace LibBundle.Records
         public virtual byte[] SaveWithRecompression(BinaryReader br, long? Offset = null) {
             Read(br, Offset);
             var data = Bundle.Read(br);
-            data.SetLength(validSize);
-            data.Position = validSize;
             foreach (var (f, b) in FileToAdd) {
                 f.Offset = (int)data.Position;
                 data.Write(b, 0, f.Size);
             }
-            UncompressedSize = validSize = (int)data.Length;
+            UncompressedSize = (int)data.Length;
             var result = Bundle.Save(data);
             FileToAdd.Clear();
             data.Close();

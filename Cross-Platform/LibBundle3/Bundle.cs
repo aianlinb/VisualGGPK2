@@ -75,14 +75,17 @@ namespace LibBundle3 {
 		/// </summary>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public virtual Memory<byte> ReadData(int offset, int length) {
+			var endOffset = offset + length;
 			if (offset < 0 || offset >= header.uncompressed_size)
 				throw new ArgumentOutOfRangeException(nameof(offset));
-			if (length < 0 || offset + length > header.uncompressed_size)
+			if (length < 0 || endOffset > header.uncompressed_size)
 				throw new ArgumentOutOfRangeException(nameof(length));
 
 			if (CachedData != null)
 				return new(CachedData, offset, length);
-			return new(ReadChunks(offset / header.chunk_size, (length - offset) / header.chunk_size + 1), offset % header.chunk_size, length);
+			var start = offset / header.chunk_size;
+			var end = (endOffset - 1) / header.chunk_size;
+			return new(ReadChunks(start, end - start + 1), offset % header.chunk_size, length);
 		}
 
 		/// <summary>
@@ -105,23 +108,22 @@ namespace LibBundle3 {
 			if (count == 0)
 				return Array.Empty<byte>();
 
-			var result = new byte[header.uncompressed_size];
+			var result = new byte[header.chunk_size * count];
 
 			var tmpp = new byte[header.chunk_size + 64];
 
 			ofs = 0;
 			fixed (byte* p = result, tmp = tmpp) {
-				count = start + count - 1;
+				count = start + count;
 				for (var i = start; i < count; ++i) {
 					for (var len = 0; len < compressed_chunk_sizes[i];)
 						len += baseStream.Read(new(tmp + len, compressed_chunk_sizes[i] - len));
-					var tmpofs = Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[i], p + ofs, header.chunk_size, 0);
+					if (i == compressed_chunk_sizes.Length - 1)
+						Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[i], p + ofs, header.GetLastChunkSize(), 0);
+					else
+						Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[i], p + ofs, header.chunk_size, 0);
 					ofs += header.chunk_size;
 				}
-				var lastChunkSize = header.GetLastChunkSize();
-				for (var len = 0; len < compressed_chunk_sizes[^1];)
-					len += baseStream.Read(new(tmp + len, compressed_chunk_sizes[^1] - len));
-				Oodle.OodleLZ_Decompress(tmp, compressed_chunk_sizes[^1], p + ofs, lastChunkSize, 0);
 			}
 
 			return result;

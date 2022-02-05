@@ -75,7 +75,7 @@ namespace VisualGGPK2
             if (SteamMode)
                 Title += " (SteamMode)";
             if (BundleMode)
-                Title += " (SteamMode)";
+                Title += " (BundleMode)";
             // Version Check
             try {
                 var http = new HttpClient {
@@ -415,7 +415,7 @@ namespace VisualGGPK2
                             bkg.Close();
                         });
                     } catch (Exception ex) {
-                        App.HandledException(ex);
+                        App.HandleException(ex);
                         Dispatcher.Invoke(bkg.Close);
                     }
                 });
@@ -439,7 +439,7 @@ namespace VisualGGPK2
                             bkg.Close();
                         });
                     } catch (Exception ex) {
-                        App.HandledException(ex);
+                        App.HandleException(ex);
                         Dispatcher.Invoke(bkg.Close);
                     }
             });
@@ -484,7 +484,7 @@ namespace VisualGGPK2
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
-                                App.HandledException(ex);
+                                App.HandleException(ex);
                                 Dispatcher.Invoke(bkg.Close);
                             }
                         });
@@ -524,7 +524,7 @@ namespace VisualGGPK2
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
-                                App.HandledException(ex);
+                                App.HandleException(ex);
                                 Dispatcher.Invoke(bkg.Close);
                             }
                         });
@@ -638,7 +638,7 @@ namespace VisualGGPK2
                         OnTreeSelectedChanged(null, null);
                     });
                 } catch (Exception ex) {
-                    App.HandledException(ex);
+                    App.HandleException(ex);
                     Dispatcher.Invoke(bkg.Close);
                 }
             });
@@ -679,7 +679,7 @@ namespace VisualGGPK2
                                 bkg.Close();
                             });
                         } catch (Exception ex) {
-                            App.HandledException(ex);
+                            App.HandleException(ex);
                             Dispatcher.Invoke(bkg.Close);
                         }
                     });

@@ -21,7 +21,7 @@
 		/// Get the full path in GGPK of this File/Directory
 		/// </summary>
 		public virtual string GetPath() {
-			return this is FileRecord ? Parent?.GetPath() ?? "" + Name : Parent?.GetPath() ?? "" + Name + "/";
+			return this is FileRecord ? (Parent?.GetPath() ?? "") + Name : (Parent?.GetPath() ?? "") + Name + "/";
 		}
 
 		/// <summary>

@@ -9,23 +9,21 @@ namespace VisualGGPK2
 {
     public partial class App : Application
     {
+#if !DEBUG
         protected override void OnStartup(StartupEventArgs e)
         {
             DispatcherUnhandledException += OnUnhandledException;
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            Thread.CurrentThread.CurrentCulture = Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
             base.OnStartup(e);
         }
 
         public static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
-            HandledException(e.Exception);
+            HandleException(e.Exception);
             e.Handled = true;
         }
-
-        public static void HandledException(Exception ex) {
+#endif
+        public static void HandleException(Exception ex) {
             Current.Dispatcher.Invoke(() => {
                 var ew = new ErrorWindow();
                 ew.ShowError(ex);

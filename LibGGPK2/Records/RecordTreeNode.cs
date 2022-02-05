@@ -25,7 +25,7 @@ namespace LibGGPK2.Records
         /// </summary>
         public virtual string GetPath()
         {
-            return this is IFileRecord ? Parent?.GetPath() ?? "" + Name : Parent?.GetPath() ?? "" + Name + "/";
+            return this is IFileRecord ? (Parent?.GetPath() ?? "") + Name : (Parent?.GetPath() ?? "") + Name + "/";
         }
 
         /// <param name="name">Name of record</param>

@@ -12,7 +12,7 @@
         public virtual void NextProgress()
         {
             progress++;
-            Dispatcher.BeginInvoke((System.Action)(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); }));
+            Dispatcher.BeginInvoke(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); });
         }
 
         protected virtual void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)

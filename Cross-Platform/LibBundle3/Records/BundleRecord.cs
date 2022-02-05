@@ -6,7 +6,6 @@ namespace LibBundle3.Records {
 		public int UncompressedSize;
 
 		public int BundleIndex;
-		public int ValidSize;
 		public readonly List<FileRecord> Files = new();
 		public Index Index;
 

@@ -43,7 +43,6 @@ namespace LibBundle
                 var b = Bundles[f.BundleIndex];
                 f.bundleRecord = b;
                 b.Files.Add(f);
-                if (f.Offset >= b.validSize) b.validSize = f.Offset + f.Size;
             }
 
             var directoryCount = databr.ReadInt32();
@@ -84,10 +83,12 @@ namespace LibBundle
                         else
                         {
                             Paths.Add(str);
-                            var f = FindFiles[FNV1a64Hash(str)];
-                            f.path = str;
-                            d.children.Add(f);
-                            f.parent = d;
+                            try {
+                                var f = FindFiles[FNV1a64Hash(str)];
+                                f.path = str;
+                                d.children.Add(f);
+                                f.parent = d;
+                            } catch { }
                         }
                     }
                 }

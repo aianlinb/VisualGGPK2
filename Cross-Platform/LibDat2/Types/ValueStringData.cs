@@ -40,7 +40,10 @@ namespace LibDat2.Types {
 						var p = (byte*)c;
 						writer.BaseStream.Write(new ReadOnlySpan<byte>(p, Value.Length * 2));
 					}
-			writer.Write(0); // \0 at the end of string
+			if (Dat.Name == "Languages")
+				writer.Write((short)0);
+			else
+				writer.Write(0); // \0 at the end of string
 		}
 
 		/// <inheritdoc/>
