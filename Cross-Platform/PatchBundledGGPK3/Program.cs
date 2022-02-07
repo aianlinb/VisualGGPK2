@@ -6,7 +6,9 @@ using System.IO.Compression;
 namespace PatchBundledGGPK3 {
 	public class Program {
 		public static void Main(string[] args) {
+			Console.TreatControlCAsInput = true;
 			Console.WriteLine("PatchBundledGGPK3  Copyright (C) 2021-2022 aianlinb."); // ©
+			Console.WriteLine();
 			if (args.Length == 0) {
 				args = new string[2];
 				Console.Write("Path To GGPK: ");

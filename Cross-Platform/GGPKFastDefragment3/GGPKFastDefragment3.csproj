@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
+	<Nullable>enable</Nullable>
 	<Authors>aianlinb</Authors>
 	<Copyright>Copyright © 2022 aianlinb.</Copyright>
 	<Version>1.0.0</Version>
@@ -11,8 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LibBundledGGPK3\LibBundledGGPK3.csproj" />
-    <ProjectReference Include="..\LibDat2\LibDat2.csproj" />
+    <ProjectReference Include="..\LibGGPK3\LibGGPK3.csproj" />
   </ItemGroup>
 
 </Project>

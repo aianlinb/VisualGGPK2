@@ -32,6 +32,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PatchBundledGGPK3", "Cross-
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PoeChinese3", "Cross-Platform\PoeChinese3\PoeChinese3.csproj", "{470BA9D3-2295-4ECD-AF26-8FE1C3A34154}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GGPKFastDefragment3", "Cross-Platform\GGPKFastDefragment3\GGPKFastDefragment3.csproj", "{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{470BA9D3-2295-4ECD-AF26-8FE1C3A34154}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{470BA9D3-2295-4ECD-AF26-8FE1C3A34154}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{470BA9D3-2295-4ECD-AF26-8FE1C3A34154}.Release|Any CPU.Build.0 = Release|Any CPU
+		{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,6 +101,7 @@ Global
 		{2BE25C80-F4F0-4727-BB55-9821346AC55F} = {631AF57E-0704-463E-A1D1-4F4DF9C5E68D}
 		{56A8F315-4902-4259-A5BE-0273202B9F19} = {631AF57E-0704-463E-A1D1-4F4DF9C5E68D}
 		{470BA9D3-2295-4ECD-AF26-8FE1C3A34154} = {631AF57E-0704-463E-A1D1-4F4DF9C5E68D}
+		{309DEBF1-C6CE-4089-8018-AD3B7E0C0EFD} = {631AF57E-0704-463E-A1D1-4F4DF9C5E68D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9E80D96F-454B-4D0C-8457-FB9480A251F2}

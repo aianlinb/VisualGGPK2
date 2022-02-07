@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LibDat2.Types;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -9,7 +10,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
-using LibDat2.Types;
 
 namespace LibDat2 {
 	public class DatContainer {

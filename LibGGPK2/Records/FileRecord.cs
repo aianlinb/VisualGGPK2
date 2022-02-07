@@ -1,7 +1,7 @@
-﻿using System.IO;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
-using System.Collections.Generic;
+using System.Text;
 using static LibGGPK2.Records.IFileRecord;
 
 namespace LibGGPK2.Records

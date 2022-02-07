@@ -33,32 +33,32 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
- * ***** END LICENSE BLOCK ***** */
+ * ***** END LICENSE BLOCK ***** 
+ 
+ Below code was modified by aianlinb  2022/2/6
+ */
 using System;
 
-internal static class MurmurHash2Unsafe
-{
+internal static unsafe class MurmurHash2Unsafe {
 	const UInt32 m = 0x5bd1e995;
 	const Int32 r = 24;
 
-	public static UInt32 Hash(String name, UInt32 seed = 0xc58f1a7b)
-	{
-		return Hash(System.Text.Encoding.Unicode.GetBytes(name), seed);
+	public static UInt32 Hash(String name, UInt32 seed = 0xc58f1a7b) {
+		fixed (char* p = name)
+			return Hash(new ReadOnlySpan<Byte>(p, name.Length * 2), seed);
 	}
 
-	public static unsafe UInt32 Hash(Byte[] data, UInt32 seed = 0xc58f1a7b)
-	{
+	public static UInt32 Hash(ReadOnlySpan<Byte> data, UInt32 seed = 0xc58f1a7b) {
 		Int32 length = data.Length;
 		if (length == 0)
 			return 0;
+
 		UInt32 h = seed ^ (UInt32)length;
 		Int32 remainingBytes = length & 3; // mod 4
 		Int32 numberOfLoops = length >> 2; // div 4
-		fixed (byte* firstByte = &(data[0]))
-		{
+		fixed (byte* firstByte = data) {
 			UInt32* realData = (UInt32*)firstByte;
-			while (numberOfLoops != 0)
-			{
+			while (numberOfLoops != 0) {
 				UInt32 k = *realData;
 				k *= m;
 				k ^= k >> r;
@@ -66,14 +66,13 @@ internal static class MurmurHash2Unsafe
 
 				h *= m;
 				h ^= k;
-				numberOfLoops--;
-				realData++;
+				--numberOfLoops;
+				++realData;
 			}
-			switch (remainingBytes)
-			{
+			switch (remainingBytes) {
 				case 3:
 					h ^= (UInt16)(*realData);
-					h ^= ((UInt32)(*(((Byte*)(realData)) + 2))) << 16;
+					h ^= ((UInt32)(*(((Byte*)realData) + 2))) << 16;
 					h *= m;
 					break;
 				case 2:
@@ -81,7 +80,7 @@ internal static class MurmurHash2Unsafe
 					h *= m;
 					break;
 				case 1:
-					h ^= *((Byte*)realData);
+					h ^= *(Byte*)realData;
 					h *= m;
 					break;
 				default:
@@ -91,11 +90,9 @@ internal static class MurmurHash2Unsafe
 
 		// Do a few final mixes of the hash to ensure the last few
 		// bytes are well-incorporated.
-
 		h ^= h >> 13;
 		h *= m;
 		h ^= h >> 15;
-
 		return h;
 	}
 }

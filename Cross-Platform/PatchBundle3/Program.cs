@@ -5,7 +5,9 @@ using System.IO.Compression;
 namespace PatchBundle3 {
 	public class Program {
 		public static void Main(string[] args) {
+			Console.TreatControlCAsInput = true;
 			Console.WriteLine("PatchBundle3  Copyright (C) 2022 aianlinb."); // ©
+			Console.WriteLine();
 			if (args.Length == 0) {
 				args = new string[2];
 				Console.Write("Path To _.index.bin: ");

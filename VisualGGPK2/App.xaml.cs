@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;

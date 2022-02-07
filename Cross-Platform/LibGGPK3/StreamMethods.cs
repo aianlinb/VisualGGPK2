@@ -23,7 +23,19 @@ namespace LibGGPK3 {
 				return *(long*)p;
 		}
 
+		public static unsafe void Write(this Stream stream, byte value) {
+			stream.WriteByte(value);
+		}
+
+		public static unsafe void Write(this Stream stream, sbyte value) {
+			stream.Write(new(&value, 1));
+		}
+
 		public static unsafe void Write(this Stream stream, short value) {
+			stream.Write(new(&value, 2));
+		}
+
+		public static unsafe void Write(this Stream stream, ushort value) {
 			stream.Write(new(&value, 2));
 		}
 
@@ -31,7 +43,15 @@ namespace LibGGPK3 {
 			stream.Write(new(&value, 4));
 		}
 
+		public static unsafe void Write(this Stream stream, uint value) {
+			stream.Write(new(&value, 4));
+		}
+
 		public static unsafe void Write(this Stream stream, long value) {
+			stream.Write(new(&value, 8));
+		}
+
+		public static unsafe void Write(this Stream stream, ulong value) {
 			stream.Write(new(&value, 8));
 		}
 	}

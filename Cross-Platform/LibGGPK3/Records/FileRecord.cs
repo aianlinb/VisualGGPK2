@@ -1,15 +1,13 @@
-﻿using System.IO;
-using System.Text;
+﻿using System;
+using System.IO;
 using System.Security.Cryptography;
-using System.Collections.Generic;
-using System;
 
 namespace LibGGPK3.Records {
 	/// <summary>
 	/// Record contains the data of a file.
 	/// </summary>
 	public class FileRecord : TreeNode {
-		public static readonly byte[] Tag = Encoding.ASCII.GetBytes("FILE");
+		public static readonly byte[] Tag = new byte[] { (byte)'F', (byte)'I', (byte)'L', (byte)'E' };
 		public static readonly SHA256 Hash256 = SHA256.Create();
 
 		/// <summary>
@@ -21,31 +19,45 @@ namespace LibGGPK3.Records {
 		/// </summary>
 		public int DataLength;
 
-		public FileRecord(int length, GGPK ggpk) : base(length, ggpk) {
+		protected unsafe internal FileRecord(int length, GGPK ggpk) : base(length, ggpk) {
 			var s = ggpk.FileStream;
 			Offset = s.Position - 8;
 			var nameLength = s.ReadInt32();
-			Hash = new byte[32];
 			s.Read(Hash, 0, 32);
-			var name = new byte[2 * (nameLength - 1)];
-			s.Read(name, 0, name.Length);
-			Name = Encoding.Unicode.GetString(name);
+
+			var name = new char[nameLength - 1];
+			fixed (char* p = name)
+				s.Read(new(p, name.Length * 2));
+
+			Name = new(name);
 			s.Seek(2, SeekOrigin.Current); // Null terminator
+
 			DataOffset = s.Position;
-			DataLength = Length - (nameLength * 2 + 44); // Length - (8 + nameLength * 2 + 32 + 4)
+			DataLength = Length - (int)(s.Position - Offset);
 			s.Seek(DataLength, SeekOrigin.Current);
 		}
 
-		protected internal override void Write(Stream? writeTo = null) {
-			writeTo ??= Ggpk.FileStream;
-			Offset = writeTo.Position;
-			writeTo.Write(Length);
-			writeTo.Write(Tag);
-			writeTo.Write(Name.Length + 1);
-			writeTo.Write(Hash);
-			writeTo.Write(Encoding.Unicode.GetBytes(Name));
-			writeTo.Write((short)0); // Null terminator
-			DataOffset = writeTo.Position;
+		protected internal FileRecord(string name, GGPK ggpk) : base(default, ggpk) {
+			Name = name;
+			Length = CaculateLength();
+		}
+
+		public override int CaculateLength() {
+			return Name.Length * 2 + 46 + DataLength; // (4 + 4 + 4 + Hash.Length + (Name + "\0").Length * 2) + DataLength
+		}
+
+		protected internal unsafe override void WriteRecordData() {
+			var s = Ggpk.FileStream;
+			Offset = s.Position;
+			s.Write(Length);
+			s.Write(Tag);
+			s.Write(Name.Length + 1);
+			s.Write(Hash);
+			fixed (char* p = Name)
+				s.Write(new(p, Name.Length * 2));
+
+			s.Write((short)0); // Null terminator
+			DataOffset = s.Position;
 			// Actual file content writing of FileRecord isn't here
 		}
 
@@ -53,12 +65,14 @@ namespace LibGGPK3.Records {
 		/// Get the file content of this record
 		/// </summary>
 		/// <param name="ggpkStream">Stream of GGPK file</param>
-		public virtual byte[] ReadFileContent(Stream? ggpkStream = null) {
+		public virtual byte[] ReadFileContent() {
 			var buffer = new byte[DataLength];
-			ggpkStream ??= Ggpk.FileStream;
-			ggpkStream.Seek(DataOffset, SeekOrigin.Begin);
+			var s = Ggpk.FileStream;
+			s.Flush();
+			s.Seek(DataOffset, SeekOrigin.Begin);
 			for (var l = 0; l < DataLength;)
-				l += ggpkStream.Read(buffer, l, DataLength - l);
+				l += s.Read(buffer, l, DataLength - l);
+
 			return buffer;
 		}
 
@@ -72,193 +86,14 @@ namespace LibGGPK3.Records {
 			if (!Hash256.TryComputeHash(NewContent, Hash, out _))
 				throw new("Unable to compute hash of the content");
 
-			if (NewContent.Length == DataLength) { // Replace in situ
-				s.Seek(DataOffset, SeekOrigin.Begin);
-				s.Write(NewContent);
-			} else { // Replace a FreeRecord
-				var oldOffset = Offset;
-				MarkAsFreeRecord();
+			if (NewContent.Length != DataLength) { // Replace a FreeRecord
 				DataLength = NewContent.Length;
-				Length = 44 + (Name.Length + 1) * 2 + DataLength; // (8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
-
-				LinkedListNode<FreeRecord>? bestNode = null; // Find the FreeRecord with most suitable size
-				var currentNode = Ggpk.FreeRecords.First!;
-				var space = int.MaxValue;
-				do {
-					if (currentNode.Value.Length == Length) {
-						bestNode = currentNode;
-						space = 0;
-						break;
-					}
-					var tmpSpace = currentNode.Value.Length - Length;
-					if (tmpSpace < space && tmpSpace >= 16) {
-						bestNode = currentNode;
-						space = tmpSpace;
-					}
-				} while ((currentNode = currentNode.Next) != null);
-
-				if (bestNode == null) {
-					s.Seek(0, SeekOrigin.End); // Write to the end of GGPK
-					Write();
-					s.Write(NewContent);
-				} else {
-					FreeRecord free = bestNode.Value;
-					s.Seek(free.Offset + free.Length - Length, SeekOrigin.Begin); // Write to the FreeRecord
-					Write();
-					s.Write(NewContent);
-					free.Length = space;
-					if (space >= 16) { // Update offset of FreeRecord
-						s.Seek(free.Offset, SeekOrigin.Begin);
-						s.Write(free.Length);
-					} else // Remove the FreeRecord
-						free.Remove(bestNode);
-				}
-
-				UpdateOffset(oldOffset); // Update the offset of FileRecord in Parent.Entries/>
+				MoveWithNewLength(CaculateLength());
+				// Offset and DataOffset will be set from Write() in above method
 			}
+			s.Seek(DataOffset, SeekOrigin.Begin);
+			s.Write(NewContent);
 			s.Flush();
-		}
-
-		/// <summary>
-		/// Set the record to a FreeRecord
-		/// </summary>
-		public virtual void MarkAsFreeRecord() {
-			var s = Ggpk.FileStream;
-			s.Seek(Offset, SeekOrigin.Begin);
-			var free = new FreeRecord(Length, Ggpk, 0, Offset);
-			free.Write();
-			var lastFree = Ggpk.FreeRecords.Last?.Value;
-			if (lastFree == null) // No FreeRecord
-			{
-				Ggpk.GgpkRecord.FirstFreeRecordOffset = Offset;
-				s.Seek(Ggpk.GgpkRecord.Offset + 20, SeekOrigin.Begin);
-				s.Write(Offset);
-			} else {
-				lastFree.NextFreeOffset = Offset;
-				s.Seek(lastFree.Offset + 8, SeekOrigin.Begin);
-				s.Write(Offset);
-			}
-			Ggpk.FreeRecords.AddLast(free);
-		}
-
-		/// <summary>
-		/// Update the offset of the record in <see cref="DirectoryRecord.Entries"/>
-		/// </summary>
-		/// <param name="OldOffset">The original offset to be update</param>
-		public virtual void UpdateOffset(long OldOffset) {
-			var Parent = (DirectoryRecord)this.Parent!;
-			for (int i = 0; i < Parent.Entries.Length; i++) {
-				if (Parent.Entries[i].Offset == OldOffset) {
-					Parent.Entries[i].Offset = Offset;
-					Ggpk.FileStream.Seek(Parent.EntriesBegin + i * 12 + 4, SeekOrigin.Begin);
-					Ggpk.FileStream.Write(Offset);
-					return;
-				}
-			}
-			throw new(GetPath() + " update offset faild:" + OldOffset.ToString() + " => " + Offset.ToString());
-		}
-
-		public enum DataFormats {
-			Unknown,
-			Image,
-			Ascii,
-			Unicode,
-			OGG,
-			Dat,
-			TextureDds,
-			BK2,
-			BANK
-		}
-
-		protected DataFormats? _DataFormat;
-		/// <summary>
-		/// Content data format of this file
-		/// </summary>
-		public virtual DataFormats DataFormat {
-			get {
-				_DataFormat ??= GetDataFormat(Name);
-				return _DataFormat.Value;
-			}
-		}
-
-		public static DataFormats GetDataFormat(string name) {
-#pragma warning disable IDE0066 // 將 switch 陳述式轉換為運算式
-			switch (Path.GetExtension(name).ToLower()) {
-				case ".act":
-				case ".ais":
-				case ".amd": // Animated Meta Data
-				case ".ao": // Animated Object
-				case ".aoc": // Animated Object Controller
-				case ".arl":
-				case ".arm": // Rooms
-				case ".atlas":
-				case ".cht": // ChestData
-				case ".clt":
-				case ".dct": // Decals
-				case ".ddt": // Doodads
-				case ".dgr":
-				case ".dlp":
-				case ".ecf":
-				case ".edp":
-				case ".env": // Environment
-				case ".epk":
-				case ".et":
-				case ".ffx": // FFX Render
-				case ".fxgraph":
-				case ".gft":
-				case ".gt": // Ground Types
-				case ".idl":
-				case ".idt":
-				case ".json":
-				case ".mat": // Materials
-				case ".mtd":
-				case ".ot":
-				case ".otc":
-				case ".pet":
-				case ".red":
-				case ".rs": // Room Set
-				case ".sm": // Skin Mesh
-				case ".tgr":
-				case ".tgt":
-				case ".trl": // Trails Effect
-				case ".tsi":
-				case ".tst":
-				case ".txt":
-				case ".ui": // User Interface
-				case ".xml":
-					return DataFormats.Unicode;
-				case ".csv":
-				case ".filter": // Item/loot Filter
-				case ".fx": // Shader
-				case ".hlsl": // Shader
-				case ".mel": // Maya Embedded Language
-				case ".properties":
-				case ".slt":
-					return DataFormats.Ascii;
-				case ".dat":
-				case ".dat64":
-				case ".datl":
-				case ".datl64":
-					return DataFormats.Dat;
-				case ".dds":
-				case ".header":
-					return DataFormats.TextureDds;
-				case ".jpg":
-				case ".png":
-				case ".bmp":
-					return DataFormats.Image;
-				case ".ogg":
-					return DataFormats.OGG;
-				case ".bk2":
-					return DataFormats.BK2;
-				case ".bank":
-					return DataFormats.BANK;
-				case ".fmt":
-				case ".mtp":
-				case ".smd": // Skin Mesh Data
-				default:
-					return DataFormats.Unknown;
-			}
 		}
 	}
 }

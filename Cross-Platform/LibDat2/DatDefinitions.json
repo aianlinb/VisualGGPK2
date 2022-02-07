@@ -1427,12 +1427,12 @@
 		//"AchievementItemsKeys": "array|foreignrow", // removed 3.16
 		"Unknown3": "i32",
 		"Unknown4": "i32",
-		"Unknown5": "bool",
-		"Unknown6": "foreignrow",
+		"Unknown5": "foreignrow",
 		"AddEnchantment": "foreignrow",
 		"SortCategory": "foreignrow",
-		"Unknown9": "foreignrow",
-		"Unknown10": "bool"
+		"Unknown6": "foreignrow",
+		"Unknown7": "bool",
+		"Unknown8": "i32"
 	},
 	"CraftingBenchSortCategories": {
 		"Id": "string",
@@ -1798,7 +1798,8 @@
 	},
 	"DivinationCardStashTabLayout": {
 		"BaseItemTypesKey": "foreignrow",
-		"IsEnabled": "bool"
+		"IsEnabled": "bool",
+		"Unknown0": "bool"
 	},
 	"Doors": {
 		"Id": "string",
@@ -3169,7 +3170,7 @@
 		"Tier": "i32",
 		"MinLevel": "i32",
 		"RoomUpgrade_IncursionRoomsKey": "row",
-		"ModsKey": "array|foreignrow",
+		"ModsKeys": "array|foreignrow",
 		"PresentARMFile": "string",
 		"IntId": "i32",
 		"IncursionArchitectKey": "foreignrow",

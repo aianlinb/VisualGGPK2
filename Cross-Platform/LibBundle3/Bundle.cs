@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace LibBundle3 {
@@ -38,6 +39,7 @@ namespace LibBundle3 {
 
 		public Bundle(string filePath) : this(File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)) { }
 
+		[SkipLocalsInit]
 		public Bundle(Stream stream, bool leaveOpen = false) {
 			baseStream = stream ?? throw new ArgumentNullException(nameof(stream));
 			streamLeaveOpen = leaveOpen;

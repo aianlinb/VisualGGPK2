@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using static LibDat2.Types.IFieldData;
 
 namespace LibDat2.Types {

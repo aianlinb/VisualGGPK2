@@ -1,4 +1,8 @@
-# LibGGPK2
+# Notice
+All projects in this repository are not thread-safe,
+do not use these libraries with more than one thread!
+
+## LibGGPK2
 Library for Content.ggpk of game PathOfExile.
 
 Rewrite of https://github.com/aianlinb/libggpk

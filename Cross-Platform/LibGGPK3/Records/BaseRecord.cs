@@ -1,8 +1,6 @@
-﻿using System.IO;
-
-namespace LibGGPK3.Records {
+﻿namespace LibGGPK3.Records {
 	/// <summary>
-	/// BaseType of all records
+	/// Base type of all records in GGPK
 	/// </summary>
 	public abstract class BaseRecord {
 		/// <summary>
@@ -26,8 +24,8 @@ namespace LibGGPK3.Records {
 		}
 
 		/// <summary>
-		/// Write the record data to GGPK
+		/// Write the record data to the current position of GGPK stream, this method must set <see cref="Offset"/> to where the record begins
 		/// </summary>
-		protected internal abstract void Write(Stream? writeTo = null);
+		protected internal abstract void WriteRecordData();
 	}
 }
