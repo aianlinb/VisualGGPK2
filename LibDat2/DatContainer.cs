@@ -493,9 +493,15 @@ namespace LibDat2 {
 		/// This won't affect the existing DatContainers
 		/// </summary>
 		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
-			var bp = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
-			if (bp != null)
-				filePath = Path.GetFullPath(filePath, bp);
+			if (!Path.IsPathFullyQualified(filePath)) {
+				var path = Assembly.GetExecutingAssembly().Location;
+				if (string.IsNullOrEmpty(path))
+					path = Environment.ProcessPath;
+				path = Path.GetDirectoryName(path);
+				if (string.IsNullOrEmpty(path))
+					path = Environment.CurrentDirectory;
+				filePath = Path.GetFullPath(filePath, path);
+			}
 			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
 			try {
 				DatDefinitions = new();

@@ -1,3 +1,2 @@
-These projects are still under development
-
-They are expected to work on Windows, Linux and MacOS
+# LibGGPK3
+Moved to https://github.com/aianlinb/LibGGPK3

@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Cross-Platform\LibDat2\LibDat2.csproj" />
+    <ProjectReference Include="..\LibDat2\LibDat2.csproj" />
     <ProjectReference Include="..\LibGGPK2\LibGGPK2.csproj" />
   </ItemGroup>
 
