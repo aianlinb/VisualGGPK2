@@ -658,7 +658,7 @@ namespace VisualGGPK2
         private void OnSavePngClicked(object sender, RoutedEventArgs e) {
             var o = (Tree.SelectedItem as TreeViewItem)?.Tag;
             if (o is RecordTreeNode rtn && rtn is not IFileRecord) {
-                var sfd = new SaveFileDialog { FileName = rtn.Name + ".dir", Filter= "*.png|*.png" };
+                var sfd = new SaveFileDialog { FileName = rtn.Name + ".dir", Filter= "*.*|*.*" };
                 if (sfd.ShowDialog() == true) {
                     var bkg = new BackgroundDialog();
                     Task.Run(() => {
