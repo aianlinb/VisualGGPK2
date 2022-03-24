@@ -149,7 +149,7 @@ namespace LibDat2 {
 					throw new KeyNotFoundException(Name + " was not defined in " + def);
 				FieldDefinitions = new(kvps);
 			} else {
-				def = "DatDefinitions";
+				def = "DatDefinitions.json";
 				if (!DatDefinitions.TryGetValue(Name, out var kvps))
 					throw new KeyNotFoundException(Name + " was not defined in " + def);
 				FieldDefinitions = new(kvps);
@@ -268,7 +268,7 @@ namespace LibDat2 {
 		/// <param name="fieldDatas">Contents of a dat file</param>
 		/// <param name="fileName">Name of the dat file</param>
 		/// <param name="SchemaMin">Whether to use schema.min.json</param>
-		public DatContainer(string fileName, List<IFieldData?[]?>? fieldDatas = null, bool SchemaMin = false) {
+		public DatContainer(string fileName, List<IFieldData?[]?>? fieldDatas, bool SchemaMin = false) {
 			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
@@ -301,7 +301,7 @@ namespace LibDat2 {
 				FieldDefinitions = new(kvps);
 			} else {
 				if (!DatDefinitions.TryGetValue(Name, out var kvps))
-					throw new KeyNotFoundException(Name + " was not defined in DatDefinitions");
+					throw new KeyNotFoundException(Name + " was not defined in DatDefinitions.json");
 				FieldDefinitions = new(kvps);
 			}
 
@@ -489,27 +489,28 @@ namespace LibDat2 {
 		}
 
 		/// <summary>
-		/// Reload DatDefinitions from a file
-		/// This won't affect the existing DatContainers
+		/// Reload DatDefinitions from DatDefinitions.json
+		/// This won't affect the existing instances of <see cref="DatContainer"/>
 		/// </summary>
-		public static void ReloadDefinitions(string filePath = "DatDefinitions.json") {
-			if (!Path.IsPathFullyQualified(filePath)) {
-				var path = Assembly.GetExecutingAssembly().Location;
-				if (string.IsNullOrEmpty(path))
-					path = Environment.ProcessPath;
-				path = Path.GetDirectoryName(path);
-				if (string.IsNullOrEmpty(path))
-					path = Environment.CurrentDirectory;
-				filePath = Path.GetFullPath(filePath, path);
-			}
-			var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
-			try {
-				DatDefinitions = new();
-				foreach (var dat in json.RootElement.EnumerateObject())
-					DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString()!)).ToArray());
-			} finally {
-				json.Dispose();
-			}
+		public static void ReloadDefinitions() {
+			var path = Assembly.GetExecutingAssembly().Location;
+			if (string.IsNullOrEmpty(path))
+				path = Environment.ProcessPath;
+			path = Path.GetDirectoryName(path);
+			if (string.IsNullOrEmpty(path))
+				path = Environment.CurrentDirectory;
+			ReloadDefinitions(Path.GetFullPath("DatDefinitions.json", path));
+		}
+
+		/// <summary>
+		/// Reload DatDefinitions from a file
+		/// This won't affect the existing instances of <see cref="DatContainer"/>
+		/// </summary>
+		public static void ReloadDefinitions(string filePath) {
+			using var json = JsonDocument.Parse(File.ReadAllBytes(filePath), new() { CommentHandling = JsonCommentHandling.Skip });
+			DatDefinitions = new();
+			foreach (var dat in json.RootElement.EnumerateObject())
+				DatDefinitions.Add(dat.Name, dat.Value.EnumerateObject().Select(p => new KeyValuePair<string, string>(p.Name, p.Value.GetString()!)).ToArray());
 		}
 	}
 }

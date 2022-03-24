@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb.</Copyright>
-	<Version>0.13.4</Version>
+	<Version>0.13.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
 	<NoWin32Manifest>true</NoWin32Manifest>

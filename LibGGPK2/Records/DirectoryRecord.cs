@@ -4,7 +4,7 @@ using System.Text;
 
 namespace LibGGPK2.Records
 {
-    public class DirectoryRecord : RecordTreeNode
+	public class DirectoryRecord : RecordTreeNode
     {
         public struct DirectoryEntry
         {
@@ -76,8 +76,13 @@ namespace LibGGPK2.Records
             var totalEntries = br.ReadInt32();
 
             Hash = br.ReadBytes(32);
-            Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
-            br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
+            if (ggpkContainer.ggpkRecord.GGPKVersion == 4) {
+                Name = Encoding.UTF32.GetString(br.ReadBytes(4 * (nameLength - 1)));
+                br.BaseStream.Seek(4, SeekOrigin.Current); // Null terminator
+            } else {
+                Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
+                br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
+            }
 
             EntriesBegin = br.BaseStream.Position;
             Entries = new DirectoryEntry[totalEntries];
@@ -94,8 +99,13 @@ namespace LibGGPK2.Records
             bw.Write(Name.Length + 1);
             bw.Write(Entries.Length);
             bw.Write(Hash);
-            bw.Write(Encoding.Unicode.GetBytes(Name));
-            bw.Write((short)0); // Null terminator
+            if (ggpkContainer.ggpkRecord.GGPKVersion == 4) {
+                bw.Write(Encoding.UTF32.GetBytes(Name));
+                bw.Write(0); // Null terminator
+            } else {
+                bw.Write(Encoding.Unicode.GetBytes(Name));
+                bw.Write((short)0); // Null terminator
+            }
             foreach (var entry in Entries)
             {
                 bw.Write(entry.EntryNameHash);

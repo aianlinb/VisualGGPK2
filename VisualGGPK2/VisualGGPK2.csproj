@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb.</Copyright>
-    <Version>0.13.4</Version>
+    <Version>0.13.5</Version>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

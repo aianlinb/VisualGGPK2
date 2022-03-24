@@ -6,10 +6,10 @@ using static LibGGPK2.Records.IFileRecord;
 
 namespace LibGGPK2.Records
 {
-    /// <summary>
-    /// Record contains the data of a file.
-    /// </summary>
-    public class FileRecord : RecordTreeNode, IFileRecord
+	/// <summary>
+	/// Record contains the data of a file.
+	/// </summary>
+	public class FileRecord : RecordTreeNode, IFileRecord
     {
         public static readonly byte[] Tag = Encoding.ASCII.GetBytes("FILE");
         public static readonly SHA256 Hash256 = SHA256.Create();
@@ -41,8 +41,13 @@ namespace LibGGPK2.Records
             var br = ggpkContainer.Reader;
             var nameLength = br.ReadInt32();
             Hash = br.ReadBytes(32);
-            Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
-            br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
+            if (ggpkContainer.ggpkRecord.GGPKVersion == 4) {
+                Name = Encoding.UTF32.GetString(br.ReadBytes(4 * (nameLength - 1)));
+                br.BaseStream.Seek(4, SeekOrigin.Current); // Null terminator
+            } else {
+                Name = Encoding.Unicode.GetString(br.ReadBytes(2 * (nameLength - 1)));
+                br.BaseStream.Seek(2, SeekOrigin.Current); // Null terminator
+            }
             DataBegin = br.BaseStream.Position;
             DataLength = Length - (nameLength * 2 + 44); // Length - (8 + nameLength * 2 + 32 + 4)
             br.BaseStream.Seek(DataLength, SeekOrigin.Current);
@@ -56,8 +61,13 @@ namespace LibGGPK2.Records
             bw.Write(Tag);
             bw.Write(Name.Length + 1);
             bw.Write(Hash);
-            bw.Write(Encoding.Unicode.GetBytes(Name));
-            bw.Write((short)0); // Null terminator
+            if (ggpkContainer.ggpkRecord.GGPKVersion == 4) {
+                bw.Write(Encoding.UTF32.GetBytes(Name));
+                bw.Write(0); // Null terminator
+            } else {
+                bw.Write(Encoding.Unicode.GetBytes(Name));
+                bw.Write((short)0); // Null terminator
+            }
             DataBegin = bw.BaseStream.Position;
             // Actual file content writing of FileRecord isn't here
         }
