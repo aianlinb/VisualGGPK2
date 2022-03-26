@@ -34,11 +34,11 @@ namespace VisualGGPK2
         /// <summary>
         /// Icon of directory on TreeView
         /// </summary>
-        public static readonly BitmapFrame IconDir = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("dir", CultureInfo.InvariantCulture)));
+        public static readonly BitmapFrame IconDir = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("VisualGGPK2.Resources.dir.ico"));
         /// <summary>
         /// Icon of file on TreeView
         /// </summary>
-        public static readonly BitmapFrame IconFile = BitmapFrame.Create(new MemoryStream((byte[])Properties.Resources.ResourceManager.GetObject("file", CultureInfo.InvariantCulture)));
+        public static readonly BitmapFrame IconFile = BitmapFrame.Create(Assembly.GetExecutingAssembly().GetManifestResourceStream("VisualGGPK2.Resources.file.ico"));
         public static readonly ContextMenu TreeMenu = new();
         public static readonly Encoding Unicode = new UnicodeEncoding(false, true);
         public static readonly Encoding UTF8 = new UTF8Encoding(false, false);

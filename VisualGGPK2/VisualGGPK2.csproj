@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb.</Copyright>
-    <Version>0.13.5</Version>
+    <Version>0.13.6</Version>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -13,6 +13,11 @@
 	<DebugType>embedded</DebugType>
 	<ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\dir.ico" />
+    <EmbeddedResource Include="Resources\file.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BrotliSharpLib" Version="0.3.3" />
