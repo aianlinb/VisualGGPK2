@@ -325,11 +325,12 @@ namespace VisualGGPK2
 		/// Get the PixelFormat of the dds image
 		/// </summary>
 		public static PixelFormat PixelFormat(Pfim.IImage image) => image.Format switch {
-            Pfim.ImageFormat.Rgb24 => PixelFormats.Bgr24,
             Pfim.ImageFormat.Rgba32 => PixelFormats.Bgra32,
-            Pfim.ImageFormat.Rgb8 => PixelFormats.Gray8,
-            Pfim.ImageFormat.R5g5b5a1 or Pfim.ImageFormat.R5g5b5 => PixelFormats.Bgr555,
+            Pfim.ImageFormat.Rgb24 => PixelFormats.Bgr24,
             Pfim.ImageFormat.R5g6b5 => PixelFormats.Bgr565,
+            Pfim.ImageFormat.R5g5b5a1 or Pfim.ImageFormat.R5g5b5 => PixelFormats.Bgr555,
+            Pfim.ImageFormat.Rgb8 => PixelFormats.Gray8,
+            Pfim.ImageFormat.Rgba16 => PixelFormats.Gray16,
             _ => throw new Exception($"Unable to convert {image.Format} to WPF PixelFormat"),
         };
 
