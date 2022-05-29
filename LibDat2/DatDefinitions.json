@@ -358,13 +358,13 @@
 	},
 	"ArchnemesisMods": {
 		"Mod": "foreignrow",
+		"Unknown0": "i32",
 		"Unknown1": "i32",
 		"Unknown2": "i32",
 		"Unknown3": "i32",
-		"Unknown4": "i32",
 		"Name": "string",
 		"Visual": "foreignrow",
-		"Unknown5": "i32",
+		"Unknown4": "i32",
 		"DisplayColors": "array|string"
 	},
 	"ArchnemesisModVisuals": {
@@ -435,7 +435,7 @@
 	"Ascendancy": {
 		"Id": "string",
 		"ClassNo": "i32",
-		"CharactersKeys": "array|foreignrow",
+		"Characters": "array|foreignrow",
 		"CoordinateRect": "string",
 		"RGBFlavourTextColour": "string",
 		"Name": "string",
@@ -633,7 +633,7 @@
 		"SoundEffectsKey": "foreignrow",
 		"TagsKeys": "array|foreignrow",
 		"ModDomainsKey": "i32",
-		"IsDropDisabled": "i32",
+		"SiteVisibility": "i32",
 		"ItemVisualIdentityKey": "foreignrow",
 		"HASH": "u32",
 		"VendorRecipe_AchievementItemsKeys": "array|foreignrow",
@@ -5848,11 +5848,11 @@
 		"Unknown1": "array|foreignrow",
 		"DDSFiles": "array|string",
 		"Unknown2": "i32",
-		"Unknown3": "array|i32",
-		"Unknown4": "i32",
-		"Unknown5": "array|f32",
-		"Unknown6": "bool",
-		"Unknown7": "bool"
+		"OverlayImages": "array|string",
+		"Unknown3": "i32",
+		"Unknown4": "array|f32",
+		"Unknown5": "bool",
+		"Unknown6": "bool"
 	},
 	"SkillMorphDisplayOverlayCondition": {},
 	"SkillMorphDisplayOverlayStyle": {},
