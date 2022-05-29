@@ -80,16 +80,13 @@ namespace LibBundle
                         if (index < temp.Count) str = temp[index] + str;
                         if (Base)
                             temp.Add(str);
-                        else
-                        {
+                        else {
                             Paths.Add(str);
-                            try {
-                                var f = FindFiles[FNV1a64Hash(str)];
-                                f.path = str;
-                                d.children.Add(f);
-                                f.parent = d;
-                            } catch { }
-                        }
+							var f = FindFiles[FNV1a64Hash(str)];
+							f.path = str;
+							d.children.Add(f);
+							f.parent = d;
+						}
                     }
                 }
             }

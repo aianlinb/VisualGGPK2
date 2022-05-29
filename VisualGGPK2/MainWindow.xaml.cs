@@ -30,6 +30,7 @@ namespace VisualGGPK2
 {
     public partial class MainWindow : Window
     {
+        public static string Version;
         public GGPKContainer ggpkContainer;
         /// <summary>
         /// Icon of directory on TreeView
@@ -72,6 +73,12 @@ namespace VisualGGPK2
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e) {
+            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version!;
+            if (currentVersion.Revision == 0)
+                Version = $" (v{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build})";
+            else
+                Version = $" (v{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}.{currentVersion.Revision})";
+            Title += Version;
             if (SteamMode)
                 Title += " (SteamMode)";
             if (BundleMode)
@@ -84,7 +91,6 @@ namespace VisualGGPK2
                 http.DefaultRequestHeaders.Add("User-Agent", "VisualGGPK2");
                 var json = await http.GetStringAsync("https://api.github.com/repos/aianlinb/LibGGPK2/releases");
                 var match = Regex.Match(json, "(?<=\"tag_name\":\"v).*?(?=\")");
-                var currentVersion = Assembly.GetEntryAssembly().GetName().Version;
                 var versionText = $"{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build}";
                 if (match.Success && match.Value != versionText && MessageBox.Show(this, $"Found a new update on GitHub!\n\nCurrent Version: {versionText}\nLatest Version: {match.Value}\n\nDownload now?", "VisualGGPK2", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes) {
                     Process.Start(new ProcessStartInfo("https://github.com/aianlinb/LibGGPK2/releases") { UseShellExecute = true });

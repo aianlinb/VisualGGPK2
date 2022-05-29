@@ -8,6 +8,7 @@ namespace VisualGGPK2
         public ErrorWindow()
         {
             InitializeComponent();
+            Title += MainWindow.Version;
         }
 
         public virtual void ShowError(Exception e)

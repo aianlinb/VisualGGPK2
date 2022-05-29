@@ -984,7 +984,7 @@
 		"Data2": "array|i32",
 		"Data3": "array|i32",
 		"Data4": "array|i32",
-		"Data5": "array|i32",
+		"Data5": "array|tuple|i32",
 		"Unknown0": "i32"
 	},
 	"BlightTowerAuras": {
@@ -1667,7 +1667,7 @@
 		"WorldAreasKey": "foreignrow",
 		"Image": "string",
 		"AchievementItemsKeys": "array|foreignrow",
-		"MinTier": "array|i32",
+		"MinTier": "array|tuple|i32",
 		"MinDepth": "array|i32",
 		"Description": "string",
 		"Unknown0": "i32",

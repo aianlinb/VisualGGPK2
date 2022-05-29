@@ -51,15 +51,18 @@ namespace VisualGGPK2 {
 				var index = e.Column.DisplayIndex - 1; // -1 For added Row column
 
 				try {
-					fd = fd is IArrayData ad
-						? IArrayData.FromString(newText, ad.TypeOfValue, dat)
-						: IFieldData.FromString(newText, ((FieldTypeAttribute)Attribute.GetCustomAttribute(fd.GetType(), typeof(FieldTypeAttribute))).Type, dat);
-					eo[(string)e.Column.Header] = dat.FieldDatas[row][index] = fd;
 					if (fd is IReferenceData rd) {
+						rd = rd switch {
+							StringData => StringData.FromString(newText, dat),
+							IArrayData => IArrayData.FromString(newText, ((IArrayData)rd).TypeOfValue, dat),
+							_ => throw new InvalidCastException("Unknown data: " + rd)
+						};
+						eo[(string)e.Column.Header] = dat.FieldDatas[row][index] = rd;
 						var oc = (ObservableCollection<IReferenceData>)DatReferenceDataTable.ItemsSource;
 						if (!oc.Contains(rd))
 							oc.Add(rd);
-					}
+					} else
+						eo[(string)e.Column.Header] = dat.FieldDatas[row][index] = fd.FromString(newText);
 				} catch (Exception ex) {
 					MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				}
