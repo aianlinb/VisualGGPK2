@@ -21,8 +21,8 @@ namespace LibDat2.Types {
 		public static int SizeOfType(string type, bool x64) {
 			if (type.StartsWith("array|"))
 				return x64 ? 16 : 8;
-			if (type.StartsWith("tuple|"))
-				return SizeOfType(type[6..], x64) * 2;
+			if (type.StartsWith("pair|"))
+				return SizeOfType(type[5..], x64) * 2;
 			return type switch {
 				"foreignrow"	=> x64 ? 16 : 8,
 				"row"			=> x64 ? 8 : 4,
@@ -50,8 +50,8 @@ namespace LibDat2.Types {
 		public static IFieldData Read(BinaryReader reader, string type, DatContainer dat) {
 			if (type.StartsWith("array|"))
 				return IArrayData.Read(reader, type[6..], dat);
-			if (type.StartsWith("tuple|"))
-				return ITupleData.Read(reader, type[6..], dat);
+			if (type.StartsWith("pair|"))
+				return IPairData.Read(reader, type[5..], dat);
 			IFieldData fd = type switch {
 				"bool"			=> new BooleanData(dat),
 				"i8"			=> new Int8Data(dat),
@@ -81,8 +81,8 @@ namespace LibDat2.Types {
 		public static IFieldData FromString(string value, string type, DatContainer dat) {
 			if (type.StartsWith("array|"))
 				return IArrayData.FromString(value, type[6..], dat);
-			if (type.StartsWith("tuple|"))
-				return ITupleData.FromString(value, type[6..], dat);
+			if (type.StartsWith("pair|"))
+				return IPairData.FromString(value, type[5..], dat);
 			IFieldData fd = type switch {
 				"bool"			=> new BooleanData(dat),
 				"i8"			=> new Int8Data(dat),

@@ -106,7 +106,7 @@ namespace LibGGPK2.Records
                 var oldOffset = Offset;
                 MarkAsFreeRecord();
                 DataLength = NewContent.Length;
-                Length = 44 + (Name.Length + 1) * 2 + DataLength; // (8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
+                Length = 44 + (Name.Length + 1) * (ggpkContainer.ggpkRecord.GGPKVersion == 4 ? 4 : 2) + DataLength; // (8 + (Name + "\0").Length * 2 + 32 + 4) + DataLength
 
                 LinkedListNode<FreeRecord> bestNode = null; // Find the FreeRecord with most suitable size
                 var currentNode = ggpkContainer.LinkedFreeRecords.First;

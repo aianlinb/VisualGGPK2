@@ -14,8 +14,8 @@ namespace LibDat2.Types {
 		public static new IArrayData Read(BinaryReader reader, string typeOfValue, DatContainer dat) {
 			if (typeOfValue.StartsWith("array|"))
 				return ArrayData<IArrayData>.Read(reader, dat, typeOfValue);
-			if (typeOfValue.StartsWith("tuple|"))
-				return ArrayData<ITupleData>.Read(reader, dat, typeOfValue);
+			if (typeOfValue.StartsWith("pair|"))
+				return ArrayData<IPairData>.Read(reader, dat, typeOfValue);
 			return typeOfValue switch {
 				"bool"			=> ArrayData<bool>.Read(reader, dat, typeOfValue),
 				"i8"			=> ArrayData<sbyte>.Read(reader, dat, typeOfValue),
@@ -42,8 +42,8 @@ namespace LibDat2.Types {
 		public static new IArrayData FromString(string value, string typeOfValue, DatContainer dat) {
 			if (typeOfValue.StartsWith("array|"))
 				return ArrayData<IArrayData>.FromString(value, dat, typeOfValue);
-			if (typeOfValue.StartsWith("tuple|"))
-				return ArrayData<ITupleData>.FromString(value, dat, typeOfValue);
+			if (typeOfValue.StartsWith("pair|"))
+				return ArrayData<IPairData>.FromString(value, dat, typeOfValue);
 			return typeOfValue switch {
 				"bool"			=> ArrayData<bool>.FromString(value, dat, typeOfValue),
 				"i8"			=> ArrayData<sbyte>.FromString(value, dat, typeOfValue),

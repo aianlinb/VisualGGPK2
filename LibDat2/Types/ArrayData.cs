@@ -205,48 +205,59 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override ArrayData<TypeOfValueInArray> FromString(string value) {
-			if (Value != default)
-				Dat.ReferenceDataOffsets.Remove(ToString());
+			TypeOfValueInArray[] newValue;
+
 			if (!TypeOfValue.EndsWith("string"))
 				value = Regex.Replace(value.Trim(), @"\s", "");
 			if (!value.StartsWith('[') || !value.EndsWith(']'))
 				throw new InvalidCastException("\"" + value + "\" cannot be converted to an array");
 
 			if (value == "[]")
-				Value = Array.Empty<TypeOfValueInArray>();
+				newValue = Array.Empty<TypeOfValueInArray>();
 			else if (TypeOfValue == "foreignrow") {
 				value = value[1..^1]; // Trim '[' ']'
 				if (!value.StartsWith('<') || !value.EndsWith('>'))
-					throw new InvalidCastException("\"[" + value + "\"] cannot be converted to an array of ForeignRowData");
+					throw new InvalidCastException("\"[" + value + "]\" cannot be converted to an array of ForeignRowData");
 				var sarray = value[1..^1].Split(">,<"); // Trim '<' '>'
-				Value = new TypeOfValueInArray[sarray.Length];
+				newValue = new TypeOfValueInArray[sarray.Length];
 				for (var n = 0; n < sarray.Length; ++n) {
 					var d = new ForeignRowData(Dat).FromString("<" + sarray[n] + ">");
-					Value[n] = (TypeOfValueInArray)(object)d;
+					newValue[n] = (TypeOfValueInArray)(object)d;
 				}
-			} else if (TypeOfValue.StartsWith("tuple")) {
+			} else if (TypeOfValue.StartsWith("pair|")) {
 				value = value[1..^1]; // Trim '[' ']'
 				if (!value.StartsWith('(') || !value.EndsWith(')'))
-					throw new InvalidCastException("\"" + value + "\" cannot be converted to an array of TupleData");
+					throw new InvalidCastException("\"[" + value + "]\" cannot be converted to an array of PairData");
 				var sarray = value[1..^1].Split("),("); // Trim '(' ')'
-				Value = new TypeOfValueInArray[sarray.Length];
+				newValue = new TypeOfValueInArray[sarray.Length];
 				for (var n = 0; n < sarray.Length; ++n) {
-					var t = ITupleData.FromString("(" + sarray[n] + ")", TypeOfValue[6..], Dat);
-					Value[n] = (TypeOfValueInArray)(object)t;
+					var t = IPairData.FromString("(" + sarray[n] + ")", TypeOfValue[5..], Dat);
+					newValue[n] = (TypeOfValueInArray)(object)t;
 				}
 			} else if (TypeOfValue.StartsWith("array|")) {
-				throw new InvalidOperationException("Parsing array of array is not implemented");
+				value = value[1..^1]; // Trim '[' ']'
+				if (!value.StartsWith('[') || !value.EndsWith(']'))
+					throw new InvalidCastException("\"[" + value + "]\" cannot be converted to an array of PairData");
+				var sarray = value[1..^1].Split("],["); // Trim '[' ']'
+				newValue = new TypeOfValueInArray[sarray.Length];
+				for (var n = 0; n < sarray.Length; ++n) {
+					var t = IArrayData.FromString("[" + sarray[n] + "]", TypeOfValue[5..], Dat);
+					newValue[n] = (TypeOfValueInArray)(object)t;
+				}
 			} else {
 				var sarray = value[1..^1].Split(','); // Trim '[' ']'
-				Value = new TypeOfValueInArray[sarray.Length];
+				newValue = new TypeOfValueInArray[sarray.Length];
 				if (TypeOfValue.EndsWith("string"))
 					for (var n = 0; n < sarray.Length; ++n)
-						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat);
+						newValue[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat);
 				else
 					for (var n = 0; n < sarray.Length; ++n)
-						Value[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat).Value;
+						newValue[n] = (TypeOfValueInArray)IFieldData.FromString(sarray[n], TypeOfValue, Dat).Value;
 			}
 
+			if (Value != default)
+				Dat.ReferenceDataOffsets.Remove(ToString());
+			Value = newValue;
 			Length = CalculateLength();
 			if (Offset == default) {
 				Offset = Dat.CurrentOffset;

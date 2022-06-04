@@ -4,23 +4,23 @@ using System.Text.RegularExpressions;
 
 namespace LibDat2.Types {
 #pragma warning disable CS8612
-	public class TupleData<TypeOfValueInTuple> : FieldDataBase<(TypeOfValueInTuple, TypeOfValueInTuple)>, ITupleData where TypeOfValueInTuple : notnull {
+	public class PairData<TypeOfValueInPair> : FieldDataBase<(TypeOfValueInPair, TypeOfValueInPair)>, IPairData where TypeOfValueInPair : notnull {
 		/// <summary>
-		/// FieldType of value in tuple
+		/// FieldType of value in pair
 		/// </summary>
 		public string TypeOfValue { get; }
 
-		public TupleData(DatContainer dat, string typeOfValue) : base(dat) {
+		public PairData(DatContainer dat, string typeOfValue) : base(dat) {
 			TypeOfValue = typeOfValue;
 		}
 
 		/// <inheritdoc/>
-		public override TupleData<TypeOfValueInTuple> Read(BinaryReader reader) {
+		public override PairData<TypeOfValueInPair> Read(BinaryReader reader) {
 			object value;
 			if (TypeOfValue.StartsWith("array|"))
 				value = (IArrayData.Read(reader, TypeOfValue[6..], Dat), IArrayData.Read(reader, TypeOfValue[6..], Dat));
-			else if (TypeOfValue.StartsWith("tuple|"))
-				value = (ITupleData.Read(reader, TypeOfValue[6..], Dat), ITupleData.Read(reader, TypeOfValue[6..], Dat));
+			else if (TypeOfValue.StartsWith("pair|"))
+				value = (IPairData.Read(reader, TypeOfValue[5..], Dat), IPairData.Read(reader, TypeOfValue[5..], Dat));
 			else
 				value = TypeOfValue switch {
 				"bool"			=> (reader.ReadBoolean(), reader.ReadBoolean()),
@@ -40,7 +40,7 @@ namespace LibDat2.Types {
 				"valuestring"	=> (new ValueStringData(Dat).Read(reader), new ValueStringData(Dat).Read(reader)),
 				_ => throw new InvalidCastException("Unknown Type: " + Value)
 			};
-			Value = ((TypeOfValueInTuple, TypeOfValueInTuple))value;
+			Value = ((TypeOfValueInPair, TypeOfValueInPair))value;
 			return this;
 		}
 
@@ -99,42 +99,52 @@ namespace LibDat2.Types {
 		}
 
 		/// <inheritdoc/>
-		public override TupleData<TypeOfValueInTuple> FromString(string value) {
+		public override PairData<TypeOfValueInPair> FromString(string value) {
 			if (!TypeOfValue.EndsWith("string"))
 				value = Regex.Replace(value.Trim(), @"\s", "");
 			if (!value.StartsWith('(') || !value.EndsWith(')'))
-				throw new InvalidCastException("\"" + value + "\" cannot be converted to an tuple");
+				throw new InvalidCastException("\"" + value + "\" cannot be converted to an pair");
 
 			if (TypeOfValue == "foreignrow") {
 				value = value[1..^1]; // Trim '(' ')'
 				if (!value.StartsWith('<') || !value.EndsWith('>'))
-					throw new InvalidCastException("\"(" + value + "\") cannot be converted to an tuple of ForeignRowData");
+					throw new InvalidCastException("\"(" + value + ")\" cannot be converted to an pair of ForeignRowData");
 				var sarray = value[1..^1].Split(">,<"); // Trim '<' '>'
 				if (sarray.Length != 2)
-					throw new InvalidCastException("A tuple must have exactly 2 elements: \"(" + value + ")\"");
+					throw new InvalidCastException("A pair must have exactly 2 elements: \"(" + value + ")\"");
 				var a = new ForeignRowData(Dat).FromString("<" + sarray[0] + ">");
 				var b = new ForeignRowData(Dat).FromString("<" + sarray[1] + ">");
-				Value = ((TypeOfValueInTuple)(object)a, (TypeOfValueInTuple)(object)b);
-			} else if (TypeOfValue.StartsWith("tuple")) {
+				Value = ((TypeOfValueInPair)(object)a, (TypeOfValueInPair)(object)b);
+			} else if (TypeOfValue.StartsWith("pair|")) {
 				value = value[1..^1]; // Trim '(' ')'
 				if (!value.StartsWith('(') || !value.EndsWith(')'))
-					throw new InvalidCastException("\"(" + value + "\") cannot be converted to an tuple of tuple");
-				var sarray = value[1..^1].Split("),("); // Trim '<' '>'
+					throw new InvalidCastException("\"(" + value + ")\" cannot be converted to an pair of pair");
+				var sarray = value[1..^1].Split("),("); // Trim '(' ')'
 				if (sarray.Length != 2)
-					throw new InvalidCastException("A tuple must have exactly 2 elements: \"(" + value + ")\"");
-				var a = ITupleData.FromString("(" + sarray[0] + ")", TypeOfValue[6..], Dat);
-				var b = ITupleData.FromString("(" + sarray[1] + ")", TypeOfValue[6..], Dat);
-				Value = ((TypeOfValueInTuple)(object)a, (TypeOfValueInTuple)(object)b);
+					throw new InvalidCastException("A pair must have exactly 2 elements: \"(" + value + ")\"");
+				var type = TypeOfValue[5..];
+				var a = IPairData.FromString("(" + sarray[0] + ")", type, Dat);
+				var b = IPairData.FromString("(" + sarray[1] + ")", type, Dat);
+				Value = ((TypeOfValueInPair)(object)a, (TypeOfValueInPair)(object)b);
 			} else if (TypeOfValue.StartsWith("array|")) {
-				throw new InvalidOperationException("Parsing tuple of array is not implemented");
+				value = value[1..^1]; // Trim '(' ')'
+				if (!value.StartsWith('[') || !value.EndsWith(']'))
+					throw new InvalidCastException("\"(" + value + ")\" cannot be converted to an pair of pair");
+				var sarray = value[1..^1].Split("],["); // Trim '[' ']'
+				if (sarray.Length != 2)
+					throw new InvalidCastException("A pair must have exactly 2 elements: \"(" + value + ")\"");
+				var type = TypeOfValue[5..];
+				var a = IArrayData.FromString("[" + sarray[0] + "]", type, Dat);
+				var b = IArrayData.FromString("[" + sarray[1] + "]", type, Dat);
+				Value = ((TypeOfValueInPair)(object)a, (TypeOfValueInPair)(object)b);
 			} else {
 				var sarray = value[1..^1].Split(','); // Trim '(' ')'
 				if (sarray.Length != 2)
-					throw new InvalidCastException("A tuple must have exactly 2 elements: \"" + value + "\"");
+					throw new InvalidCastException("A pair must have exactly 2 elements: \"(" + value + ")\"");
 				if (TypeOfValue.EndsWith("string"))
-					Value = ((TypeOfValueInTuple)IFieldData.FromString(sarray[0], TypeOfValue, Dat), (TypeOfValueInTuple)IFieldData.FromString(sarray[1], TypeOfValue, Dat));
+					Value = ((TypeOfValueInPair)IFieldData.FromString(sarray[0], TypeOfValue, Dat), (TypeOfValueInPair)IFieldData.FromString(sarray[1], TypeOfValue, Dat));
 				else
-					Value = ((TypeOfValueInTuple)IFieldData.FromString(sarray[0], TypeOfValue, Dat).Value, (TypeOfValueInTuple)IFieldData.FromString(sarray[1], TypeOfValue, Dat).Value);
+					Value = ((TypeOfValueInPair)IFieldData.FromString(sarray[0], TypeOfValue, Dat).Value, (TypeOfValueInPair)IFieldData.FromString(sarray[1], TypeOfValue, Dat).Value);
 			}
 			return this;
 		}

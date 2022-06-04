@@ -4,10 +4,12 @@
 		Title="ErrorWindow" Width="560" Height="500" WindowStartupLocation="CenterScreen" Closing="OnClosing">
     <Grid>
         <TextBox x:Name="ErrorBox" Text="Loading Exception . . ." Padding="2" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" Margin="0,0,0,31" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
-		<TextBlock FontSize="14"
-				   HorizontalAlignment="Right"
+		<TextBlock HorizontalAlignment="Right"
+				   Text="Copyright © 2020-2022 aianlinb"
 				   TextWrapping="Wrap"
-				   Text="Copyright © 2020-2022 aianlinb." VerticalAlignment="Bottom" Margin="0,0,10,7"/>
+				   FontSize="14"
+				   VerticalAlignment="Bottom"
+				   Margin="0,0,10,7"/>
         <Button x:Name="ButtonCopy" Content="CopyText" IsEnabled="False" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="70" Margin="10,0,0,6" Click="OnCopyClick"/>
         <Button x:Name="ButtonGitHub" Content="OpenGitHub" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="85" Margin="90,0,0,6" Click="OnGitHubClick"/>
         <Button x:Name="ButtonResume" Content="Resume" IsEnabled="False" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="60" Margin="190,0,0,6" Click="OnResumeClick"/>
