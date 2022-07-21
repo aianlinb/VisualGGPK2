@@ -1,4 +1,5 @@
-﻿using LibBundle;
+﻿using DirectXTexWrapper;
+using LibBundle;
 using LibDat2;
 using LibGGPK2;
 using LibGGPK2.Records;
@@ -7,7 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Globalization;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -15,6 +17,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -25,6 +28,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using PixelFormat = System.Windows.Media.PixelFormat;
 
 namespace VisualGGPK2
 {
@@ -73,7 +77,7 @@ namespace VisualGGPK2
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e) {
-            var currentVersion = Assembly.GetExecutingAssembly().GetName().Version!;
+			var currentVersion = Assembly.GetExecutingAssembly().GetName().Version!;
             if (currentVersion.Revision == 0)
                 Version = $" (v{currentVersion.Major}.{currentVersion.Minor}.{currentVersion.Build})";
             else
@@ -144,13 +148,16 @@ namespace VisualGGPK2
             mi.Click += OnRecoveryClicked;
             TreeMenu.Items.Add(mi);
             mi = new MenuItem { Header = "Convert dds to png" };
-            mi.Click += OnSavePngClicked;
+            mi.Click += OnConvertPngClicked;
             TreeMenu.Items.Add(mi);
 
             var imageMenu = new ContextMenu();
             mi = new MenuItem { Header = "Save as png" };
             mi.Click += OnSavePngClicked;
-            imageMenu.Items.Add(mi);
+			imageMenu.Items.Add(mi);
+			mi = new MenuItem { Header = "Write png into dds" };
+			mi.Click += OnWriteImageClicked;
+			imageMenu.Items.Add(mi);
             ImageView.ContextMenu = imageMenu;
 
             var root = CreateNode(ggpkContainer.rootDirectory);
@@ -181,16 +188,16 @@ namespace VisualGGPK2
             var tvi = new TreeViewItem { Tag = rtn, Margin = new Thickness(0,1,0,1) };
             var stack = new StackPanel { Orientation = Orientation.Horizontal };
             if (rtn is IFileRecord)
-                stack.Children.Add(new Image // Icon
-                {
+                stack.Children.Add(new System.Windows.Controls.Image // Icon
+				{
                     Source = IconFile,
                     Width = 18,
                     Height = 18,
                     Margin = new Thickness(0,0,2,0)
                 });
             else
-                stack.Children.Add(new Image // Icon
-                {
+                stack.Children.Add(new System.Windows.Controls.Image // Icon
+				{
                     Source = IconDir,
                     Width = 20,
                     Height = 20,
@@ -245,8 +252,10 @@ namespace VisualGGPK2
                         switch (f.DataFormat)
                         {
                             case IFileRecord.DataFormats.Image:
-                                Image.Source = BitmapFrame.Create(new MemoryStream(f.ReadFileContent(ggpkContainer.fileStream)));
-                                Image.Width = ImageView.ActualWidth;
+                                var b = f.ReadFileContent(ggpkContainer.fileStream);
+								Image.Source = BitmapFrame.Create(new MemoryStream(b));
+                                Image.Tag = b;
+								Image.Width = ImageView.ActualWidth;
                                 Image.Height = ImageView.ActualHeight;
                                 Canvas.SetLeft(Image, 0);
                                 Canvas.SetTop(Image, 0);
@@ -288,25 +297,14 @@ namespace VisualGGPK2
                                 try
                                 {
                                     var buffer = f.ReadFileContent(ggpkContainer.fileStream);
-                                    if (rtn.Name.EndsWith(".header"))
-                                        buffer = buffer[16..];
-                                    while (buffer[0] == '*')
-                                    {
-                                        var path = UTF8.GetString(buffer, 1, buffer.Length - 1);
-                                        f = (IFileRecord)ggpkContainer.FindRecord(path, ggpkContainer.FakeBundles2);
-                                        buffer = f.ReadFileContent(ggpkContainer.fileStream);
-                                        if (path.EndsWith(".header"))
-                                            buffer = buffer[16..];
-                                    }
-                                    var ms = new MemoryStream(buffer);
-                                    Image.Source = DdsToPng(ms);
-                                    Image.Tag = rtn.Name;
+                                    buffer = DdsRedirectAndHeaderProcess(buffer, rtn);
+									Image.Source = DdsToBitmap(buffer);
+                                    Image.Tag = buffer;
                                     Image.Width = ImageView.ActualWidth;
                                     Image.Height = ImageView.ActualHeight;
                                     Canvas.SetLeft(Image, 0);
                                     Canvas.SetTop(Image, 0);
                                     ImageView.Visibility = Visibility.Visible;
-                                    ms.Close();
                                 } catch (Exception ex) {
                                     TextView.Text = ex.ToString();
                                     TextView.IsReadOnly = true;
@@ -327,34 +325,178 @@ namespace VisualGGPK2
             }
         }
 
-		/// <summary>
-		/// Get the PixelFormat of the dds image
-		/// </summary>
-		public static PixelFormat PixelFormat(Pfim.IImage image) => image.Format switch {
-            Pfim.ImageFormat.Rgba32 => PixelFormats.Bgra32,
-            Pfim.ImageFormat.Rgb24 => PixelFormats.Bgr24,
-            Pfim.ImageFormat.R5g6b5 => PixelFormats.Bgr565,
-            Pfim.ImageFormat.R5g5b5a1 or Pfim.ImageFormat.R5g5b5 => PixelFormats.Bgr555,
-            Pfim.ImageFormat.Rgb8 => PixelFormats.Gray8,
-            Pfim.ImageFormat.Rgba16 => PixelFormats.Gray16,
-            _ => throw new Exception($"Unable to convert {image.Format} to WPF PixelFormat"),
-        };
+        public static byte[] DdsRedirectAndHeaderProcess(byte[] buffer, RecordTreeNode node) {
+			ReadOnlySpan<byte> span = buffer;
+			if (node.Name.EndsWith(".header"))
+				span = span[16..];
+			while (span[0] == '*') {
+				var path = UTF8.GetString(span[1..]);
+				var f = (IFileRecord)node.ggpkContainer.FindRecord(path, node.ggpkContainer.FakeBundles2);
+				span = f.ReadFileContent(node.ggpkContainer.fileStream);
+				if (path.EndsWith(".header"))
+					span = span[16..];
+			}
+			return buffer == span ? buffer : span.ToArray();
+		}
+        public static DXGI_FORMAT_Managed ToWPFSupported(DXGI_FORMAT_Managed format) {
+            switch (format) {
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_TYPELESS:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM_SRGB:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_TYPELESS:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM_SRGB:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B5G5R5A1_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R1_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32_TYPELESS:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UINT:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_TYPELESS:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_D16_UNORM:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UINT:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R8_TYPELESS:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_A8_UNORM:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS:
+                    return format;
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_UNORM:
+                case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_UINT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_FLOAT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_SNORM:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16_SINT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UNORM:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UINT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_TYPELESS:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10_XR_BIAS_A2_UNORM:
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM;
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R9G9B9E5_SHAREDEXP:
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R10G10B10A2_UNORM;
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R24_UNORM_X8_TYPELESS:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_D24_UNORM_S8_UINT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT;
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_FLOAT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_SNORM:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_R16_SINT:
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM;
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_X24_TYPELESS_G8_UINT:
+				case DXGI_FORMAT_Managed.DXGI_FORMAT_X32_TYPELESS_G8X24_UINT:
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM;
+				default:
+                    var bpp = DirectXTex.BitsPerPixel(format);
+                    if (bpp <= 32)
+					    return DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM;
+					if (bpp <= 64)
+						return DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM;
+					return DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT;
+			};
+		}
+		public static PixelFormat? ToPixelFormat(DXGI_FORMAT_Managed format, bool isPMAlpha) {
+            if (isPMAlpha)
+                return format switch {
+					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM or
+					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT or
+					DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS => PixelFormats.Prgba64,
+                    DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT or
+                    DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS => PixelFormats.Prgba128Float,
+                    _ => null
+                };
+			return format switch {
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_TYPELESS or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM_SRGB => PixelFormats.Bgra32,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_TYPELESS or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM_SRGB => PixelFormats.Bgr32,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B5G5R5A1_UNORM => PixelFormats.Bgr555,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM => PixelFormats.Bgr565,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R1_UNORM => PixelFormats.BlackWhite,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R32_FLOAT or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R32_TYPELESS or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_D32_FLOAT => PixelFormats.Gray32Float,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UINT or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R16_TYPELESS or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_D16_UNORM => PixelFormats.Gray16,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UNORM or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_UINT or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R8_TYPELESS or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_A8_UNORM => PixelFormats.Gray8,
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UNORM or
+                DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_UINT or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R16G16B16A16_TYPELESS => PixelFormats.Rgba64,
+                DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_FLOAT or
+				DXGI_FORMAT_Managed.DXGI_FORMAT_R32G32B32A32_TYPELESS => PixelFormats.Rgba128Float,
+				_ => null
+			};
+		}
+		public static unsafe BitmapSource DdsToBitmap(byte[] buffer) {
+            fixed (byte* p = buffer)
+                if (*(int*)p != 0x20534444) // "DDS "
+					buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4); // for game before v3.11.2
+			var image = new DirectXTexWrapper.Image();
+            try {
+				fixed (byte* p = buffer) {
+					var hr = DirectXTex.LoadDDSSingleFrame(p, buffer.Length, ref image);
+					if (hr < 0)
+						throw new COMException("Failed to read dds file", hr);
+				}
 
-        public static unsafe BitmapSource DdsToPng(MemoryStream buffer) {
-            Pfim.IImage image;
-            var tag = stackalloc byte[4];
-            buffer.Read(new(tag, 4));
-            bool dispose;
-            if (dispose = *(int*)tag != 0x20534444) // "DDS "
-                buffer = new MemoryStream(BrotliSharpLib.Brotli.DecompressBuffer(buffer.ToArray(), 4, (int)buffer.Length - 4));
-            buffer.Seek(0, SeekOrigin.Begin);
-            image = Pfim.Pfim.FromStream(buffer);
-            image.Decompress();
-            if (dispose)
-                buffer.Close();
-            return BitmapSource.Create(image.Width, image.Height, 96.0, 96.0,
-            PixelFormat(image), null, image.Data, image.Stride);
+				var pma = image.IsPMAlpha();
+				var format = ToPixelFormat(image.format, pma);
+				if (!format.HasValue) {
+					var newFormat = ToWPFSupported(image.format);
+					var hr = DirectXTex.Convert(ref image, newFormat);
+					if (hr < 0)
+						throw new COMException($"Failed to convert dds image format from {image.format} to {newFormat}", hr);
+					format = ToPixelFormat(image.format, pma);
+				}
+				return BitmapSource.Create(image.width, image.height, 96, 96, format.Value, null, image.pixels, image.slicePitch, image.rowPitch);
+			} finally {
+                image.Release();
+            }
         }
+        [DllImport("mfplat")]
+        private extern static DXGI_FORMAT_Managed MFMapDX9FormatToDXGIFormat(uint dx9);
+		public static BLOB BitmapToDdsFile(Bitmap bitmap) {
+            var format = bitmap.PixelFormat;
+            var dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM;
+            switch (format) {
+				case System.Drawing.Imaging.PixelFormat.Format32bppRgb:
+					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8X8_UNORM;
+					break;
+				case System.Drawing.Imaging.PixelFormat.Format16bppRgb565:
+					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM;
+					break;
+				case System.Drawing.Imaging.PixelFormat.Format16bppRgb555:
+                    format = System.Drawing.Imaging.PixelFormat.Format16bppRgb565;
+					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B5G6R5_UNORM;
+					break;
+                case System.Drawing.Imaging.PixelFormat.Format16bppGrayScale:
+					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM;
+					break;
+            }
+
+            var bd = bitmap.LockBits(new(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, format);
+            var image = new DirectXTexWrapper.Image {
+                width = bd.Width,
+                height = bd.Height,
+                format = dformat,
+                pixels = bd.Scan0,
+                rowPitch = bd.Stride,
+                slicePitch = bd.Stride * bd.Height
+            };
+            DirectXTex.SaveDds(ref image, out var blob);
+			image.Release();
+			return blob;
+		}
 
         /// <summary>
         /// TreeViewItem MouseDown event
@@ -422,10 +564,10 @@ namespace VisualGGPK2
                             bkg.Close();
                         });
                     } catch (Exception ex) {
-                        App.HandleException(ex);
-                        Dispatcher.Invoke(bkg.Close);
-                    }
-                });
+						App.HandleException(ex);
+						Dispatcher.Invoke(bkg.Close);
+					}
+				});
             else
                 Task.Run(() => {
                     try {
@@ -446,10 +588,10 @@ namespace VisualGGPK2
                             bkg.Close();
                         });
                     } catch (Exception ex) {
-                        App.HandleException(ex);
-                        Dispatcher.Invoke(bkg.Close);
-                    }
-            });
+						App.HandleException(ex);
+						Dispatcher.Invoke(bkg.Close);
+					}
+				});
             bkg.ShowDialog();
         }
 
@@ -475,10 +617,11 @@ namespace VisualGGPK2
                         var bkg = new BackgroundDialog();
                         Task.Run(() => {
                             try {
-                                var list = new SortedDictionary<IFileRecord, string>(BundleSortComparer.Instance);
+                                var list = new List<KeyValuePair<IFileRecord, string>>();
                                 var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
                                 GGPKContainer.RecursiveFileList(rtn, path, list, true);
                                 bkg.ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . .";
+                                list.Sort((a, b) => BundleSortComparer.Instance.Compare(a.Key, b.Key));
                                 var failFileCount = 0;
 								try {
                                     GGPKContainer.Export(list, bkg.NextProgress);
@@ -491,9 +634,9 @@ namespace VisualGGPK2
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
-                                App.HandleException(ex);
-                                Dispatcher.Invoke(bkg.Close);
-                            }
+								App.HandleException(ex);
+								Dispatcher.Invoke(bkg.Close);
+							}
                         });
                         bkg.ShowDialog();
                     }
@@ -512,7 +655,8 @@ namespace VisualGGPK2
                     {
                         fr.ReplaceContent(File.ReadAllBytes(ofd.FileName));
                         MessageBox.Show(this, "Replaced " + rtn.GetPath() + "\nwith " + ofd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
+						OnTreeSelectedChanged(null, null);
+					}
                 }
                 else
                 {
@@ -531,10 +675,10 @@ namespace VisualGGPK2
                                     bkg.Close();
                                 });
                             } catch (Exception ex) {
-                                App.HandleException(ex);
-                                Dispatcher.Invoke(bkg.Close);
-                            }
-                        });
+								App.HandleException(ex);
+								Dispatcher.Invoke(bkg.Close);
+							}
+						});
                         bkg.ShowDialog();
                     }
                 }
@@ -645,10 +789,10 @@ namespace VisualGGPK2
                         OnTreeSelectedChanged(null, null);
                     });
                 } catch (Exception ex) {
-                    App.HandleException(ex);
-                    Dispatcher.Invoke(bkg.Close);
-                }
-            });
+					App.HandleException(ex);
+					Dispatcher.Invoke(bkg.Close);
+				}
+			});
             bkg.ShowDialog();
 		}
 
@@ -662,63 +806,119 @@ namespace VisualGGPK2
             return Encoding.Unicode.GetString(b, 35, b[34] * 2);
         }
 
-        private void OnSavePngClicked(object sender, RoutedEventArgs e) {
-            var o = (Tree.SelectedItem as TreeViewItem)?.Tag;
-            if (o is RecordTreeNode rtn && rtn is not IFileRecord) {
+        private void OnConvertPngClicked(object sender, RoutedEventArgs e) {
+            if ((Tree.SelectedItem as TreeViewItem)?.Tag is not RecordTreeNode rtn) {
+				MessageBox.Show(this, "You must select a node first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				return;
+			}
+            if (rtn is not IFileRecord) { // directory
                 var sfd = new SaveFileDialog { FileName = rtn.Name + ".dir", Filter= "*.*|*.*" };
                 if (sfd.ShowDialog() == true) {
                     var bkg = new BackgroundDialog();
                     Task.Run(() => {
-                        try {
-                            var list = new SortedDictionary<IFileRecord, string>(BundleSortComparer.Instance);
-                            var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
-                            GGPKContainer.RecursiveFileList(rtn, path, list, true, ".dds$");
-                            bkg.ProgressText = "Converting {0}/" + list.Count.ToString() + " Files . . .";
-                            var failFileCount = 0;
-                            try {
-                                BatchConvertPng(list, bkg.NextProgress);
-                            } catch (GGPKContainer.BundleMissingException bex) {
-                                failFileCount = bex.failFiles;
-                                Dispatcher.Invoke(() => MessageBox.Show(this, bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning));
-                            }
-                            Dispatcher.Invoke(() => {
-                                MessageBox.Show(this, "Converted " + (list.Count - failFileCount).ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                                bkg.Close();
-                            });
-                        } catch (Exception ex) {
-                            App.HandleException(ex);
-                            Dispatcher.Invoke(bkg.Close);
-                        }
-                    });
+						try {
+							var list = new List<KeyValuePair<IFileRecord, string>>();
+							var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
+							GGPKContainer.RecursiveFileList(rtn, path, list, true, ".dds$");
+							bkg.ProgressText = "Converting {0}/" + list.Count.ToString() + " Files . . .";
+							list.Sort((x, y) => BundleSortComparer.Instance.Compare(x.Key, y.Key));
+							var failFileCount = 0;
+							try {
+								var fail = BatchConvertPng(list, bkg.NextProgress);
+								if (fail < 0) {
+									Dispatcher.Invoke(() => bkg.Close());
+									return;
+								}
+                                failFileCount += fail;
+							} catch (GGPKContainer.BundleMissingException bex) {
+								failFileCount = bex.failFiles;
+								Dispatcher.Invoke(() => MessageBox.Show(this, bex.Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning));
+							}
+							Dispatcher.Invoke(() => {
+								if (failFileCount > 0)
+									MessageBox.Show(this, "Converted " + (list.Count - failFileCount) + " files\r\n" + failFileCount + "files failed", "Done", MessageBoxButton.OK, MessageBoxImage.Warning);
+								else
+									MessageBox.Show(this, "Converted " + list.Count + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+								bkg.Close();
+							});
+						} catch (Exception ex) {
+							App.HandleException(ex);
+							Dispatcher.Invoke(bkg.Close);
+						}
+					});
                     bkg.ShowDialog();
                 }
-            } else if (o is IFileRecord fr && !(fr as RecordTreeNode).Name.EndsWith(".dds") && !(fr as RecordTreeNode).Name.EndsWith(".dds.header")) {
-                MessageBox.Show(this, "Selected file is not a DDS file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            } else {
-                var sfd = new SaveFileDialog { FileName = Path.GetFileNameWithoutExtension((string)Image.Tag) + ".png", Filter = "*.png|*.png" };
-                if (sfd.ShowDialog() == true) {
-                    BitmapSourceSave((BitmapSource)Image.Source, sfd.FileName);
-                    MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-        }
+            } else { // file
+				if (ImageView.Visibility != Visibility.Visible)
+					MessageBox.Show(this, "Selected file is not a dds file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                else {
+                    var buffer = (byte[])Image.Tag;
 
-        public static void BitmapSourceSave(BitmapSource bitmapSource, string path) {
-            var pbe = new PngBitmapEncoder();
-            pbe.Frames.Add(BitmapFrame.Create(bitmapSource));
-            var f = File.OpenWrite(path);
-            pbe.Save(f);
-            f.Flush();
-            f.Close();
-        }
+					string name;
+                    if (rtn.Name.EndsWith(".dds"))
+                        name = rtn.Name[..^4] + ".png";
+					else if (rtn.Name.EndsWith(".dds.header"))
+						name = rtn.Name + ".png";
+					else {
+						MessageBox.Show(this, "Selected file is not a dds file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+					}
+					
+					var sfd = new SaveFileDialog { FileName = name, Filter = "*.png|*.png" };
+                    if (sfd.ShowDialog() == true) {
+                        SaveImageSource(DdsToBitmap(buffer), sfd.FileName);
+						MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+				}
+			}
+		}
 
-        public static void BatchConvertPng(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null) {
-            var regex = new Regex(".dds$");
+		private void OnSavePngClicked(object sender, RoutedEventArgs e) {
+			if ((Tree.SelectedItem as TreeViewItem)?.Tag is not RecordTreeNode rtn) {
+				MessageBox.Show(this, "You must select a image file first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				return;
+			}
+			var name = rtn.Name.EndsWith(".dds") ? rtn.Name[..^4] + ".png" : rtn.Name.EndsWith(".png") ? rtn.Name : rtn.Name + ".png";
+            var sfd = new SaveFileDialog { FileName = name, Filter = "*.png|*.png" };
+            if (sfd.ShowDialog() == true) {
+                //DdsToPngFile(DdsToPng((byte[])Image.Tag), sfd.FileName);
+                if (rtn.Name.EndsWith(".png"))
+                    File.WriteAllBytes(sfd.FileName, (byte[])Image.Tag);
+                else
+                    SaveImageSource((BitmapSource)Image.Source, sfd.FileName);
+				MessageBox.Show(this, "Saved " + sfd.FileName, "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+			}
+		}
+		
+		public static void SaveImageSource(BitmapSource source, string path) {
+			var fs = File.Create(path);
+			var png = new PngBitmapEncoder();
+			png.Frames.Add(source is BitmapFrame bf ? bf : BitmapFrame.Create(source));
+			png.Save(fs);
+			fs.Close();
+		}
+
+		private int BatchConvertPng(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null) {
+			var regex = new Regex(".dds$");
             LibBundle.Records.BundleRecord br = null;
             MemoryStream ms = null;
             var failBundles = 0;
             var failFiles = 0;
-            foreach (var (record, path) in list) {
+            var fail = 0;
+            var done = 0;
+			var semaphore = new Semaphore(Environment.ProcessorCount - 1, Environment.ProcessorCount - 1);
+            COMException COM = null;
+            string errorPath = null;
+
+			foreach (var (record, path) in list) {
+                if (COM != null) {
+					if (MessageBox.Show(this, $"Error when processing file: {errorPath}\r\n\r\n{COM}\r\nIgnore and continue?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error) != MessageBoxResult.Yes) {
+						semaphore.Dispose();
+						semaphore = null;
+						return -1;
+					}
+                    COM = null;
+				}
                 Directory.CreateDirectory(Directory.GetParent(path).FullName);
                 if (record is BundleFileNode bfn) {
                     if (br != bfn.BundleFileRecord.bundleRecord) {
@@ -731,21 +931,102 @@ namespace VisualGGPK2
                     }
                     if (ms == null)
                         ++failFiles;
-					else {
-                        var bs = DdsToPng(new MemoryStream(bfn.BatchReadFileContent(ms)));
-                        BitmapSourceSave(bs, regex.Replace(path, ".png"));
-                    }
+                    else {
+						if (COM != null) {
+							if (MessageBox.Show(this, $"Error when processing file: {errorPath}\r\n\r\n{COM}\r\nIgnore and continue?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error) != MessageBoxResult.Yes) {
+								semaphore.Dispose();
+								semaphore = null;
+								return -1;
+							}
+							COM = null;
+						}
+						semaphore.WaitOne();
+						var b = bfn.BatchReadFileContent(ms);
+						Task.Run(() => {
+							try {
+								b = DdsRedirectAndHeaderProcess(b, bfn);
+								SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
+								Interlocked.Increment(ref done);
+								ProgressStep?.Invoke();
+                                semaphore?.Release();
+							} catch (COMException ex) {
+								Interlocked.Increment(ref fail);
+								if (COM == null) {
+									COM = ex;
+									errorPath = bfn.GetPath();
+									semaphore?.Release();
+								}
+							}
+						});
+					}
                 } else {
-                    var bs = DdsToPng(new MemoryStream(record.ReadFileContent()));
-                    BitmapSourceSave(bs, regex.Replace(path, ".png"));
-                }
-                ProgressStep?.Invoke();
-            }
-            if (failBundles != 0 || failFiles != 0)
+					if (COM != null) {
+						if (MessageBox.Show(this, $"Error when processing file: {errorPath}\r\n\r\n{COM}\r\nIgnore and continue?", "Error", MessageBoxButton.YesNo, MessageBoxImage.Error) != MessageBoxResult.Yes) {
+							semaphore.Dispose();
+							semaphore = null;
+							return -1;
+						}
+						COM = null;
+					}
+					semaphore.WaitOne();
+					var b = record.ReadFileContent();
+					Task.Run(() => {
+						try {
+							b = DdsRedirectAndHeaderProcess(b, (RecordTreeNode)record);
+							SaveImageSource(DdsToBitmap(b), path[..^4] + ".png");
+							Interlocked.Increment(ref done);
+							ProgressStep?.Invoke();
+							if (COM == null)
+								semaphore.Release();
+						} catch (COMException ex) {
+							Interlocked.Increment(ref fail);
+							if (COM == null) {
+								COM = ex;
+                                errorPath = ((RecordTreeNode)record).GetPath();
+								semaphore?.Release();
+							}
+						}
+					});
+				}
+			}
+			semaphore.WaitOne();
+			while (done < list.Count)
+                Thread.Sleep(500);
+            semaphore.Dispose();
+			if (failBundles != 0 || failFiles != 0)
                 throw new GGPKContainer.BundleMissingException(failBundles, failFiles);
+            return fail;
         }
 
-        private void FilterButton_Click(object sender, RoutedEventArgs e) {
+		private unsafe void OnWriteImageClicked(object sender, RoutedEventArgs e) {
+			if ((Tree.SelectedItem as TreeViewItem)?.Tag is not IFileRecord fr || Image.Visibility != Visibility.Visible) {
+				MessageBox.Show(this, "You must select a dds file first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				return;
+			}
+            var rtn = (RecordTreeNode)fr;
+			if (!rtn.Name.EndsWith(".dds")) {
+				MessageBox.Show(this, "Selected file is not a dds file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				return;
+            }
+
+			var ofd = new OpenFileDialog { FileName = rtn.Name, Filter = "Image File|*.png;*.jpg;*.bmp;*.jpeg;*.gif;*.tiff;*.ico|*.*|*.*" };
+            if (ofd.ShowDialog() != true)
+                return;
+			if (MessageBox.Show(this, "The image will directly write into dds in ggpk\r\nThis is an experimental feature and may not work as expected!\r\n\r\nClick OK to continue", "Error", MessageBoxButton.OK, MessageBoxImage.Warning) != MessageBoxResult.OK)
+				return;
+
+            var bitmap = (Bitmap)System.Drawing.Image.FromFile(ofd.FileName);
+            uint fourcc; // Get origin dds DXGI_FORMAT
+            fixed (byte* p = (byte[])Image.Tag)
+                fourcc = *(uint*)(p + 84);
+            var blob = BitmapToDdsFile(bitmap);
+			fr.ReplaceContent(new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray());
+
+			MessageBox.Show(this, "Wrote " + ofd.FileName + "\r\ninto " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+			OnTreeSelectedChanged(null, null);
+		}
+
+		private void FilterButton_Click(object sender, RoutedEventArgs e) {
             Tree.Items.Clear();
             ggpkContainer.FakeBundles2.Children.Clear();
             foreach (var f in ggpkContainer.Index.Files)
@@ -821,5 +1102,5 @@ namespace VisualGGPK2
                 Image.Height /= 1.2;
             }
         }
-	}
+    }
 }

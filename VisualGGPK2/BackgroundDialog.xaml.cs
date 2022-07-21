@@ -1,4 +1,6 @@
-﻿namespace VisualGGPK2
+﻿using System.Threading;
+
+namespace VisualGGPK2
 {
     public partial class BackgroundDialog : System.Windows.Window
     {
@@ -11,7 +13,7 @@
 
         public virtual void NextProgress()
         {
-            progress++;
+            Interlocked.Increment(ref progress);
             Dispatcher.BeginInvoke(() => { MessageTextBlock.Text = string.Format(ProgressText, progress); });
         }
 

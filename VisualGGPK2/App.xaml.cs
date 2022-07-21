@@ -8,7 +8,6 @@ namespace VisualGGPK2
 {
     public partial class App : Application
     {
-#if !DEBUG
         protected override void OnStartup(StartupEventArgs e)
         {
             DispatcherUnhandledException += OnUnhandledException;
@@ -21,14 +20,14 @@ namespace VisualGGPK2
             HandleException(e.Exception);
             e.Handled = true;
         }
-#endif
+
         public static void HandleException(Exception ex) {
-            Current.Dispatcher.Invoke(() => {
+			Current.Dispatcher.Invoke(() => {
                 var ew = new ErrorWindow();
                 ew.ShowError(ex);
                 if (ew.ShowDialog() != true)
                     Current.Shutdown();
             });
-        }
-    }
+		}
+	}
 }

@@ -13,7 +13,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using static LibDat2.Types.IFieldData;
 
 namespace VisualGGPK2 {
 	public partial class MainWindow {

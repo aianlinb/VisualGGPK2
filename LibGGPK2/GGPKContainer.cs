@@ -504,7 +504,7 @@ namespace LibGGPK2
             // In GGPK
             if (x is FileRecord frx)
                 if (y is FileRecord fry)
-                    return frx.DataBegin > fry.DataBegin ? 1 : -1;
+                    return (int)(frx.DataBegin - fry.DataBegin);
                 else
                     return -1;
             else if (y is FileRecord)
@@ -520,7 +520,7 @@ namespace LibGGPK2
             else if (ofx < ofy)
                 return -1;
             else
-                return bfx.Offset > bfy.Offset ? 1 : -1;
+                return (int)(bfx.Offset - bfy.Offset);
         }
     }
 }
