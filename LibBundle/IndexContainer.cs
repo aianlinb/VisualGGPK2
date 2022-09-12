@@ -178,20 +178,19 @@ namespace LibBundle
                 }
             return result;
         }
+		
+		public static unsafe ulong FNV1a64Hash(string str) {
+			byte[] b;
+			if (str.EndsWith('/'))
+				b = Encoding.UTF8.GetBytes(str, 0, str.Length - 1);
+			else
+				b = Encoding.UTF8.GetBytes(str.ToLower());
 
-        public static ulong FNV1a64Hash(string str)
-        {
-            if (str.EndsWith('/'))
-                str = str.TrimEnd('/') + "++";
-            else
-                str = str.ToLower() + "++";
-
-            var bs = Encoding.UTF8.GetBytes(str);
-            var hash = 0xCBF29CE484222325UL;
-            foreach (var by in bs)
-                hash = (hash ^ by) * 0x100000001B3UL;
-            // Equals to: bs.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3);
-            return hash;
-        }
-    }
+			var hash = 0xCBF29CE484222325UL;
+			// Equals to: b.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3UL);
+			foreach (var by in b)
+				hash = (hash ^ by) * 0x100000001B3UL;
+			return (((hash ^ 43) * 0x100000001B3UL) ^ 43) * 0x100000001B3UL; // "++"  -->  '+'==43
+		}
+	}
 }

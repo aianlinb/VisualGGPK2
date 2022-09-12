@@ -87,6 +87,7 @@ namespace VisualGGPK2
                 Title += " (SteamMode)";
             if (BundleMode)
                 Title += " (BundleMode)";
+#if !DEBUG
             // Version Check
             try {
                 var http = new HttpClient {
@@ -103,7 +104,7 @@ namespace VisualGGPK2
                 }
                 http.Dispose();
             } catch { }
-
+#endif
             // GGPK Selection
             if (FilePath == null) {
                 var ofd = new OpenFileDialog {
@@ -122,11 +123,11 @@ namespace VisualGGPK2
                     path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
                     if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
                         ofd.InitialDirectory = path.TrimEnd('\\');
-                } else
+                } else if (File.Exists(setting.GGPKPath + @"\Content.ggpk"))
                     ofd.InitialDirectory = setting.GGPKPath;
 
                 if (ofd.ShowDialog() == true) {
-                    setting.GGPKPath = Directory.GetParent(FilePath = ofd.FileName).FullName;
+                    setting.GGPKPath = Path.GetDirectoryName(FilePath = ofd.FileName);
                     setting.Save();
                 } else {
                     Close();
@@ -193,7 +194,7 @@ namespace VisualGGPK2
                     Source = IconFile,
                     Width = 18,
                     Height = 18,
-                    Margin = new Thickness(0,0,2,0)
+                    Margin = new Thickness(0, 0, 2, 0)
                 });
             else
                 stack.Children.Add(new System.Windows.Controls.Image // Icon
@@ -495,6 +496,7 @@ namespace VisualGGPK2
             };
             DirectXTex.SaveDds(ref image, out var blob);
 			image.Release();
+			bitmap.UnlockBits(bd);
 			return blob;
 		}
 
@@ -618,7 +620,7 @@ namespace VisualGGPK2
                         Task.Run(() => {
                             try {
                                 var list = new List<KeyValuePair<IFileRecord, string>>();
-                                var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
+                                var path = Path.GetDirectoryName(sfd.FileName) + "\\" + rtn.Name;
                                 GGPKContainer.RecursiveFileList(rtn, path, list, true);
                                 bkg.ProgressText = "Exporting {0}/" + list.Count.ToString() + " Files . . .";
                                 list.Sort((a, b) => BundleSortComparer.Instance.Compare(a.Key, b.Key));
@@ -818,7 +820,7 @@ namespace VisualGGPK2
                     Task.Run(() => {
 						try {
 							var list = new List<KeyValuePair<IFileRecord, string>>();
-							var path = Directory.GetParent(sfd.FileName).FullName + "\\" + rtn.Name;
+							var path = Path.GetDirectoryName(sfd.FileName) + "\\" + rtn.Name;
 							GGPKContainer.RecursiveFileList(rtn, path, list, true, ".dds$");
 							bkg.ProgressText = "Converting {0}/" + list.Count.ToString() + " Files . . .";
 							list.Sort((x, y) => BundleSortComparer.Instance.Compare(x.Key, y.Key));
@@ -919,7 +921,7 @@ namespace VisualGGPK2
 					}
                     COM = null;
 				}
-                Directory.CreateDirectory(Directory.GetParent(path).FullName);
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
                 if (record is BundleFileNode bfn) {
                     if (br != bfn.BundleFileRecord.bundleRecord) {
                         ms?.Close();

@@ -4,7 +4,7 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb</Copyright>
-    <Version>0.15.0</Version>
+    <Version>0.15.1</Version>
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
@@ -14,10 +14,6 @@
     <DebugType>embedded</DebugType>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
   </PropertyGroup>
-  
-  <ItemGroup>  <!-- https://github.com/dotnet/core/issues/7176 -->
-    <FrameworkReference Update="Microsoft.WindowsDesktop.App;Microsoft.WindowsDesktop.App.WPF;Microsoft.WindowsDesktop.App.WindowsForms" TargetingPackVersion="6.0.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\dir.ico" />

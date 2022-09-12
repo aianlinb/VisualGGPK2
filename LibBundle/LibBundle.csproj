@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2022 aianlinb</Copyright>
-    <Version>2.6.2</Version>
+    <Version>2.6.3</Version>
     <Platforms>x64;x86</Platforms>
     <PlatformTarget Condition="'Platforms' == 'x64'">x64</PlatformTarget>
     <PlatformTarget Condition="'Platforms' == 'x86'">x86</PlatformTarget>
