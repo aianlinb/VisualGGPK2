@@ -40,9 +40,7 @@ namespace LibDat2.Types {
 				return a;
 
 			reader.BaseStream.Seek(dat.x64 ? -16 : -8, SeekOrigin.Current);
-			var ad = new ArrayData<TypeOfValueInArray>(dat, typeOfarrayInArray);
-			ad.Read(reader);
-			return ad;
+			return new ArrayData<TypeOfValueInArray>(dat, typeOfarrayInArray).Read(reader);
 		}
 
 		/// <summary>
@@ -264,7 +262,8 @@ namespace LibDat2.Types {
 				Dat.CurrentOffset += Length;
 				Dat.ReferenceDatas[Offset] = this;
 			}
-			Dat.ReferenceDataOffsets[value] = Offset;
+			if (Length != 0)
+				Dat.ReferenceDataOffsets[ToString()] = Offset;
 			return this;
 		}
 

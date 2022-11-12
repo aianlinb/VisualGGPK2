@@ -401,12 +401,12 @@ namespace LibDat2 {
 			CurrentOffset = 8;
 			ReferenceDataOffsets.Clear();
 			ReferenceDatas.Clear();
+			FieldDatas = new List<IFieldData[]>(FieldDatas.Count);
 
 			var quotes = false;
 			var row = new IFieldData[FieldDefinitions.Count];
 			var i = 0;
 			var s = new StringBuilder();
-			var list = new List<IFieldData[]>(FieldDatas.Count);
 
 			if (sr.Peek() == '"') {
 				sr.Read();
@@ -445,7 +445,7 @@ namespace LibDat2 {
 						row[i] = IFieldData.FromString(s.ToString(), FieldDefinitions[i].Value, this);
 						i = 0;
 						s.Length = 0;
-						list.Add(row);
+						FieldDatas.Add(row);
 						row = new IFieldData[row.Length];
 						break;
 					case -1:
@@ -454,8 +454,6 @@ namespace LibDat2 {
 						s.Append(char.ConvertFromUtf32(chr));
 						break;
 				}
-
-			FieldDatas = list;
 		}
 
 		/// <summary>
