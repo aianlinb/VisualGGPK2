@@ -2,6 +2,9 @@
 All projects in this repository are not thread-safe,
 do not use these libraries with more than one thread!
 
+This project is reserved for VisualGGPK2.
+For development, it is recommended to use [LibGGPK3](https://github.com/aianlinb/LibGGPK3) instead.
+
 ## LibGGPK2
 Library for Content.ggpk of game PathOfExile.
 
