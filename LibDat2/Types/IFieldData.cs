@@ -39,7 +39,7 @@ namespace LibDat2.Types {
 				"i64"			=> 8,
 				"u64"			=> 8,
 				"f64"			=> 8,
-				"valuestring"	=> -1,
+				"valuestring"	=> -1, // Shouldn't be used
 				_ => throw new ArgumentException("Unknown Type: " + type, nameof(type))
 			};
 		}
