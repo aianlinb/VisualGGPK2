@@ -4362,7 +4362,7 @@
 		"Domain": "i32",
 		"Name": "string",
 		"GenerationType": "i32",
-		"CorrectGroup": "array|foreignrow",
+		"Families": "array|foreignrow",
 		"Stat1Min": "i32",
 		"Stat1Max": "i32",
 		"Stat2Min": "i32",
@@ -4404,9 +4404,9 @@
 		"Heist_AddStatValue1": "i32",
 		"Heist_AddStatValue2": "i32",
 		"InfluenceTypes": "i32",
-		"Unknown4": "array|foreignrow",
+		"ImplicitTagsKeys": "array|foreignrow",
+		"Unknown4": "bool",
 		"Unknown5": "i32",
-		"Flag0": "bool",
 		"Unknown6": "i32",
 		"Unknown7": "i32",
 		"Unknown8": "i32",
@@ -4422,10 +4422,12 @@
 		"Unknown18": "i32",
 		"Unknown19": "i32",
 		"Unknown20": "i32",
-		"BuffTemplateKey0": "row",
+		"BuffTemplate": "row",
 		"ArchnemesisMinionMod": "foreignrow",
 		"HASH32": "u32",
-		"BuffTemplateKey1": "array|foreignrow"
+		"Unknown21": "array|foreignrow",
+		"Unknown22": "i32",
+		"Unknown23": "array|foreignrow"
 	},
 	"ModSellPriceTypes": {
 		"Id": "string"

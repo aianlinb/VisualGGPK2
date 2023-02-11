@@ -51,6 +51,8 @@ namespace LibDat2 {
 					foreach (var field in columns.EnumerateArray()) {
 						var name = field.GetProperty("name").GetString() ?? "Unknown" + Unknown++.ToString();
 						var type = field.GetProperty("type").GetString()!;
+						if (type == "array")
+							type = "i32"; // Array of unknown type
 						if (field.GetProperty("array").GetBoolean())
 							type = "array|" + type;
 						array[index++] = new(name, type);

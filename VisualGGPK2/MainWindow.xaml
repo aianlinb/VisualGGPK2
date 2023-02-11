@@ -81,7 +81,7 @@
 				<RowDefinition MinHeight="10"/>
 				<RowDefinition MinHeight="10"/>
 			</Grid.RowDefinitions>
-			<CheckBox x:Name="SchemaMin" Content="Use schema.min.json" VerticalContentAlignment="Center" Margin="5,0,0,0" Checked="OnSchemaMinChecked" Unchecked="OnSchemaMinChecked"/>
+			<CheckBox x:Name="SchemaMin" Content="Use schema.min.json" VerticalContentAlignment="Center" Margin="5,0,0,0" Checked="OnSchemaMinChecked" Unchecked="OnSchemaMinChecked" IsChecked="True"/>
 			<Button Content="Save" Click="OnSaveDatClicked" Padding="5,0" HorizontalAlignment="Right" Margin="0,0,350,0"/>
 			<Button Content="Reload DatDefinitions" Click="OnReloadClicked" Padding="5,0" HorizontalAlignment="Right" Margin="0,0,210,0"/>
 			<Button Content="Import from .csv" Click="OnImportClicked" Padding="5,0" HorizontalAlignment="Right" Margin="0,0,90,0"/>
