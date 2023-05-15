@@ -245,8 +245,8 @@ namespace LibGGPK2
         public virtual void Replace(IEnumerable<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null) {
             var bundles = Index == null ? new() : new List<LibBundle.Records.BundleRecord>(Index.Bundles);
             var changed = false;
-            var BundleToSave = Index.GetSmallestBundle(bundles);
-            var fr = RecordOfBundle(BundleToSave);
+            var BundleToSave = Index?.GetSmallestBundle(bundles);
+            var fr = BundleToSave == null ? null : RecordOfBundle(BundleToSave);
 
             if (Index != null) // else BundleMode
                 if (fileStream == null) // SteamMode
@@ -426,7 +426,7 @@ namespace LibGGPK2
             }
             else
                 foreach (var f in record.Children)
-                    RecursiveFileList(f, path + "\\" + f.Name, list, export, regex);
+                    RecursiveFileList(f, path + "/" + f.Name, list, export, regex);
         }
 
         /// <summary>

@@ -353,11 +353,8 @@ namespace DirectXTexWrapper {
 	public ref struct BLOB sealed {
 	private:
 		DirectX::Blob* blob;
-#pragma warning(disable:4461)
 		!BLOB() {
-			blob->Release();
-			delete blob;
-			blob = NULL;
+			this->~BLOB();
 		}
 	internal:
 		BLOB(DirectX::Blob* blob) {
@@ -373,6 +370,11 @@ namespace DirectXTexWrapper {
 			int get() {
 				return static_cast<int>(blob->GetBufferSize());
 			}
+		}
+		~BLOB() {
+			blob->Release();
+			delete blob;
+			blob = NULL;
 		}
 	};
 

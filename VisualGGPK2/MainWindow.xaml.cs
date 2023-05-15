@@ -151,15 +151,18 @@ namespace VisualGGPK2
             mi = new MenuItem { Header = "Convert dds to png" };
             mi.Click += OnConvertPngClicked;
             TreeMenu.Items.Add(mi);
+			mi = new MenuItem { Header = "Write png into dds" };
+			mi.Click += OnWriteImageClicked;
+			TreeMenu.Items.Add(mi);
 
-            var imageMenu = new ContextMenu();
+			var imageMenu = new ContextMenu();
             mi = new MenuItem { Header = "Save as png" };
             mi.Click += OnSavePngClicked;
 			imageMenu.Items.Add(mi);
 			mi = new MenuItem { Header = "Write png into dds" };
 			mi.Click += OnWriteImageClicked;
 			imageMenu.Items.Add(mi);
-            ImageView.ContextMenu = imageMenu;
+			ImageView.ContextMenu = imageMenu;
 
             var root = CreateNode(ggpkContainer.rootDirectory);
             Tree.Items.Add(root); // Initial TreeView
@@ -333,7 +336,7 @@ namespace VisualGGPK2
 			while (span[0] == '*') {
 				var path = UTF8.GetString(span[1..]);
 				var f = (IFileRecord)node.ggpkContainer.FindRecord(path, node.ggpkContainer.FakeBundles2);
-				span = f.ReadFileContent(node.ggpkContainer.fileStream);
+				span = buffer = f.ReadFileContent(node.ggpkContainer.fileStream);
 				if (path.EndsWith(".header"))
 					span = span[16..];
 			}
@@ -483,7 +486,10 @@ namespace VisualGGPK2
                 case System.Drawing.Imaging.PixelFormat.Format16bppGrayScale:
 					dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_R16_UNORM;
 					break;
-            }
+                default:
+                    format = System.Drawing.Imaging.PixelFormat.Format32bppArgb;
+                    break;
+			}
 
             var bd = bitmap.LockBits(new(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, format);
             var image = new DirectXTexWrapper.Image {
@@ -599,7 +605,7 @@ namespace VisualGGPK2
 
         private void OnExportClicked(object sender, RoutedEventArgs e)
         {
-            if ((Tree.SelectedItem as TreeViewItem)?.Tag is RecordTreeNode rtn)
+            if (Tree.SelectedItem is TreeViewItem { Tag: RecordTreeNode rtn })
             {
                 var sfd = new SaveFileDialog();
                 if (rtn is IFileRecord fr)
@@ -648,7 +654,7 @@ namespace VisualGGPK2
 
         private void OnReplaceClicked(object sender, RoutedEventArgs e)
         {
-            if ((Tree.SelectedItem as TreeViewItem)?.Tag is RecordTreeNode rtn)
+            if (Tree.SelectedItem is TreeViewItem { Tag: RecordTreeNode rtn })
             {
                 if (rtn is IFileRecord fr)
                 {
@@ -809,7 +815,7 @@ namespace VisualGGPK2
         }
 
         private void OnConvertPngClicked(object sender, RoutedEventArgs e) {
-            if ((Tree.SelectedItem as TreeViewItem)?.Tag is not RecordTreeNode rtn) {
+            if (Tree.SelectedItem is not TreeViewItem { Tag: RecordTreeNode rtn }) {
 				MessageBox.Show(this, "You must select a node first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
@@ -876,7 +882,7 @@ namespace VisualGGPK2
 		}
 
 		private void OnSavePngClicked(object sender, RoutedEventArgs e) {
-			if ((Tree.SelectedItem as TreeViewItem)?.Tag is not RecordTreeNode rtn) {
+			if (Tree.SelectedItem is not TreeViewItem { Tag: RecordTreeNode rtn }) {
 				MessageBox.Show(this, "You must select a image file first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
@@ -1001,31 +1007,148 @@ namespace VisualGGPK2
         }
 
 		private unsafe void OnWriteImageClicked(object sender, RoutedEventArgs e) {
-			if ((Tree.SelectedItem as TreeViewItem)?.Tag is not IFileRecord fr || Image.Visibility != Visibility.Visible) {
-				MessageBox.Show(this, "You must select a dds file first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+			if (Tree.SelectedItem is not TreeViewItem { Tag: RecordTreeNode rtn }) {
+				MessageBox.Show(this, "You must select a node first", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 				return;
 			}
-            var rtn = (RecordTreeNode)fr;
-			if (!rtn.Name.EndsWith(".dds")) {
-				MessageBox.Show(this, "Selected file is not a dds file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-				return;
-            }
+			if (rtn is IFileRecord fr) {
+				if (ImageView.Visibility != Visibility.Visible || !rtn.Name.EndsWith(".dds")) {
+					MessageBox.Show(this, "Selected file is not a dds file", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+					return;
+				}
+				var ofd = new OpenFileDialog { FileName = rtn.Name, Filter = "Image File|*.png;*.jpg;*.bmp;*.jpeg;*.gif;*.tiff;*.ico|*.*|*.*" };
+				if (ofd.ShowDialog() != true)
+					return;
+				if (MessageBox.Show(this, "The image will directly write into the dds in ggpk.\r\nThis is an experimental feature and may not work as expected!\r\n\r\nClick OK to continue", "Error", MessageBoxButton.OK, MessageBoxImage.Warning) != MessageBoxResult.OK)
+					return;
 
-			var ofd = new OpenFileDialog { FileName = rtn.Name, Filter = "Image File|*.png;*.jpg;*.bmp;*.jpeg;*.gif;*.tiff;*.ico|*.*|*.*" };
-            if (ofd.ShowDialog() != true)
-                return;
-			if (MessageBox.Show(this, "The image will directly write into dds in ggpk\r\nThis is an experimental feature and may not work as expected!\r\n\r\nClick OK to continue", "Error", MessageBoxButton.OK, MessageBoxImage.Warning) != MessageBoxResult.OK)
-				return;
+				var bitmap = (Bitmap)System.Drawing.Image.FromFile(ofd.FileName);
+                /*uint fourcc; // Get origin dds DXGI_FORMAT
+				fixed (byte* p = (byte[])Image.Tag)
+					fourcc = *(uint*)(p + 84); */
+                using (var blob = BitmapToDdsFile(bitmap))
+				    fr.ReplaceContent(new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray());
 
-            var bitmap = (Bitmap)System.Drawing.Image.FromFile(ofd.FileName);
-            uint fourcc; // Get origin dds DXGI_FORMAT
-            fixed (byte* p = (byte[])Image.Tag)
-                fourcc = *(uint*)(p + 84);
-            var blob = BitmapToDdsFile(bitmap);
-			fr.ReplaceContent(new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray());
+				MessageBox.Show(this, "Wrote " + ofd.FileName + "\r\ninto " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+				OnTreeSelectedChanged(null, null);
+			} else { // directory
+				var ofd = new OpenFolderDialog();
+				if (ofd.ShowDialog() == true) {
+					var bkg = new BackgroundDialog();
+					Task.Run(() => {
+						try {
+							var list = new List<KeyValuePair<IFileRecord, string>>();
+                            void Recursive(RecordTreeNode record, string path) {
+								if (record is IFileRecord fr) {
+									path = path[..^4] + ".png";
+									if (record.Name.EndsWith(".dds") && File.Exists(path))
+										list.Add(new(fr, path));
+								} else
+									foreach (var f in record.Children) {
+                                        var i = f.Name.LastIndexOf('.');
+										Recursive(f, path + "/" + f.Name);
+									}
+							}
+							Recursive(rtn, ofd.DirectoryPath);
+							bkg.ProgressText = "Writing {0}/" + list.Count.ToString() + " image files . . .";
 
-			MessageBox.Show(this, "Wrote " + ofd.FileName + "\r\ninto " + rtn.GetPath(), "Done", MessageBoxButton.OK, MessageBoxImage.Information);
-			OnTreeSelectedChanged(null, null);
+							var bundles = ggpkContainer.Index == null ? new() : new List<LibBundle.Records.BundleRecord>(ggpkContainer.Index.Bundles);
+							var changed = false;
+							var BundleToSave = ggpkContainer.Index?.GetSmallestBundle(bundles);
+							var fr = BundleToSave == null ? null : ggpkContainer.RecordOfBundle(BundleToSave);
+
+							if (ggpkContainer.Index != null) // else BundleMode
+								if (ggpkContainer.fileStream == null) // SteamMode
+									while (!File.Exists(BundleToSave.Name)) {
+										bundles.Remove(BundleToSave);
+										if (bundles.Count == 0)
+											throw new("Couldn't find a bundle to save");
+										BundleToSave = ggpkContainer.Index.GetSmallestBundle(bundles);
+									}
+								else
+									while (fr == null) {
+										bundles.Remove(BundleToSave);
+										if (bundles.Count == 0)
+											throw new("Couldn't find a bundle to save");
+										BundleToSave = ggpkContainer.Index.GetSmallestBundle(bundles);
+										fr = ggpkContainer.RecordOfBundle(BundleToSave);
+									}
+
+							var SavedSize = 0;
+							Parallel.ForEach(list, (kv) => {
+								var bitmap = (Bitmap)System.Drawing.Image.FromFile(kv.Value);
+								/*uint fourcc; // Get origin dds DXGI_FORMAT
+								fixed (byte* p = (byte[])Image.Tag)
+									fourcc = *(uint*)(p + 84); */
+								using var blob = BitmapToDdsFile(bitmap);
+                                var b = new ReadOnlySpan<byte>(blob.Pointer, blob.Length).ToArray();
+
+								lock (ggpkContainer) {
+									if (SavedSize > 200000000 && bundles.Count > 1) { // 200MB per bundle
+										changed = true;
+										if (ggpkContainer.fileStream == null) // SteamMode
+											BundleToSave.Save();
+										else {
+											fr.ReplaceContent(BundleToSave.Save(ggpkContainer.Reader, fr.DataBegin));
+											BundleToSave.Bundle.offset = fr.DataBegin;
+											BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
+										}
+										BundleToSave = ggpkContainer.Index.GetSmallestBundle();
+
+										if (ggpkContainer.Index != null) { // else BundleMode
+											fr = ggpkContainer.RecordOfBundle(BundleToSave);
+											if (ggpkContainer.fileStream == null) // SteamMode
+												while (!File.Exists(BundleToSave.Name)) {
+													bundles.Remove(BundleToSave);
+													BundleToSave = ggpkContainer.Index.GetSmallestBundle(bundles);
+												}
+											else
+												while (fr == null) {
+													bundles.Remove(BundleToSave);
+													BundleToSave = ggpkContainer.Index.GetSmallestBundle(bundles);
+													fr = ggpkContainer.RecordOfBundle(BundleToSave);
+												}
+										}
+										SavedSize = 0;
+									}
+
+									if (kv.Key is BundleFileNode bfn) // In Bundle
+										SavedSize += bfn.BatchReplaceContent(b, BundleToSave);
+									else // In GGPK
+										kv.Key.ReplaceContent(b);
+								}
+								bkg.NextProgress();
+							});
+							if (BundleToSave != null && SavedSize > 0) {
+								changed = true;
+								if (ggpkContainer.fileStream == null) // SteamMode
+									BundleToSave.Save();
+								else {
+									fr.ReplaceContent(BundleToSave.Save(ggpkContainer.Reader, fr.DataBegin));
+									BundleToSave.Bundle.offset = fr.DataBegin;
+									BundleFileNode.LastFileToUpdate.RemoveOldCache(BundleToSave);
+								}
+							}
+							// Save Index
+							if (changed)
+								if (fr == null)
+									ggpkContainer.Index.Save("_.index.bin");
+								else
+									ggpkContainer.IndexRecord.ReplaceContent(ggpkContainer.Index.Save());
+
+							Dispatcher.Invoke(() => {
+								MessageBox.Show(this, "Wrote " + list.Count.ToString() + " Files", "Done", MessageBoxButton.OK, MessageBoxImage.Information);
+								OnTreeSelectedChanged(null, null);
+								bkg.Close();
+							});
+						} catch (Exception ex) {
+							App.HandleException(ex);
+							Dispatcher.Invoke(bkg.Close);
+						}
+					});
+					bkg.ShowDialog();
+				}
+			}
 		}
 
 		private void FilterButton_Click(object sender, RoutedEventArgs e) {

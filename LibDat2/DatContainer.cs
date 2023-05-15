@@ -15,11 +15,10 @@ using System.Threading;
 
 namespace LibDat2 {
 	public class DatContainer {
-#pragma warning disable CS8618
 		/// <summary>
 		/// Structure definition of dat files
 		/// </summary>
-		public static Dictionary<string, KeyValuePair<string, string>[]> DatDefinitions;
+		public static Dictionary<string, KeyValuePair<string, string>[]>? DatDefinitions;
 
 		/// <summary>
 		/// DatDefinitions from schema.min.json
@@ -32,9 +31,8 @@ namespace LibDat2 {
 		public readonly bool SchemaMin;
 
 		/// <summary>
-		/// Call <see cref="ReloadDefinitions"/>
+		/// Download schema.min.json into <see cref="SchemaMinDatDefinitions"/>
 		/// </summary>
-
 		public static void DownloadSchemaMin() {
 			var http = new HttpClient() { Timeout = Timeout.InfiniteTimeSpan };
 			try {
@@ -79,7 +77,7 @@ namespace LibDat2 {
 		/// <summary>
 		/// List of record content of the dat file
 		/// </summary>
-		public List<IFieldData[]> FieldDatas;
+		public List<IFieldData[]> FieldDatas = null!;
 
 		/// <summary>
 		/// Store the first error that occurred during reading
@@ -118,8 +116,6 @@ namespace LibDat2 {
 		/// <param name="fileName">Name of the dat file</param>
 		/// <param name="SchemaMin">Whether to use schema.min.json</param>
 		public DatContainer(Stream stream, string fileName, bool SchemaMin = false) {
-			if (DatDefinitions == null)
-				ReloadDefinitions();
 			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
@@ -155,6 +151,8 @@ namespace LibDat2 {
 					throw new KeyNotFoundException(Name + " was not defined in " + def);
 				FieldDefinitions = new(kvps);
 			} else {
+				if (DatDefinitions == null)
+					ReloadDefinitions();
 				def = "DatDefinitions.json";
 				if (!DatDefinitions.TryGetValue(Name, out var kvps))
 					throw new KeyNotFoundException(Name + " was not defined in " + def);
@@ -272,8 +270,6 @@ namespace LibDat2 {
 		/// <param name="fileName">Name of the dat file</param>
 		/// <param name="SchemaMin">Whether to use schema.min.json</param>
 		public DatContainer(string fileName, List<IFieldData[]> fieldDatas, bool SchemaMin = false) {
-			if (DatDefinitions == null)
-				ReloadDefinitions();
 			this.SchemaMin = SchemaMin;
 			switch (Path.GetExtension(fileName)) {
 				case ".dat":
@@ -305,6 +301,8 @@ namespace LibDat2 {
 					throw new KeyNotFoundException(Name + " was not defined in schema.min.json");
 				FieldDefinitions = new(kvps);
 			} else {
+				if (DatDefinitions == null)
+					ReloadDefinitions();
 				if (!DatDefinitions.TryGetValue(Name, out var kvps))
 					throw new KeyNotFoundException(Name + " was not defined in DatDefinitions.json");
 				FieldDefinitions = new(kvps);
