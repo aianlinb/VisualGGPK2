@@ -332,13 +332,13 @@ namespace VisualGGPK2
         public static byte[] DdsRedirectAndHeaderProcess(byte[] buffer, RecordTreeNode node) {
 			ReadOnlySpan<byte> span = buffer;
 			if (node.Name.EndsWith(".header"))
-				span = span[16..];
+				span = span[0] == 3 ? span[28..] : span[16..];
 			while (span[0] == '*') {
 				var path = UTF8.GetString(span[1..]);
 				var f = (IFileRecord)node.ggpkContainer.FindRecord(path, node.ggpkContainer.FakeBundles2);
 				span = buffer = f.ReadFileContent(node.ggpkContainer.fileStream);
 				if (path.EndsWith(".header"))
-					span = span[16..];
+					span = span[0] == 3 ? span[28..] : span[16..];
 			}
 			return buffer == span ? buffer : span.ToArray();
 		}

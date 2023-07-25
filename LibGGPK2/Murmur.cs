@@ -49,25 +49,22 @@ public static class MurmurHash2Unsafe
     public static unsafe UInt32 Hash(Byte[] data, UInt32 seed = 0xc58f1a7b)
     {
         Int32 length = data.Length;
-        if (length == 0)
-            return 0;
+
         UInt32 h = seed ^ (UInt32)length;
         Int32 remainingBytes = length & 3; // mod 4
         Int32 numberOfLoops = length >> 2; // div 4
         fixed (byte* firstByte = &(data[0]))
         {
             UInt32* realData = (UInt32*)firstByte;
-            while (numberOfLoops != 0)
+            while (numberOfLoops-- != 0)
             {
-                UInt32 k = *realData;
+                UInt32 k = *realData++;
                 k *= m;
                 k ^= k >> r;
                 k *= m;
 
                 h *= m;
                 h ^= k;
-                numberOfLoops--;
-                realData++;
             }
             switch (remainingBytes)
             {
