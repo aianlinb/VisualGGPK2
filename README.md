@@ -1,16 +1,16 @@
 # Notice
 All projects in this repository are not thread-safe,
-do not use these libraries with more than one thread!
+Do not process a single ggpk file with more than one thread
 
 This project is reserved for VisualGGPK2.
-For development, it is recommended to use [LibGGPK3](https://github.com/aianlinb/LibGGPK3) instead.
+For development, it's recommended to use [LibGGPK3](https://github.com/aianlinb/LibGGPK3) instead.
 
 ## LibGGPK2
 Library for Content.ggpk of game PathOfExile.
 
 Rewrite of https://github.com/aianlinb/libggpk
 ## VisualGGPK2
-A visual program to view/edit ggpk file.
+A windows desktop program to view/edit ggpk file.
 
 ![image](https://github.com/aianlinb/LibGGPK2/blob/master/.github/example.png)
 ## What's New?

@@ -160,7 +160,7 @@ namespace LibDat2 {
 				FieldDefinitions = new(kvps);
 			}
 
-			if (Name != "Languages") {
+			if (Name != "languages") {
 				var actualRecordLength = GetActualRecordLength(reader, Count);
 				DataSectionOffset = Count * actualRecordLength + 4;
 				// DataSectionDataLength = Length - DataSectionOffset - 8;
