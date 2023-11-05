@@ -1,19 +1,21 @@
-# Notice
-All projects in this repository are not thread-safe,
-Do not process a single ggpk file with more than one thread
+## ***No longer updating. Bug fixing only.***
 
+# Notice
 This project is reserved for VisualGGPK2.
-For development, it's recommended to use [LibGGPK3](https://github.com/aianlinb/LibGGPK3) instead.
+For development or learning, It's highly recommended to use [LibGGPK3](https://github.com/aianlinb/LibGGPK3) instead.
+
+All projects in this repository are not thread-safe.
+Do not process a single ggpk file with more than one thread.
 
 ## LibGGPK2
 Library for Content.ggpk of game PathOfExile.
 
 Rewrite of https://github.com/aianlinb/libggpk
 ## VisualGGPK2
-A windows desktop program to view/edit ggpk file.
+A Windows-Only desktop program to view/edit ggpk file.
 
 ![image](https://github.com/aianlinb/LibGGPK2/blob/master/.github/example.png)
-## What's New?
+## What's New? (than libggpk)
 - Directly access the files in bundles.
 - No longer read all Records of GGPK at the beginning.
 - The new file added will replace existing FreeRecord instead of being appended to the end of the GGPK.

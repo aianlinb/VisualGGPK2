@@ -34,32 +34,27 @@ namespace LibDat2 {
 		/// Download schema.min.json into <see cref="SchemaMinDatDefinitions"/>
 		/// </summary>
 		public static void DownloadSchemaMin() {
-			var http = new HttpClient() { Timeout = Timeout.InfiniteTimeSpan };
-			try {
-				http.DefaultRequestHeaders.Add("User-Agent", "LibDat2");
-				var s = http.GetStringAsync("http://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json").Result;
-				var json = JsonDocument.Parse(s);
-				var table = json.RootElement.GetProperty("tables");
-				SchemaMinDatDefinitions = new(table.GetArrayLength());
-				foreach (var dat in table.EnumerateArray()) {
-					var columns = dat.GetProperty("columns");
-					var array = new KeyValuePair<string, string>[columns.GetArrayLength()];
-					var Unknown = 0;
-					var index = 0;
-					foreach (var field in columns.EnumerateArray()) {
-						var name = field.GetProperty("name").GetString() ?? "Unknown" + Unknown++.ToString();
-						var type = field.GetProperty("type").GetString()!;
-						if (type == "array")
-							type = "i32"; // Array of unknown type
-						if (field.GetProperty("array").GetBoolean())
-							type = "array|" + type;
-						array[index++] = new(name, type);
-					}
-					SchemaMinDatDefinitions.Add(dat.GetProperty("name").GetString()!.ToLowerInvariant(), array);
+			using var http = new HttpClient() { Timeout = Timeout.InfiniteTimeSpan };
+			http.DefaultRequestHeaders.Add("User-Agent", "LibDat2");
+			var s = http.GetStringAsync("http://github.com/poe-tool-dev/dat-schema/releases/download/latest/schema.min.json").Result;
+			using var json = JsonDocument.Parse(s);
+			var table = json.RootElement.GetProperty("tables");
+			SchemaMinDatDefinitions = new(table.GetArrayLength());
+			foreach (var dat in table.EnumerateArray()) {
+				var columns = dat.GetProperty("columns");
+				var array = new KeyValuePair<string, string>[columns.GetArrayLength()];
+				var Unknown = 0;
+				var index = 0;
+				foreach (var field in columns.EnumerateArray()) {
+					var name = field.GetProperty("name").GetString() ?? "Unknown" + Unknown++.ToString();
+					var type = field.GetProperty("type").GetString()!;
+					if (type == "array")
+						type = "i32"; // Array of unknown type
+					if (field.GetProperty("array").GetBoolean())
+						type = "array|" + type;
+					array[index++] = new(name, type);
 				}
-				json.Dispose();
-			} finally {
-				http.Dispose();
+				SchemaMinDatDefinitions.Add(dat.GetProperty("name").GetString()!.ToLowerInvariant(), array);
 			}
 		}
 
@@ -77,7 +72,7 @@ namespace LibDat2 {
 		/// <summary>
 		/// List of record content of the dat file
 		/// </summary>
-		public List<IFieldData[]> FieldDatas = null!;
+		public List<IFieldData[]> FieldDatas;
 
 		/// <summary>
 		/// Store the first error that occurred during reading
@@ -169,12 +164,13 @@ namespace LibDat2 {
 				if (recordLength != actualRecordLength)
 					throw new($"{fileName} : Actual record length: {actualRecordLength} is not equal to that defined in {def}: {recordLength}");
 
-				reader.BaseStream.Seek(4, SeekOrigin.Begin);
+				reader.BaseStream.Position = 4;
 			}
 
 			Exception = Read(reader, Count);
 		}
 
+		[MemberNotNull(nameof(FieldDatas))]
 		protected virtual DatDataReadException? Read(BinaryReader reader, int entryCount) {
 			ReferenceDatas.Clear();
 			ReferenceDataOffsets.Clear();
@@ -202,7 +198,7 @@ namespace LibDat2 {
 
 			if (ReferenceDatas.Count != 0)
 				CurrentOffset = ReferenceDatas.Values.ElementAt(ReferenceDatas.Count - 1).EndOffset;
-			reader.BaseStream.Seek(DataSectionOffset + CurrentOffset, SeekOrigin.Begin); // Move to the end of dat file
+			reader.BaseStream.Position = DataSectionOffset + CurrentOffset; // Move to the end of dat file
 			return ex;
 		}
 
@@ -317,20 +313,17 @@ namespace LibDat2 {
 		/// Save the dat file with the modified <see cref="FieldDatas"/>
 		/// </summary>
 		public virtual void Save(string filePath, bool x64, bool UTF32) {
-			var f = File.Create(filePath);
+			using var f = File.Create(filePath);
 			Save(f, x64, UTF32);
-			f.Close();
 		}
 
 		/// <summary>
 		/// Save the dat file with the modified <see cref="FieldDatas"/>
 		/// </summary>
 		public virtual byte[] Save(bool x64, bool UTF32) {
-			var f = new MemoryStream();
+			using var f = new MemoryStream();
 			Save(f, x64, UTF32);
-			var b = f.ToArray();
-			f.Close();
-			return b;
+			return f.ToArray();
 		}
 
 		/// <summary>
@@ -350,7 +343,8 @@ namespace LibDat2 {
 				foreach (var fd in fds!)
 					fd!.Write(bw);
 			bw.Write(0xBBBBBBBBBBBBBBBB); // Magic number
-			bw.Seek((int)(DataSectionOffset + CurrentOffset), SeekOrigin.Begin); // Move to the end of dat file
+			bw.Flush();
+			stream.Position = DataSectionOffset + CurrentOffset; // Move to the end of dat file
 		}
 
 		/// <summary>
@@ -369,7 +363,7 @@ namespace LibDat2 {
 					f.Append(field + ",");
 
 			if (f.Length == 0) {
-				for (var i=0; i< FieldDatas.Count; ++i)
+				for (var i = 0; i < FieldDatas.Count; ++i)
 					f.AppendLine();
 				return f.ToString();
 			} else

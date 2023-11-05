@@ -45,10 +45,10 @@ namespace LibDat2.Types {
 			Dat.ReferenceDatas[Offset] = this;
 
 			var previousPos = reader.BaseStream.Position;
-			var begin = reader.BaseStream.Seek(Offset + Dat.DataSectionOffset, SeekOrigin.Begin);
+			var begin = reader.BaseStream.Position = Offset + Dat.DataSectionOffset;
 			ReadInDataSection(reader);
 			Length = (int)(reader.BaseStream.Position - begin);
-			reader.BaseStream.Seek(previousPos, SeekOrigin.Begin);
+			reader.BaseStream.Position = previousPos;
 
 			if (Length != 0)
 				Dat.ReferenceDataOffsets[ToString()] = Offset;
@@ -91,11 +91,11 @@ namespace LibDat2.Types {
 			else
 				writer.Write((uint)Offset);
 			var previousPos = writer.BaseStream.Position;
-			var begin = writer.BaseStream.Seek(Offset + Dat.DataSectionOffset, SeekOrigin.Begin);
+			var begin = writer.BaseStream.Position = Offset + Dat.DataSectionOffset;
 			Dat.CurrentOffset += CalculateLength(); // For array
 			WriteInDataSection(writer);
 			Length = (int)(writer.BaseStream.Position - begin);
-			writer.BaseStream.Seek(previousPos, SeekOrigin.Begin);
+			writer.BaseStream.Position = previousPos;
 		}
 
 		/// <summary>

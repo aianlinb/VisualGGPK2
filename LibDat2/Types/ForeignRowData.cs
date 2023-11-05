@@ -75,7 +75,7 @@ namespace LibDat2.Types {
 
 		/// <inheritdoc/>
 		public override string ToString() {
-			return $"<{Key1?.ToString() ?? "null"}, { Key2?.ToString() ?? "null"}>";
+			return $"<{Key1?.ToString() ?? "null"}, {Key2?.ToString() ?? "null"}>";
 		}
 	}
 }

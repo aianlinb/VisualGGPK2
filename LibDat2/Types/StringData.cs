@@ -16,7 +16,7 @@ namespace LibDat2.Types {
 			reader.BaseStream.Seek(dat.x64 ? -8 : -4, SeekOrigin.Current);
 			return new StringData(dat).Read(reader);
 		}
-		
+
 		public override StringData Read(BinaryReader reader) {
 			if (Value != default)
 				Dat.ReferenceDataOffsets.Remove(ToString());

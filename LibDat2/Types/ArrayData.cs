@@ -164,7 +164,7 @@ namespace LibDat2.Types {
 						writer.BaseStream.Write(new ReadOnlySpan<byte>(b, Value.Length * sizeof(ushort)));
 					break;
 				case "u32":
-					fixed (uint* b =Value as uint[])
+					fixed (uint* b = Value as uint[])
 						writer.BaseStream.Write(new ReadOnlySpan<byte>(b, Value.Length * sizeof(uint)));
 					break;
 				case "u64":
@@ -291,7 +291,7 @@ namespace LibDat2.Types {
 						s.Append('D');
 					s.Append(", ");
 				}
-			
+
 			if (s.Length > 2)
 				s.Remove(s.Length - 2, 2);
 			s.Append(']');

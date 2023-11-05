@@ -184,30 +184,11 @@ namespace LibBundle
 		/// Get the hash of a file path
 		/// </summary>
 		public unsafe ulong NameHash(string name) {
-            if (Directories[0].NameHash == 0xF42A94E69CFF42FE)
-				return MurmurHash64A(Encoding.UTF8.GetBytes(name.ToLowerInvariant()));
-            else { // 0x07E47507B4A92E53
-				if (name[^1] != '/')
-					name = name.ToLowerInvariant();
-                return FNV1a64Hash(name);
-			}
-		}
-
-		/// <summary>
-		/// Get the hash of a file path with ggpk before patch 3.21.2
-		/// </summary>
-		protected static unsafe ulong FNV1a64Hash(string str) {
-			byte[] b;
-			if (str.EndsWith('/'))
-				b = Encoding.UTF8.GetBytes(str, 0, str.Length - 1);
-			else
-				b = Encoding.UTF8.GetBytes(str.ToLower());
-
-			// Equals to: b.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3UL);
-			var hash = 0xCBF29CE484222325UL;
-			foreach (var by in b)
-				hash = (hash ^ by) * 0x100000001B3UL;
-			return (((hash ^ 43) * 0x100000001B3UL) ^ 43) * 0x100000001B3UL; // "++"  -->  '+'==43
+			return Directories[0].NameHash switch {
+				0xF42A94E69CFF42FE => MurmurHash64A(Encoding.UTF8.GetBytes(name.ToLowerInvariant())),
+				0x07E47507B4A92E53 => FNV1a64Hash(name),
+                _ => throw new("Unable to detect the namehash algorithm")
+			};
 		}
 
 		/// <summary>
@@ -249,6 +230,23 @@ namespace LibBundle
 			h ^= h >> r;
 
 			return h;
+		}
+
+		/// <summary>
+		/// Get the hash of a file path with ggpk before patch 3.21.2
+		/// </summary>
+		protected static unsafe ulong FNV1a64Hash(string str) {
+			byte[] b;
+			if (str.EndsWith('/'))
+				b = Encoding.UTF8.GetBytes(str, 0, str.Length - 1);
+			else
+				b = Encoding.UTF8.GetBytes(str.ToLowerInvariant());
+
+			// Equals to: b.Aggregate(0xCBF29CE484222325UL, (current, by) => (current ^ by) * 0x100000001B3UL);
+			var hash = 0xCBF29CE484222325UL;
+			foreach (var by in b)
+				hash = (hash ^ by) * 0x100000001B3UL;
+			return (((hash ^ 43) * 0x100000001B3UL) ^ 43) * 0x100000001B3UL; // "++"  -->  '+'==43
 		}
 	}
 }

@@ -453,8 +453,9 @@ namespace LibGGPK2
         /// <param name="regex">Regular Expression for filtering files in GGPK by their path</param>
         public virtual void GetFileList(string ROOTPath, ICollection<KeyValuePair<IFileRecord, string>> list, string searchPattern = "*", string regex = null) {
             var files = Directory.GetFiles(ROOTPath, searchPattern, SearchOption.AllDirectories);
+            var l = ROOTPath.Length + 1;
             foreach (var f in files) {
-                var path = f[(ROOTPath.Length + 1)..];
+                var path = f[l..];
                 if ((regex == null || Regex.IsMatch(path, regex)) && FindRecord(path) is IFileRecord ifr)
                     list.Add(new(ifr, f));
 			}
@@ -472,9 +473,9 @@ namespace LibGGPK2
                 return;
 
             RecordTreeNode parent;
-            if (first.FullName.StartsWith("ROOT/"))
+            if (first.FullName.StartsWith("root/"))
                 parent = rootDirectory;
-            else if (first.FullName.StartsWith("Bundles2/"))
+            else if (first.FullName.StartsWith("bundles2/"))
                 parent = (RecordTreeNode)FakeBundles2 ?? OriginalBundles2;
             else
                 throw new("The root directory in zip must be ROOT or Bundles2");

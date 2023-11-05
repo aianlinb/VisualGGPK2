@@ -727,7 +727,7 @@ namespace VisualGGPK2
                     var indexUrl = SelectedVersion switch {
                         1 => (PatchServer = GetPatchServer()) + "Bundles2/_.index.bin",
                         2 => (PatchServer = GetPatchServer(true)) + "Bundles2/_.index.bin",
-                        3 => "http://poesmoother.eu/owncloud/index.php/s/1VsY1uYOBmfDcMy/download",
+                        3 => "http://poesmoother.eu/nextcloud/index.php" + "/s/8GEmZMECZqTDByt/download",
                         _ => null
                     };
 

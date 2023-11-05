@@ -97,8 +97,10 @@ namespace LibGGPK2.Records
             Hash = Hash256.ComputeHash(NewContent); // New Hash
 
             if (NewContent.Length == DataLength) // Replace in situ
-            {
-                bw.BaseStream.Seek(DataBegin, SeekOrigin.Begin);
+			{
+				bw.BaseStream.Seek(Offset + 12, SeekOrigin.Begin);
+				bw.Write(Hash);
+				bw.BaseStream.Seek(DataBegin, SeekOrigin.Begin);
                 bw.Write(NewContent);
             }
             else // Replace a FreeRecord

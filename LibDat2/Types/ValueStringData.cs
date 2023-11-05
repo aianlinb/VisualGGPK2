@@ -19,9 +19,9 @@ namespace LibDat2.Types {
 				while ((ch = reader.ReadInt32()) != 0)
 					sb.Append(char.ConvertFromUtf32(ch));
 			} else {
-				short ch;
-				while ((ch = reader.ReadInt16()) != 0)
-				sb.Append((char)ch);
+				char ch;
+				while ((ch = reader.ReadChar()) != 0)
+					sb.Append(ch);
 				if (Dat.Name != "languages" && reader.ReadInt16() != 0) // string should end with 4 bytes of zero
 					throw new("Not found \\0 at the end of the string");
 			}

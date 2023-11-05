@@ -128,6 +128,15 @@ namespace LibBundle {
         }
 
         public virtual byte[] AppendAndSave(Stream newData, Stream originalData) {
+            if (entry_count <= 0) {
+                if (originalData.Length == 0)
+					return Save(newData);
+                newData.Position = 0;
+				originalData.Position = originalData.Length;
+                newData.CopyTo(originalData);
+                return Save(originalData);
+			}
+
             originalData.Seek(offset + 60, SeekOrigin.Begin);
             var OldChunkCompressedSizes = new byte[(entry_count - 1) * 4];
             originalData.Read(OldChunkCompressedSizes, 0, OldChunkCompressedSizes.Length);

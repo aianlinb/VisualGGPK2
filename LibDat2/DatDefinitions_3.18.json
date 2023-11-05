@@ -5780,12 +5780,12 @@
 		"Frame_ArtFile": "string"
 	},
 	"SingleGroundLaser": {
-        "Index": "i32",
+		"Index": "i32",
 		"Unknown1": "foreignrow",
 		"Unknown2": "foreignrow",
 		"Unknown3": "i32",
 		"Unknown4": "string",
-        "Flag0": "bool",
+		"Flag0": "bool",
 		"Unknown5": "i32",
 		"Flag1": "bool",
 		"Unknown6": "i32",
