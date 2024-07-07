@@ -114,16 +114,9 @@ namespace VisualGGPK2
                 };
 
                 var setting = Properties.Settings.Default;
-                if (setting.GGPKPath == "") {
+                if (setting.GGPKPath == "")
                     setting.Upgrade();
-                    setting.Save();
-                }
-                if (setting.GGPKPath == "") {
-                    string path;
-                    path = Registry.CurrentUser.OpenSubKey(@"Software\GrindingGearGames\Path of Exile")?.GetValue("InstallLocation") as string;
-                    if (path != null && File.Exists(path + @"\Content.ggpk")) // Get POE path
-                        ofd.InitialDirectory = path.TrimEnd('\\');
-                } else if (File.Exists(setting.GGPKPath + @"\Content.ggpk"))
+                if (!string.IsNullOrEmpty(setting.GGPKPath) && File.Exists(setting.GGPKPath + @"\Content.ggpk"))
                     ofd.InitialDirectory = setting.GGPKPath;
 
                 if (ofd.ShowDialog() == true) {
@@ -442,9 +435,12 @@ namespace VisualGGPK2
 			};
 		}
 		public static unsafe BitmapSource DdsToBitmap(byte[] buffer) {
-            fixed (byte* p = buffer)
-                if (*(int*)p != 0x20534444) // "DDS "
-					buffer = BrotliSharpLib.Brotli.DecompressBuffer(buffer, 4, buffer.Length - 4); // for game before v3.11.2
+            if (MemoryMarshal.Read<int>(buffer) != 0x20534444) { // "DDS "
+				using var s = new BrotliStream(new MemoryStream(buffer, 4, buffer.Length - 4), CompressionMode.Decompress); // for game before v3.11.2
+				buffer = new byte[buffer.Length];
+				for (var l = 0; l < s.Length;)
+					l += s.Read(buffer, l, buffer.Length - l);
+			}
 			var image = new DirectXTexWrapper.Image();
             try {
 				fixed (byte* p = buffer) {
@@ -468,7 +464,9 @@ namespace VisualGGPK2
             }
         }
         [DllImport("mfplat")]
-        private extern static DXGI_FORMAT_Managed MFMapDX9FormatToDXGIFormat(uint dx9);
+#pragma warning disable SYSLIB1054
+		private extern static DXGI_FORMAT_Managed MFMapDX9FormatToDXGIFormat(uint dx9);
+#pragma warning restore SYSLIB1054
 		public static BLOB BitmapToDdsFile(Bitmap bitmap) {
             var format = bitmap.PixelFormat;
             var dformat = DXGI_FORMAT_Managed.DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -675,7 +673,7 @@ namespace VisualGGPK2
                         Task.Run(() => {
                             try {
                                 var list = new Collection<KeyValuePair<IFileRecord, string>>();
-                                GGPKContainer.RecursiveFileList(rtn, ofd.DirectoryPath, list, false);
+                                GGPKContainer.RecursiveFileList(rtn, ofd.FolderName, list, false);
                                 bkg.ProgressText = "Replacing {0}/" + list.Count.ToString() + " Files . . .";
                                 ggpkContainer.Replace(list, bkg.NextProgress);
                                 Dispatcher.Invoke(() => {
@@ -780,7 +778,9 @@ namespace VisualGGPK2
                             }
                         } else {
                             var fr = f as FileRecord;
-                            var path = Regex.Replace(fr.GetPath(), "^ROOT/", "");
+                            var path = fr.GetPath();
+							if (path.StartsWith("ROOT/"))
+                                path = path[5..];
                             fr.ReplaceContent(http.GetByteArrayAsync(PatchServer + path).Result);
                         }
                         bkg.NextProgress();
@@ -907,7 +907,6 @@ namespace VisualGGPK2
 		}
 
 		private int BatchConvertPng(ICollection<KeyValuePair<IFileRecord, string>> list, Action ProgressStep = null) {
-			var regex = new Regex(".dds$");
             LibBundle.Records.BundleRecord br = null;
             MemoryStream ms = null;
             var failBundles = 0;
@@ -1049,10 +1048,10 @@ namespace VisualGGPK2
 										Recursive(f, path + "/" + f.Name);
 									}
 							}
-							Recursive(rtn, ofd.DirectoryPath);
+							Recursive(rtn, ofd.FolderName);
 							bkg.ProgressText = "Writing {0}/" + list.Count.ToString() + " image files . . .";
 
-							var bundles = ggpkContainer.Index == null ? new() : new List<LibBundle.Records.BundleRecord>(ggpkContainer.Index.Bundles);
+							var bundles = ggpkContainer.Index == null ? [] : new List<LibBundle.Records.BundleRecord>(ggpkContainer.Index.Bundles);
 							var changed = false;
 							var BundleToSave = ggpkContainer.Index?.GetSmallestBundle(bundles);
 							var fr = BundleToSave == null ? null : ggpkContainer.RecordOfBundle(BundleToSave);

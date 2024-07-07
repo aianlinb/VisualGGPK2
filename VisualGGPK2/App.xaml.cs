@@ -11,7 +11,6 @@ namespace VisualGGPK2
         protected override void OnStartup(StartupEventArgs e)
         {
             DispatcherUnhandledException += OnUnhandledException;
-            Thread.CurrentThread.CurrentCulture = Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
             base.OnStartup(e);
         }
 

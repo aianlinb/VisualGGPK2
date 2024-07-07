@@ -4,7 +4,7 @@ namespace VisualGGPK2
 {
     public partial class BackgroundDialog : System.Windows.Window
     {
-        public int progress = 0;
+        private int progress = 0;
         public string ProgressText;
         public BackgroundDialog()
         {

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>aianlinb</Authors>
     <Copyright>Copyright © 2020-2023 aianlinb</Copyright>
     <Version>0.16.3</Version>
